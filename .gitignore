@@ -1,0 +1,10 @@
+# Ignore user uploads
+uploads/
+profiles/
+
+# Ignore logs
+*.log
+
+# Ignore system files
+.DS_Store
+Thumbs.db
