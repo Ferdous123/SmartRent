@@ -19,7 +19,7 @@ if (!isset($current_user)) {
             --secondary-bg: <?php echo $user_preferences['secondary_bg_color'] ?? '#f5f7fa'; ?>;
             --font-size: <?php echo ($user_preferences['font_size'] ?? 'medium') === 'small' ? '14px' : (($user_preferences['font_size'] ?? 'medium') === 'large' ? '18px' : '16px'); ?>;
         }
-                /* Tab display fixes */
+        /* Tab display fixes */
         .tab-pane {
             display: none;
         }
@@ -73,8 +73,6 @@ if (!isset($current_user)) {
                     </button>
                     <div class="user-menu" id="userMenu" style="display: none;">
                         <a href="../controller/profile_controller.php">Profile Settings</a>
-                        <a href="#preferences">Preferences</a>
-                        <hr>
                         <a href="../controller/working_login.php?action=logout">Logout</a>
                     </div>
                 </div>
@@ -111,21 +109,10 @@ if (!isset($current_user)) {
                 <p class="member-since">Member since <?php echo isset($user_profile['created_at']) && $user_profile['created_at'] ? date('M Y', strtotime($user_profile['created_at'])) : 'Unknown'; ?></p>
             </div>
         </div>
-
-            <!-- Profile Tabs -->
-            <div class="profile-tabs">
-                <button class="tab-btn active" onclick="showTab('personal')">Personal Info</button>
-                <button class="tab-btn" onclick="showTab('security')">Security</button>
-                <button class="tab-btn" onclick="showTab('preferences')">Preferences</button>
-                <?php if ($current_user['user_type'] === 'tenant'): ?>
-                    <button class="tab-btn" onclick="showTab('tenancy')">Tenancy Info</button>
-                <?php endif; ?>
-            </div>
-
-            <!-- Tab Content -->
-            <div class="tab-content">
-                <!-- Personal Information Tab -->
-                <div id="personal-tab" class="tab-pane active">
+        <!-- Profile Sections - No Tabs -->
+            <div class="profile-sections">
+                <!-- Personal Information Section -->
+                <div class="profile-section">
                     <div class="card">
                         <div class="card-header">
                             <h3>Personal Information</h3>
@@ -180,9 +167,9 @@ if (!isset($current_user)) {
                     </div>
                 </div>
 
-                <!-- Security Tab -->
-                <div id="security-tab" class="tab-pane">
-                    <!-- Change Password Section -->
+                <!-- Security Section -->
+                <div class="profile-section">
+                    <!-- Change Password -->
                     <div class="card">
                         <div class="card-header">
                             <h3>Change Password</h3>
@@ -213,7 +200,7 @@ if (!isset($current_user)) {
                         </div>
                     </div>
 
-                    <!-- Two-Factor Authentication Section -->
+                    <!-- Two-Factor Authentication -->
                     <div class="card">
                         <div class="card-header">
                             <h3>Two-Factor Authentication (2FA)</h3>
@@ -224,30 +211,18 @@ if (!isset($current_user)) {
                             </div>
                         </div>
                         <div class="card-content">
-                            <div id="twofa-content">
-                                <?php if (!$twofa_status['is_enabled']): ?>
-                                    <!-- 2FA Setup -->
-                                    <div id="twofa-setup">
-                                        <p>Enhance your account security by enabling two-factor authentication. This adds an extra layer of protection to your account.</p>
-                                        <button id="setup2FABtn" class="btn-primary" onclick="setup2FA()">Enable 2FA</button>
-                                    </div>
-                                <?php else: ?>
-                                    <!-- 2FA Enabled -->
-                                    <div id="twofa-enabled">
-                                        <p>Two-factor authentication is currently enabled for your account.</p>
-                                        <div class="twofa-actions">
-                                            <button class="btn-secondary" onclick="show2FACode()">Show Backup Codes</button>
-                                            <button class="btn-warning" onclick="disable2FA()">Disable 2FA</button>
-                                        </div>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
+                            <p>Two-factor authentication adds an extra layer of security to your account.</p>
+                            <?php if (!$twofa_status['is_enabled']): ?>
+                                <button id="setup2FABtn" class="btn-primary" onclick="alert('2FA setup will be implemented soon')">Enable 2FA</button>
+                            <?php else: ?>
+                                <button class="btn-warning" onclick="alert('2FA disable will be implemented soon')">Disable 2FA</button>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
 
-                <!-- Preferences Tab -->
-                <div id="preferences-tab" class="tab-pane">
+                <!-- Preferences Section -->
+                <div class="profile-section">
                     <div class="card">
                         <div class="card-header">
                             <h3>Display Preferences</h3>
@@ -288,7 +263,6 @@ if (!isset($current_user)) {
                                 
                                 <div class="form-actions">
                                     <button type="submit" class="btn-primary">Save Preferences</button>
-                                    <button type="button" class="btn-secondary" onclick="resetPreferences()">Reset to Default</button>
                                 </div>
                             </form>
                         </div>
@@ -296,22 +270,19 @@ if (!isset($current_user)) {
                 </div>
 
                 <?php if ($current_user['user_type'] === 'tenant'): ?>
-                <!-- Tenancy Information Tab -->
-                <div id="tenancy-tab" class="tab-pane">
+                <!-- Tenancy Section -->
+                <div class="profile-section">
                     <div class="card">
                         <div class="card-header">
                             <h3>Current Tenancy</h3>
                         </div>
                         <div class="card-content">
-                            <div id="tenancy-info">
-                                <p>Loading tenancy information...</p>
-                            </div>
+                            <p>Tenancy information will be displayed here.</p>
                         </div>
                     </div>
                 </div>
                 <?php endif; ?>
             </div>
-        </div>
     </main>
 
     <!-- 2FA Setup Modal -->

@@ -49,13 +49,14 @@ function setupEventListeners() {
         pictureUpload.addEventListener('change', uploadProfilePicture);
     }
     
-    // User dropdown
+    // User dropdown - Copy from working dashboard.js
     var userBtn = document.getElementById('userBtn');
     var userMenu = document.getElementById('userMenu');
+    
     if (userBtn && userMenu) {
         userBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            toggleDropdown(userMenu);
+            toggleDropdownFixed(userMenu);
         });
     }
     
@@ -166,7 +167,6 @@ function clearMessages() {
 
 
 
-// Personal information update
 function handlePersonalInfoUpdate(event) {
     event.preventDefault();
     
@@ -174,34 +174,36 @@ function handlePersonalInfoUpdate(event) {
     var formData = new FormData(form);
     formData.append('action', 'update_profile');
     
-    var submitBtn = document.getElementById('personalInfoSubmitBtn');
-    setButtonLoading(submitBtn, true);
-    
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '../controller/profile_controller.php', true);
-    
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            setButtonLoading(submitBtn, false);
-            
-            if (xhr.status === 200) {
-                try {
-                    var data = JSON.parse(xhr.responseText);
-                    if (data.success) {
-                        showMessage(data.message, 'success');
-                    } else {
-                        showMessage(data.message, 'error');
-                    }
-                } catch (e) {
-                    showMessage('Update failed. Please try again.', 'error');
-                }
+    fetch('../controller/profile_controller.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers.get('content-type'));
+        return response.text();
+    })
+    .then(text => {
+        console.log('Raw response text:', text);
+        clearMessages();
+        
+        try {
+            var data = JSON.parse(text);
+            if (data.success) {
+                showMessage(data.message, 'success');
             } else {
-                showMessage('Update failed. Please try again.', 'error');
+                showMessage(data.message, 'error');
             }
+        } catch (e) {
+            console.error('JSON Parse Error:', e);
+            showMessage('Response parsing failed: ' + text.substring(0, 200), 'error');
         }
-    };
-    
-    xhr.send(formData);
+    })
+    .catch(error => {
+        console.error('Network error:', error);
+        clearMessages();
+        showMessage('Network error occurred', 'error');
+    });
 }
 
 // Password change
@@ -225,16 +227,12 @@ function handlePasswordChange(event) {
     var formData = new FormData(form);
     formData.append('action', 'change_password');
     
-    var submitBtn = document.getElementById('passwordSubmitBtn');
-    setButtonLoading(submitBtn, true);
     
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '../controller/profile_controller.php', true);
     
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
-            setButtonLoading(submitBtn, false);
-            
             if (xhr.status === 200) {
                 try {
                     var data = JSON.parse(xhr.responseText);
@@ -491,19 +489,6 @@ function disable2FA() {
     xhr.send(params);
 }
 
-// Utility functions
-function setButtonLoading(button, loading) {
-    if (!button) return;
-    
-    if (loading) {
-        button.disabled = true;
-        button.originalText = button.textContent;
-        button.textContent = 'Loading...';
-    } else {
-        button.disabled = false;
-        button.textContent = button.originalText || 'Submit';
-    }
-}
 
 function showMessage(message, type) {
     clearMessages();
@@ -531,9 +516,13 @@ function showMessage(message, type) {
 }
 
 function toggleDropdown(dropdown) {
-    var isVisible = dropdown.style.display === 'block';
-    dropdown.style.display = isVisible ? 'none' : 'block';
+    if (dropdown.style.display === 'block') {
+        dropdown.style.display = 'none';
+    } else {
+        dropdown.style.display = 'block';
+    }
 }
+
 
 function closeAllDropdowns() {
     var userMenu = document.getElementById('userMenu');
