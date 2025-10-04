@@ -3,37 +3,47 @@
 if (!isset($current_user)) {
     require_once '../controller/session_controller.php';
     
-    // Check if user is logged in
     if (!is_user_logged_in()) {
         header("Location: ../view/login.php");
         exit();
     }
     
-    // Get current user
     $current_user = get_logged_in_user();
 }
 
-// Check if user has correct role for this dashboard
 if ($current_user['user_type'] !== 'manager') {
     header("Location: ../controller/dashboard_controller.php");
     exit();
 }
+
+// Initialize user preferences with defaults if not set
+if (!isset($user_preferences)) {
+    $user_preferences = [
+        'language_code' => 'en',
+        'nav_color' => '#667eea',
+        'primary_bg_color' => '#ffffff',
+        'secondary_bg_color' => '#f5f7fa',
+        'font_size' => 'medium',
+        'theme_mode' => 'light'
+    ];
+}
 ?>
 
 <!DOCTYPE html>
-<html lang="<?php echo $user_preferences['language_code'] ?? 'en'; ?>">
+<html lang="<?php echo $user_preferences['language_code']; ?>">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo ucfirst($current_user['user_type']); ?> Dashboard - SmartRent</title>
     <link rel="icon" type="image/x-icon" href="../favicon.ico">
     <style>
-        /* Complete Dashboard CSS */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         :root {
-            --nav-color: <?php echo $user_preferences['nav_color'] ?? '#667eea'; ?>;
-            --primary-bg: <?php echo $user_preferences['primary_bg_color'] ?? '#ffffff'; ?>;
-            --secondary-bg: <?php echo $user_preferences['secondary_bg_color'] ?? '#f5f7fa'; ?>;
-            --font-size: <?php echo ($user_preferences['font_size'] ?? 'medium') === 'small' ? '14px' : (($user_preferences['font_size'] ?? 'medium') === 'large' ? '18px' : '16px'); ?>;
+            --nav-color: <?php echo $user_preferences['nav_color']; ?>;
+            --primary-bg: <?php echo $user_preferences['primary_bg_color']; ?>;
+            --secondary-bg: <?php echo $user_preferences['secondary_bg_color']; ?>;
+            --font-size: <?php echo $user_preferences['font_size'] === 'small' ? '14px' : ($user_preferences['font_size'] === 'large' ? '18px' : '16px'); ?>;
         }
         
         body {
@@ -43,7 +53,6 @@ if ($current_user['user_type'] !== 'manager') {
             line-height: 1.6;
         }
         
-        /* Navigation */
         .dashboard-navbar {
             background: white;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -98,7 +107,6 @@ if ($current_user['user_type'] !== 'manager') {
             gap: 1rem;
         }
         
-        /* User dropdown */
         .user-dropdown {
             position: relative;
         }
@@ -148,7 +156,37 @@ if ($current_user['user_type'] !== 'manager') {
             font-size: 12px;
         }
         
-        /* Main content */
+        .user-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            min-width: 200px;
+            z-index: 1001;
+        }
+        
+        .user-menu a {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: #333;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+        
+        .user-menu a:hover {
+            background: #f5f7fa;
+        }
+        
+        .user-menu hr {
+            margin: 0.5rem 0;
+            border: none;
+            border-top: 1px solid #e0e0e0;
+        }
+        
         .dashboard-main {
             max-width: 1400px;
             margin: 0 auto;
@@ -216,7 +254,6 @@ if ($current_user['user_type'] !== 'manager') {
             color: white;
         }
         
-        /* Stats grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -269,7 +306,6 @@ if ($current_user['user_type'] !== 'manager') {
             font-size: 0.9rem;
         }
         
-        /* Content grid */
         .content-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -309,7 +345,6 @@ if ($current_user['user_type'] !== 'manager') {
             padding: 1.5rem;
         }
         
-        /* Quick actions */
         .quick-actions {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -340,7 +375,6 @@ if ($current_user['user_type'] !== 'manager') {
             font-size: 1.5rem;
         }
         
-        /* Activities */
         .activity-list {
             display: flex;
             flex-direction: column;
@@ -375,7 +409,6 @@ if ($current_user['user_type'] !== 'manager') {
             font-size: 0.9rem;
         }
         
-        /* Loading */
         .loading {
             display: flex;
             justify-content: center;
@@ -384,7 +417,6 @@ if ($current_user['user_type'] !== 'manager') {
             color: #666;
         }
         
-        /* Responsive */
         @media (max-width: 768px) {
             .nav-container {
                 padding: 0 1rem;
@@ -413,8 +445,7 @@ if ($current_user['user_type'] !== 'manager') {
         }
     </style>
 </head>
-<body class="<?php echo $user_preferences['theme_mode'] ?? 'light'; ?>-theme">
-    <!-- Navigation Header -->
+<body class="<?php echo $user_preferences['theme_mode']; ?>-theme">
     <header class="dashboard-navbar">
         <div class="nav-container">
             <div class="nav-left">
@@ -423,26 +454,16 @@ if ($current_user['user_type'] !== 'manager') {
                 </div>
                 <nav class="main-nav">
                     <a href="#dashboard" class="nav-link active">Dashboard</a>
-                    <?php if ($current_user['user_type'] === 'manager'): ?>
-                        <a href="#buildings" class="nav-link">My Buildings</a>
-                        <a href="#tenants" class="nav-link">Tenants</a>
-                        <a href="#maintenance" class="nav-link">Maintenance</a>
-                    <?php elseif ($current_user['user_type'] === 'owner'): ?>
-                        <a href="#buildings" class="nav-link">Buildings</a>
-                        <a href="#managers" class="nav-link">Managers</a>
-                        <a href="#reports" class="nav-link">Reports</a>
-                    <?php else: ?>
-                        <a href="#profile" class="nav-link">Profile</a>
-                        <a href="#requests" class="nav-link">Service Requests</a>
-                    <?php endif; ?>
+                    <a href="#buildings" class="nav-link">My Buildings</a>
+                    <a href="#tenants" class="nav-link">Tenants</a>
+                    <a href="#maintenance" class="nav-link">Maintenance</a>
                     <a href="#payments" class="nav-link">Payments</a>
                 </nav>
             </div>
             
             <div class="nav-right">
-                <!-- User Menu -->
                 <div class="user-dropdown">
-                    <button class="user-btn" onclick="toggleUserMenu()">
+                    <button class="user-btn" id="userBtn">
                         <div class="user-avatar">
                             <?php if (!empty($current_user['profile_picture_url'])): ?>
                                 <img src="<?php echo htmlspecialchars($current_user['profile_picture_url']); ?>" alt="Profile">
@@ -453,7 +474,7 @@ if ($current_user['user_type'] !== 'manager') {
                         <span class="user-name"><?php echo htmlspecialchars($current_user['full_name']); ?></span>
                         <span class="dropdown-arrow">▼</span>
                     </button>
-                    <div class="user-menu" id="userMenu" style="display: none;">
+                    <div class="user-menu" id="userMenu">
                         <a href="../controller/dashboard_controller.php?redirect=profile">Profile Settings</a>
                         <a href="#preferences">Preferences</a>
                         <hr>
@@ -464,161 +485,60 @@ if ($current_user['user_type'] !== 'manager') {
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="dashboard-main">
-        <!-- Dashboard Header -->
         <div class="dashboard-header">
             <div class="header-content">
                 <h1>Welcome, <?php echo htmlspecialchars($current_user['full_name']); ?>!</h1>
-                <p><?php echo ucfirst($current_user['user_type']); ?> Dashboard - <?php 
-                    if ($current_user['user_type'] === 'manager') {
-                        echo 'Manage your assigned properties';
-                    } elseif ($current_user['user_type'] === 'owner') {
-                        echo 'Oversee your property portfolio';
-                    } else {
-                        echo 'Your rental information and services';
-                    }
-                ?></p>
+                <p>Manager Dashboard - Manage your assigned properties</p>
             </div>
             <div class="header-actions">
-                <?php if ($current_user['user_type'] === 'manager'): ?>
-                    <button class="btn-primary" onclick="assignTenant()">
-                        <span class="btn-icon">👤</span>
-                        Assign Tenant
-                    </button>
-                    <button class="btn-secondary" onclick="viewServiceRequests()">
-                        <span class="btn-icon">🔧</span>
-                        Service Requests
-                    </button>
-                <?php elseif ($current_user['user_type'] === 'owner'): ?>
-                    <button class="btn-primary" onclick="addBuilding()">
-                        <span class="btn-icon">🏢</span>
-                        Add Building
-                    </button>
-                    <button class="btn-secondary" onclick="viewReports()">
-                        <span class="btn-icon">📊</span>
-                        View Reports
-                    </button>
-                <?php else: ?>
-                    <button class="btn-primary" onclick="makePayment()">
-                        <span class="btn-icon">💳</span>
-                        Make Payment
-                    </button>
-                    <button class="btn-secondary" onclick="createServiceRequest()">
-                        <span class="btn-icon">🔧</span>
-                        Service Request
-                    </button>
-                <?php endif; ?>
+                <button class="btn-primary" onclick="assignTenant()">
+                    <span class="btn-icon">👤</span>
+                    Assign Tenant
+                </button>
+                <button class="btn-secondary" onclick="viewServiceRequests()">
+                    <span class="btn-icon">🔧</span>
+                    Service Requests
+                </button>
             </div>
         </div>
 
-        <!-- Statistics Cards -->
         <div class="stats-grid">
-            <?php if ($current_user['user_type'] === 'manager'): ?>
-                <div class="stat-card">
-                    <div class="stat-icon">🏢</div>
-                    <div class="stat-content">
-                        <h3 id="managedBuildings">--</h3>
-                        <p>Managed Buildings</p>
-                        <div class="stat-detail">Buildings under your management</div>
-                    </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏢</div>
+                <div class="stat-content">
+                    <h3 id="managedBuildings">--</h3>
+                    <p>Managed Buildings</p>
+                    <div class="stat-detail">Buildings under your management</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🏠</div>
-                    <div class="stat-content">
-                        <h3 id="totalFlats">--</h3>
-                        <p>Total Flats</p>
-                        <div class="stat-detail">Flats across all buildings</div>
-                    </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏠</div>
+                <div class="stat-content">
+                    <h3 id="totalFlats">--</h3>
+                    <p>Total Flats</p>
+                    <div class="stat-detail">Flats across all buildings</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon">👥</div>
-                    <div class="stat-content">
-                        <h3 id="totalTenants">--</h3>
-                        <p>Active Tenants</p>
-                        <div class="stat-detail">Tenants under your management</div>
-                    </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-content">
+                    <h3 id="totalTenants">--</h3>
+                    <p>Active Tenants</p>
+                    <div class="stat-detail">Tenants under your management</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🔧</div>
-                    <div class="stat-content">
-                        <h3 id="pendingRequests">--</h3>
-                        <p>Pending Requests</p>
-                        <div class="stat-detail">Service requests awaiting action</div>
-                    </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔧</div>
+                <div class="stat-content">
+                    <h3 id="pendingRequests">--</h3>
+                    <p>Pending Requests</p>
+                    <div class="stat-detail">Service requests awaiting action</div>
                 </div>
-            <?php elseif ($current_user['user_type'] === 'owner'): ?>
-                <div class="stat-card">
-                    <div class="stat-icon">🏢</div>
-                    <div class="stat-content">
-                        <h3 id="totalBuildings">--</h3>
-                        <p>Total Buildings</p>
-                        <div class="stat-detail">Properties in your portfolio</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">💰</div>
-                    <div class="stat-content">
-                        <h3 id="monthlyRevenue">--</h3>
-                        <p>Monthly Revenue</p>
-                        <div class="stat-detail">Current month collections</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">📊</div>
-                    <div class="stat-content">
-                        <h3 id="occupancyRate">--</h3>
-                        <p>Occupancy Rate</p>
-                        <div class="stat-detail">Percentage of occupied flats</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">👥</div>
-                    <div class="stat-content">
-                        <h3 id="totalTenants">--</h3>
-                        <p>Total Tenants</p>
-                        <div class="stat-detail">Active tenants across properties</div>
-                    </div>
-                </div>
-            <?php else: ?>
-                <div class="stat-card">
-                    <div class="stat-icon">🏠</div>
-                    <div class="stat-content">
-                        <h3 id="flatInfo">--</h3>
-                        <p>Current Flat</p>
-                        <div class="stat-detail">Your assigned accommodation</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">💳</div>
-                    <div class="stat-content">
-                        <h3 id="outstandingDues">--</h3>
-                        <p>Outstanding Dues</p>
-                        <div class="stat-detail">Amount pending payment</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">📅</div>
-                    <div class="stat-content">
-                        <h3 id="lastPayment">--</h3>
-                        <p>Last Payment</p>
-                        <div class="stat-detail">Most recent payment date</div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🔧</div>
-                    <div class="stat-content">
-                        <h3 id="activeRequests">--</h3>
-                        <p>Active Requests</p>
-                        <div class="stat-detail">Pending service requests</div>
-                    </div>
-                </div>
-            <?php endif; ?>
+            </div>
         </div>
 
-        <!-- Main Content Area -->
         <div class="content-grid">
-            <!-- Recent Activity Card -->
             <div class="card">
                 <div class="card-header">
                     <h3>Recent Activity</h3>
@@ -631,159 +551,34 @@ if ($current_user['user_type'] !== 'manager') {
                 </div>
             </div>
 
-            <!-- Quick Actions Card -->
             <div class="card">
                 <div class="card-header">
                     <h3>Quick Actions</h3>
                 </div>
                 <div class="card-content">
                     <div class="quick-actions">
-                        <?php if ($current_user['user_type'] === 'manager'): ?>
-                            <button class="quick-action-btn" onclick="assignTenant()">
-                                <span class="action-icon">👤</span>
-                                <span>Assign Tenant</span>
-                            </button>
-                            <button class="quick-action-btn" onclick="generateOTP()">
-                                <span class="action-icon">🔑</span>
-                                <span>Generate OTP</span>
-                            </button>
-                            <button class="quick-action-btn" onclick="recordPayment()">
-                                <span class="action-icon">💳</span>
-                                <span>Record Payment</span>
-                            </button>
-                            <button class="quick-action-btn" onclick="handleServiceRequest()">
-                                <span class="action-icon">🔧</span>
-                                <span>Handle Request</span>
-                            </button>
-                        <?php elseif ($current_user['user_type'] === 'owner'): ?>
-                            <button class="quick-action-btn" onclick="addBuilding()">
-                                <span class="action-icon">🏢</span>
-                                <span>Add Building</span>
-                            </button>
-                            <button class="quick-action-btn" onclick="assignManager()">
-                                <span class="action-icon">👨‍💼</span>
-                                <span>Assign Manager</span>
-                            </button>
-                            <button class="quick-action-btn" onclick="viewReports()">
-                                <span class="action-icon">📊</span>
-                                <span>View Reports</span>
-                            </button>
-                            <button class="quick-action-btn" onclick="backupData()">
-                                <span class="action-icon">💾</span>
-                                <span>Backup Data</span>
-                            </button>
-                        <?php else: ?>
-                            <button class="quick-action-btn" onclick="makePayment()">
-                                <span class="action-icon">💳</span>
-                                <span>Make Payment</span>
-                            </button>
-                            <button class="quick-action-btn" onclick="createServiceRequest()">
-                                <span class="action-icon">🔧</span>
-                                <span>Service Request</span>
-                            </button>
-                            <button class="quick-action-btn" onclick="downloadReceipt()">
-                                <span class="action-icon">🧾</span>
-                                <span>Download Receipt</span>
-                            </button>
-                            <button class="quick-action-btn" onclick="updateProfile()">
-                                <span class="action-icon">⚙️</span>
-                                <span>Update Profile</span>
-                            </button>
-                        <?php endif; ?>
+                        <button class="quick-action-btn" onclick="assignTenant()">
+                            <span class="action-icon">👤</span>
+                            <span>Assign Tenant</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="generateOTP()">
+                            <span class="action-icon">🔑</span>
+                            <span>Generate OTP</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="recordPayment()">
+                            <span class="action-icon">💳</span>
+                            <span>Record Payment</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="handleServiceRequest()">
+                            <span class="action-icon">🔧</span>
+                            <span>Handle Request</span>
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <script>
-        // Dashboard JavaScript
-        document.addEventListener('DOMContentLoaded', function() {
-            loadDashboardStats();
-            loadRecentActivity();
-        });
-
-        function loadDashboardStats() {
-            fetch('../controller/dashboard_controller.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'action=get_dashboard_stats'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    updateStatsDisplay(data.stats);
-                }
-            })
-            .catch(error => console.error('Error loading stats:', error));
-        }
-
-        function updateStatsDisplay(stats) {
-            const userType = '<?php echo $current_user['user_type']; ?>';
-            
-            if (userType === 'manager') {
-                document.getElementById('managedBuildings').textContent = stats.managed_buildings || '0';
-                document.getElementById('totalFlats').textContent = stats.total_flats || '0';
-                document.getElementById('totalTenants').textContent = stats.total_tenants || '0';
-                document.getElementById('pendingRequests').textContent = stats.pending_service_requests || '0';
-            } else if (userType === 'owner') {
-                document.getElementById('totalBuildings').textContent = stats.total_buildings || '0';
-                document.getElementById('monthlyRevenue').textContent = '৳' + (stats.monthly_revenue || '0');
-                document.getElementById('occupancyRate').textContent = (stats.occupancy_rate || '0') + '%';
-                document.getElementById('totalTenants').textContent = stats.total_tenants || '0';
-            } else {
-                document.getElementById('flatInfo').textContent = stats.flat_info || 'Not Assigned';
-                document.getElementById('outstandingDues').textContent = '৳' + (stats.outstanding_dues || '0');
-                document.getElementById('lastPayment').textContent = stats.last_payment_date || 'No payments';
-                document.getElementById('activeRequests').textContent = stats.active_service_requests || '0';
-            }
-        }
-
-        function loadRecentActivity() {
-            setTimeout(() => {
-                const activityList = document.getElementById('activityList');
-                activityList.innerHTML = `
-                    <div class="activity-item">
-                        <div class="activity-icon">✅</div>
-                        <div class="activity-content">
-                            <p><strong>Dashboard Loaded</strong></p>
-                            <p>Welcome to your SmartRent dashboard</p>
-                            <span class="activity-time">Just now</span>
-                        </div>
-                    </div>
-                `;
-            }, 1000);
-        }
-
-        function toggleUserMenu() {
-            const menu = document.getElementById('userMenu');
-            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-        }
-
-        // Close user menu when clicking outside
-        document.addEventListener('click', function(event) {
-            const userDropdown = document.querySelector('.user-dropdown');
-            const userMenu = document.getElementById('userMenu');
-            
-            if (!userDropdown.contains(event.target)) {
-                userMenu.style.display = 'none';
-            }
-        });
-
-        // Quick action functions (placeholders)
-        function assignTenant() { alert('Assign Tenant feature coming soon!'); }
-        function generateOTP() { alert('Generate OTP feature coming soon!'); }
-        function recordPayment() { alert('Record Payment feature coming soon!'); }
-        function handleServiceRequest() { alert('Handle Service Request feature coming soon!'); }
-        function addBuilding() { alert('Add Building feature coming soon!'); }
-        function assignManager() { alert('Assign Manager feature coming soon!'); }
-        function viewReports() { alert('View Reports feature coming soon!'); }
-        function backupData() { alert('Backup Data feature coming soon!'); }
-        function makePayment() { alert('Make Payment feature coming soon!'); }
-        function createServiceRequest() { alert('Create Service Request feature coming soon!'); }
-        function downloadReceipt() { alert('Download Receipt feature coming soon!'); }
-        function updateProfile() { alert('Update Profile feature coming soon!'); }
-        function viewServiceRequests() { alert('Service Requests feature coming soon!'); }
-    </script>
+    <script src="../view/js/dashboard.js"></script>
 </body>
 </html>

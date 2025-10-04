@@ -210,23 +210,49 @@ function handlePersonalInfoUpdate(event) {
 function handlePasswordChange(event) {
     event.preventDefault();
     
+    // Clear all error messages
+    document.getElementById('current_password_error').textContent = '';
+    document.getElementById('new_password_error').textContent = '';
+    document.getElementById('confirm_password_error').textContent = '';
+    clearMessages();
+    
+    var currentPassword = document.getElementById('current_password').value;
     var newPassword = document.getElementById('new_password').value;
     var confirmPassword = document.getElementById('confirm_password').value;
     
-    if (newPassword !== confirmPassword) {
-        showMessage('New passwords do not match', 'error');
+    var hasError = false;
+    
+    // Client-side validations
+    if (!currentPassword) {
+        document.getElementById('current_password_error').textContent = 'Current password is required';
+        hasError = true;
+    }
+    
+    if (!newPassword) {
+        document.getElementById('new_password_error').textContent = 'New password is required';
+        hasError = true;
+    } else if (newPassword.length < 6) {
+        document.getElementById('new_password_error').textContent = 'Password must be at least 6 characters';
+        hasError = true;
+    }
+    
+    if (!confirmPassword) {
+        document.getElementById('confirm_password_error').textContent = 'Please confirm your password';
+        hasError = true;
+    } else if (newPassword !== confirmPassword) {
+        document.getElementById('confirm_password_error').textContent = 'Passwords do not match';
+        hasError = true;
+    }
+    
+    // Stop if there are validation errors
+    if (hasError) {
         return;
     }
     
-    if (newPassword.length < 6) {
-        showMessage('Password must be at least 6 characters', 'error');
-        return;
-    }
-    
+    // All validations passed, submit to server
     var form = event.target;
     var formData = new FormData(form);
     formData.append('action', 'change_password');
-    
     
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '../controller/profile_controller.php', true);
@@ -239,14 +265,20 @@ function handlePasswordChange(event) {
                     if (data.success) {
                         showMessage(data.message, 'success');
                         form.reset();
+                        // Clear password strength indicator
+                        var strengthIndicator = document.querySelector('.password-strength');
+                        if (strengthIndicator) {
+                            strengthIndicator.className = 'password-strength';
+                        }
                     } else {
-                        showMessage(data.message, 'error');
+                        // Server-side validation failed (wrong current password)
+                        document.getElementById('current_password_error').textContent = data.message;
                     }
                 } catch (e) {
-                    showMessage('Password change failed. Please try again.', 'error');
+                    showMessage('Server error occurred. Please try again.', 'error');
                 }
             } else {
-                showMessage('Password change failed. Please try again.', 'error');
+                showMessage('Server error occurred. Please try again.', 'error');
             }
         }
     };
@@ -270,7 +302,7 @@ function updatePasswordStrength(password) {
     
     var strength = calculatePasswordStrength(password);
     
-    strengthIndicator.className = 'password-strength ' + strength;
+    strengthIndicator.className = 'password-strength password-strength-' + strength;
 }
 
 function calculatePasswordStrength(password) {
@@ -365,12 +397,29 @@ function show2FAModal() {
 }
 
 function closeTwoFAModal() {
+    // Close the modal
     var modal = document.getElementById('twofa-modal');
     if (modal) {
         modal.style.display = 'none';
     }
     current2FASetup = null;
     setupStep = 1;
+    
+    // Reload the page to show updated button and status
+    location.reload();
+}
+
+function close2FAAndUpdate() {
+    // Close the modal
+    var modal = document.getElementById('twofa-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    current2FASetup = null;
+    setupStep = 1;
+    
+    // Reload the page to show updated button and status
+    location.reload();
 }
 
 function showStep(step) {
@@ -411,6 +460,7 @@ function previousStep(step) {
 function verify2FASetup() {
     var verificationCode = document.getElementById('verification-code').value;
     
+    
     if (!verificationCode || verificationCode.length !== 6) {
         showMessage('Please enter a valid 6-digit code', 'error');
         return;
@@ -421,27 +471,49 @@ function verify2FASetup() {
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     
     xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-            try {
-                var data = JSON.parse(xhr.responseText);
-                if (data.success) {
-                    // Show backup codes
-                    displayBackupCodes(current2FASetup.backup_codes);
-                    var backupCodesDiv = document.getElementById('backup-codes');
-                    if (backupCodesDiv) {
-                        backupCodesDiv.style.display = 'block';
-                    }
+        if (xhr.readyState === 4) {
+            console.log("Server response status:", xhr.status);
+            console.log("Raw server response:", xhr.responseText);
+            
+            if (xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    console.log("Parsed response:", data);
                     
-                    setTimeout(function() {
-                        showMessage(data.message, 'success');
-                        closeTwoFAModal();
+                    if (data.success) {
+                        console.log("SUCCESS: 2FA verified");
+                        
+                        // Show backup codes
+                        displayBackupCodes(current2FASetup.backup_codes);
+                        var backupCodesDiv = document.getElementById('backup-codes');
+                        if (backupCodesDiv) {
+                            backupCodesDiv.style.display = 'block';
+                        }
+                        
+                        // Hide the verify button and show close button instead
+                        var verifyButton = document.querySelector('#step3 .btn-primary');
+                        if (verifyButton && verifyButton.textContent === 'Verify & Enable') {
+                            verifyButton.textContent = 'Close';
+                            verifyButton.onclick = function() { close2FAAndUpdate(); };
+                        }
+                        
+                        // Hide back button
+                        var backButton = document.querySelector('#step3 .btn-secondary');
+                        if (backButton && backButton.textContent === 'Back') {
+                            backButton.style.display = 'none';
+                        }
+                        
+                        // Load status to update in background
                         load2FAStatus();
-                    }, 3000);
-                } else {
-                    showMessage(data.message, 'error');
+                    } else {
+                        console.log("Error message:", data.message);
+                        showMessage(data.message, 'error');
+                    }
+                } catch (e) {
+                    showMessage('Verification failed. Please try again.', 'error');
                 }
-            } catch (e) {
-                showMessage('Verification failed. Please try again.', 'error');
+            } else {
+                showMessage('Server error. Please try again.', 'error');
             }
         }
     };
@@ -462,7 +534,7 @@ function displayBackupCodes(codes) {
 }
 
 function disable2FA() {
-    var code = prompt('Enter your current 2FA code to disable:');
+    var code = prompt('Enter your 2FA code or backup code to disable 2FA:');
     if (!code) return;
     
     var xhr = new XMLHttpRequest();
@@ -475,7 +547,9 @@ function disable2FA() {
                 var data = JSON.parse(xhr.responseText);
                 if (data.success) {
                     showMessage(data.message, 'success');
-                    load2FAStatus();
+                    setTimeout(function() {
+                        location.reload(); // Reload to show Enable button
+                    }, 1000);
                 } else {
                     showMessage(data.message, 'error');
                 }

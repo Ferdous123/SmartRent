@@ -179,6 +179,7 @@ if (!isset($current_user)) {
                                 <div class="form-group">
                                     <label for="current_password">Current Password</label>
                                     <input type="password" id="current_password" name="current_password" required>
+                                    <span class="form-error" id="current_password_error"></span>
                                 </div>
                                 
                                 <div class="form-row">
@@ -186,10 +187,12 @@ if (!isset($current_user)) {
                                         <label for="new_password">New Password</label>
                                         <input type="password" id="new_password" name="new_password" required>
                                         <div class="password-strength" id="passwordStrength"></div>
+                                        <span class="form-error" id="new_password_error"></span>
                                     </div>
                                     <div class="form-group">
                                         <label for="confirm_password">Confirm New Password</label>
                                         <input type="password" id="confirm_password" name="confirm_password" required>
+                                        <span class="form-error" id="confirm_password_error"></span>
                                     </div>
                                 </div>
                                 
@@ -213,9 +216,9 @@ if (!isset($current_user)) {
                         <div class="card-content">
                             <p>Two-factor authentication adds an extra layer of security to your account.</p>
                             <?php if (!$twofa_status['is_enabled']): ?>
-                                <button id="setup2FABtn" class="btn-primary" onclick="alert('2FA setup will be implemented soon')">Enable 2FA</button>
+                                <button id="setup2FABtn" class="btn-primary" onclick="setup2FA()">Enable 2FA</button>
                             <?php else: ?>
-                                <button class="btn-warning" onclick="alert('2FA disable will be implemented soon')">Disable 2FA</button>
+                                <button class="btn-warning" onclick="disable2FA()">Disable 2FA</button>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -297,11 +300,7 @@ if (!isset($current_user)) {
                     <!-- Step 1: Install App -->
                     <div class="setup-step" id="step1">
                         <h4>Step 1: Install Google Authenticator</h4>
-                        <p>Download and install Google Authenticator on your mobile device:</p>
-                        <div class="app-links">
-                            <a href="#" class="app-link">iOS App Store</a>
-                            <a href="#" class="app-link">Google Play Store</a>
-                        </div>
+                        <p>Download and install Google Authenticator on your mobile device</p>
                         <button class="btn-primary" onclick="nextStep(2)">Next</button>
                     </div>
 
@@ -343,7 +342,6 @@ if (!isset($current_user)) {
     <div id="messageContainer" class="message-container"></div>
 
     <!-- Scripts -->
-    <script src="../view/js/dashboard.js"></script>
     <script src="../view/js/profile.js"></script>
 </body>
 </html>

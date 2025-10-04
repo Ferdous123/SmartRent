@@ -1,9 +1,13 @@
 <?php
+// Add this immediately after opening PHP tag
+ob_start();
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 1); // Change to 0 for production
 
 // Clean any previous output
-if (ob_get_contents()) ob_clean();
+while (ob_get_level()) {
+    ob_end_clean();
+}
 
 session_start();
 require_once '../model/database.php';
@@ -60,7 +64,20 @@ if (isset($_POST['action'])) {
 // Only include the view if NOT an AJAX request
 $user_profile = get_user_by_id($current_user['user_id']);
 $user_preferences = get_user_preferences($current_user['user_id']);
-$twofa_status = array('is_enabled' => false, 'created_at' => null);
+
+// Get actual 2FA status from database
+$twofa_query = "SELECT is_enabled, created_at FROM user_authenticator WHERE user_id = ?";
+$twofa_result = execute_prepared_query($twofa_query, array($current_user['user_id']), 'i');
+
+if ($twofa_result && mysqli_num_rows($twofa_result) > 0) {
+    $twofa_row = fetch_single_row($twofa_result);
+    $twofa_status = array(
+        'is_enabled' => $twofa_row['is_enabled'] ? true : false,
+        'created_at' => $twofa_row['created_at']
+    );
+} else {
+    $twofa_status = array('is_enabled' => false, 'created_at' => null);
+}
 
 include '../view/profile.php';
 
@@ -94,7 +111,19 @@ function handle_update_profile() {
     }
 }
 
-function handle_change_password() {
+
+    function handle_change_password() {
+    // Clear any output buffer
+    if (ob_get_length()) ob_clean();
+    
+    global $current_user;
+    
+    $current_password = $_POST['current_password'] ?? '';
+    $new_password = $_POST['new_password'] ?? '';
+    $confirm_password = $_POST['confirm_password'] ?? '';
+    
+    // ... rest of the function
+
     global $current_user;
     
     $current_password = $_POST['current_password'] ?? '';
@@ -174,28 +203,223 @@ function handle_upload_picture() {
     }
 }
 
-// Placeholder 2FA handlers (implement these based on your 2FA system)
+// Get 2FA status - simple function
 function handle_get_2fa_status() {
     global $current_user;
-    // Replace this with actual 2FA status check
-    echo json_encode([
+    
+    $user_id = $current_user['user_id'];
+    
+    // Simple query to check 2FA
+    $query = "SELECT is_enabled, created_at FROM user_authenticator WHERE user_id = ?";
+    $result = execute_prepared_query($query, array($user_id), 'i');
+    
+    if ($result && mysqli_num_rows($result) > 0) {
+        $row = fetch_single_row($result);
+        $is_enabled = $row['is_enabled'] ? true : false;
+        $created_at = $row['created_at'];
+    } else {
+        $is_enabled = false;
+        $created_at = null;
+    }
+    
+    echo json_encode(array(
         'success' => true, 
-        'status' => ['is_enabled' => false, 'created_at' => null]
-    ]);
+        'status' => array(
+            'is_enabled' => $is_enabled,
+            'created_at' => $created_at
+        )
+    ));
 }
 
+// Setup 2FA - simple function
 function handle_setup_2fa() {
-    // Implement 2FA setup logic
-    echo json_encode(['success' => false, 'message' => '2FA setup not implemented yet']);
+    global $current_user;
+    
+    // Include the Google Authenticator file
+    require_once '../lib/PHPGangsta_GoogleAuthenticator.php';
+    
+    // Create new authenticator
+    $ga = new PHPGangsta_GoogleAuthenticator();
+    
+    // Generate secret key
+    $secret = $ga->createSecret();
+    
+    // Get user name instead of email
+    $user_name = $current_user['full_name'];
+
+    // Generate QR code URL with name
+    $qr_url = $ga->getQRCodeGoogleUrl($user_name, $secret, 'SmartRent', 200);
+    
+    // Generate 10 backup codes
+    $backup_codes = array();
+    for ($i = 0; $i < 10; $i++) {
+        $random_bytes = random_bytes(10);
+        $code = strtoupper(substr(md5($random_bytes), 0, 8));
+        $backup_codes[] = $code;
+    }
+    
+    // Save in session temporarily
+    $_SESSION['temp_2fa_secret'] = $secret;
+    $_SESSION['temp_2fa_backup_codes'] = $backup_codes;
+    
+    // Send response
+    echo json_encode(array(
+        'success' => true,
+        'secret' => $secret,
+        'qr_url' => $qr_url,
+        'backup_codes' => $backup_codes
+    ));
 }
 
+// Verify 2FA setup - simple function
 function handle_verify_2fa_setup() {
-    // Implement 2FA verification logic
-    echo json_encode(['success' => false, 'message' => '2FA verification not implemented yet']);
+    global $current_user;
+    
+    // Get verification code from POST
+    $verification_code = isset($_POST['verification_code']) ? $_POST['verification_code'] : '';
+    
+    // Check if code is provided
+    if (empty($verification_code)) {
+        echo json_encode(array('success' => false, 'message' => 'Verification code required'));
+        return;
+    }
+    
+    // Check if session has secret
+    if (!isset($_SESSION['temp_2fa_secret'])) {
+        echo json_encode(array('success' => false, 'message' => 'Setup session expired. Please start again.'));
+        return;
+    }
+    
+    // Include Google Authenticator
+    require_once '../lib/PHPGangsta_GoogleAuthenticator.php';
+    
+    // Create authenticator
+    $ga = new PHPGangsta_GoogleAuthenticator();
+    
+    // Get secret from session
+    $secret = $_SESSION['temp_2fa_secret'];
+    
+    // Verify the code (with 2 time slots tolerance)
+    $is_valid = $ga->verifyCode($secret, $verification_code, 2);
+    
+    if ($is_valid) {
+        // Get backup codes from session
+        $backup_codes = $_SESSION['temp_2fa_backup_codes'];
+        
+        // Convert backup codes array to JSON
+        $backup_codes_json = json_encode($backup_codes);
+        
+        // Generate QR URL again
+        $qr_url = $ga->getQRCodeGoogleUrl($current_user['email'], $secret, 'SmartRent', 200);
+        
+        // Get user ID
+        $user_id = $current_user['user_id'];
+        
+        // Check if record exists
+        $check_query = "SELECT auth_id FROM user_authenticator WHERE user_id = ?";
+        $check_result = execute_prepared_query($check_query, array($user_id), 'i');
+        
+        if ($check_result && mysqli_num_rows($check_result) > 0) {
+            // Update existing record
+            $update_query = "UPDATE user_authenticator SET secret_key = ?, qr_code_url = ?, backup_codes = ?, is_enabled = 1 WHERE user_id = ?";
+            $result = execute_prepared_query($update_query, array($secret, $qr_url, $backup_codes_json, $user_id), 'sssi');
+        } else {
+            // Insert new record
+            $insert_query = "INSERT INTO user_authenticator (user_id, secret_key, qr_code_url, backup_codes, is_enabled) VALUES (?, ?, ?, ?, 1)";
+            $result = execute_prepared_query($insert_query, array($user_id, $secret, $qr_url, $backup_codes_json), 'isss');
+        }
+        
+        if ($result) {
+            // Clear session data
+            unset($_SESSION['temp_2fa_secret']);
+            unset($_SESSION['temp_2fa_backup_codes']);
+            
+            // Log activity
+            log_user_activity($user_id, 'create', 'user_authenticator', $user_id, null, array('action' => '2fa_enabled'));
+            
+            echo json_encode(array('success' => true, 'message' => '2FA enabled successfully'));
+        } else {
+            echo json_encode(array('success' => false, 'message' => 'Failed to save 2FA settings'));
+        }
+    } else {
+        echo json_encode(array('success' => false, 'message' => 'Invalid verification code. Please try again.'));
+    }
 }
 
+// Disable 2FA - simple function
 function handle_disable_2fa() {
-    // Implement 2FA disable logic
-    echo json_encode(['success' => false, 'message' => '2FA disable not implemented yet']);
+    global $current_user;
+    
+    // Get verification code or backup code
+    $verification_code = isset($_POST['verification_code']) ? trim($_POST['verification_code']) : '';
+    
+    if (empty($verification_code)) {
+        echo json_encode(array('success' => false, 'message' => 'Verification code or backup code required'));
+        return;
+    }
+    
+    // Get user ID
+    $user_id = $current_user['user_id'];
+    
+    // Get current 2FA settings from database
+    $query = "SELECT secret_key, is_enabled, backup_codes FROM user_authenticator WHERE user_id = ?";
+    $result = execute_prepared_query($query, array($user_id), 'i');
+    
+    if (!$result || mysqli_num_rows($result) == 0) {
+        echo json_encode(array('success' => false, 'message' => '2FA is not enabled'));
+        return;
+    }
+    
+    $row = fetch_single_row($result);
+    $secret_key = $row['secret_key'];
+    $is_enabled = $row['is_enabled'];
+    $backup_codes_json = $row['backup_codes'];
+    
+    if (!$is_enabled) {
+        echo json_encode(array('success' => false, 'message' => '2FA is not enabled'));
+        return;
+    }
+    
+    $is_valid = false;
+    
+    // Check if it's a 6-digit code (2FA) or 8-character code (backup)
+    if (strlen($verification_code) == 6 && ctype_digit($verification_code)) {
+        // This is a 2FA code
+        require_once '../lib/PHPGangsta_GoogleAuthenticator.php';
+        $ga = new PHPGangsta_GoogleAuthenticator();
+        $is_valid = $ga->verifyCode($secret_key, $verification_code, 4);
+        
+    } else if (strlen($verification_code) == 8) {
+        // This might be a backup code
+        $backup_codes = json_decode($backup_codes_json, true);
+        
+        if (is_array($backup_codes)) {
+            // Check if entered code matches any backup code
+            $verification_code_upper = strtoupper($verification_code);
+            foreach ($backup_codes as $backup_code) {
+                if (strtoupper($backup_code) === $verification_code_upper) {
+                    $is_valid = true;
+                    break;
+                }
+            }
+        }
+    }
+    
+    if ($is_valid) {
+        // DELETE all 2FA data completely
+        $delete_query = "DELETE FROM user_authenticator WHERE user_id = ?";
+        $delete_result = execute_prepared_query($delete_query, array($user_id), 'i');
+        
+        if ($delete_result) {
+            // Log activity
+            log_user_activity($user_id, 'delete', 'user_authenticator', $user_id, null, array('action' => '2fa_deleted'));
+            
+            echo json_encode(array('success' => true, 'message' => '2FA disabled successfully'));
+        } else {
+            echo json_encode(array('success' => false, 'message' => 'Failed to disable 2FA'));
+        }
+    } else {
+        echo json_encode(array('success' => false, 'message' => 'Invalid verification code or backup code'));
+    }
 }
 ?>

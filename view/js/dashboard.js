@@ -1,88 +1,40 @@
 // SmartRent Dashboard JavaScript
-// Procedural JavaScript for dashboard functionality
-
 // Global variables
 var currentUser = null;
 var dashboardStats = null;
-var notificationInterval = null;
 var sessionCheckInterval = null;
 
-// Initialize dashboard based on user type
+// Initialize dashboard when page loads
 document.addEventListener('DOMContentLoaded', function() {
     initCommonDashboard();
-    
-    // Initialize specific dashboard based on body class
-    if (document.body.classList.contains('owner-theme')) {
-        initOwnerDashboard();
-    } else if (document.body.classList.contains('manager-theme')) {
-        initManagerDashboard();
-    } else if (document.body.classList.contains('tenant-theme')) {
-        initTenantDashboard();
-    }
 });
 
 // Initialize common dashboard features
 function initCommonDashboard() {
-    setupNavigationDropdowns();
+    setupUserMenu();
     setupSessionCheck();
     loadDashboardStats();
-    loadNotifications();
-    startNotificationPolling();
+    loadRecentActivity();
     setupModalHandlers();
-    setupFormValidation();
 }
 
-// Setup navigation dropdowns
-function setupNavigationDropdowns() {
+// Setup user menu toggle
+function setupUserMenu() {
     var userBtn = document.getElementById('userBtn');
     var userMenu = document.getElementById('userMenu');
-    var notificationBtn = document.getElementById('notificationBtn');
-    var notificationsPanel = document.getElementById('notificationsPanel');
     
     if (userBtn && userMenu) {
         userBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            toggleDropdown(userMenu, 'user-dropdown');
+            userMenu.style.display = userMenu.style.display === 'none' ? 'block' : 'none';
         });
-    }
-    
-    if (notificationBtn && notificationsPanel) {
-        notificationBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            toggleDropdown(notificationsPanel);
-            markNotificationsAsRead();
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!userBtn.contains(e.target) && !userMenu.contains(e.target)) {
+                userMenu.style.display = 'none';
+            }
         });
-    }
-    
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', function() {
-        closeAllDropdowns();
-    });
-}
-
-// Toggle dropdown visibility
-function toggleDropdownFixed(dropdown) {
-    var isVisible = dropdown.style.display === 'block';
-    
-    // Close all dropdowns first
-    closeAllDropdowns();
-    
-    if (!isVisible) {
-        dropdown.style.display = 'block';
-        dropdown.style.animation = 'fadeIn 0.3s ease';
-    }
-}
-
-// Close all dropdowns
-function closeAllDropdowns() {
-    var userMenu = document.getElementById('userMenu');
-    var notificationsPanel = document.getElementById('notificationsPanel');
-    
-    if (userMenu) {
-        userMenu.style.display = 'none';
-    }
-    if (notificationsPanel) {
-        notificationsPanel.style.display = 'none';
     }
 }
 
@@ -92,7 +44,6 @@ function setupSessionCheck() {
         checkSession();
     }, 60000); // Check every minute
     
-    // Check session immediately
     checkSession();
 }
 
@@ -103,18 +54,16 @@ function checkSession() {
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     
     xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            if (xhr.status === 200) {
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    if (!response.logged_in) {
-                        window.location.href = '../view/login.php';
-                    } else if (response.session_info && response.session_info.timeout_warning) {
-                        showSessionTimeoutWarning(response.session_info.minutes_remaining);
-                    }
-                } catch (e) {
-                    console.error('Session check failed:', e);
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            try {
+                var response = JSON.parse(xhr.responseText);
+                if (!response.logged_in) {
+                    window.location.href = '../view/login.php';
+                } else if (response.session_info && response.session_info.timeout_warning) {
+                    showSessionTimeoutWarning(response.session_info.minutes_remaining);
                 }
+            } catch (e) {
+                console.error('Session check failed:', e);
             }
         }
     };
@@ -150,8 +99,6 @@ function extendSession() {
                 var response = JSON.parse(xhr.responseText);
                 if (response.success) {
                     showMessage('Session extended successfully', 'success');
-                    
-                    // Remove warning
                     var warning = document.getElementById('sessionWarning');
                     if (warning) {
                         warning.remove();
@@ -168,30 +115,22 @@ function extendSession() {
 
 // Load dashboard statistics
 function loadDashboardStats() {
-    showLoading(true);
-    
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '../controller/dashboard_controller.php', true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     
     xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            showLoading(false);
-            
-            if (xhr.status === 200) {
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    if (response.success) {
-                        dashboardStats = response.stats;
-                        updateDashboardStats(response.stats);
-                    } else {
-                        showMessage('Failed to load dashboard statistics', 'error');
-                    }
-                } catch (e) {
-                    showMessage('Invalid response from server', 'error');
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            try {
+                var response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    dashboardStats = response.stats;
+                    updateDashboardStats(response.stats);
+                } else {
+                    console.error('Failed to load dashboard statistics');
                 }
-            } else {
-                showMessage('Server error while loading statistics', 'error');
+            } catch (e) {
+                console.error('Invalid response from server:', e);
             }
         }
     };
@@ -201,32 +140,40 @@ function loadDashboardStats() {
 
 // Update dashboard statistics display
 function updateDashboardStats(stats) {
-    // Update elements based on user type
+    // Update stats based on what's available
     updateElementText('totalBuildings', stats.total_buildings || stats.managed_buildings);
     updateElementText('totalFlats', stats.total_flats);
     updateElementText('totalTenants', stats.total_tenants);
     updateElementText('occupiedFlats', stats.occupied_flats);
     updateElementText('availableFlats', stats.available_flats);
-    updateElementText('occupancyRate', stats.occupancy_rate + '%');
-    updateElementText('monthlyRevenue', '৳' + stats.monthly_revenue);
-    updateElementText('outstandingCount', stats.outstanding_payments_count);
-    updateElementText('outstandingAmount', '৳' + stats.outstanding_payments_amount);
     updateElementText('managedBuildings', stats.managed_buildings);
     updateElementText('pendingRequests', stats.pending_service_requests || stats.active_service_requests);
+    
+    if (stats.occupancy_rate !== undefined) {
+        updateElementText('occupancyRate', stats.occupancy_rate + '%');
+    }
+    
+    if (stats.monthly_revenue !== undefined) {
+        updateElementText('monthlyRevenue', '৳' + formatNumber(stats.monthly_revenue));
+    }
+    
+    if (stats.outstanding_payments_count !== undefined) {
+        updateElementText('outstandingCount', stats.outstanding_payments_count);
+    }
+    
+    if (stats.outstanding_payments_amount !== undefined) {
+        updateElementText('outstandingAmount', '৳' + formatNumber(stats.outstanding_payments_amount));
+    }
     
     // Tenant specific stats
     if (stats.has_assignment) {
         updateElementText('flatDetails', stats.flat_info);
-        updateElementText('floorInfo', 'Floor ' + stats.floor_number);
-        updateElementText('flatInfo', 'You are living in ' + stats.flat_info + ' on Floor ' + stats.floor_number);
-        updateElementText('outstandingDues', '৳' + stats.outstanding_dues);
-        updateElementText('advanceBalance', '৳' + stats.advance_balance);
-        updateElementText('lastPaymentAmount', '৳' + stats.last_payment_amount);
-        updateElementText('lastPaymentDate', stats.last_payment_date);
-        updateElementText('activeRequests', stats.active_service_requests);
-        updateElementText('buildingName', stats.flat_info.split(' - ')[0]);
-        updateElementText('flatNumber', stats.flat_info.split(' - ')[1]);
-        updateElementText('floorNumber', stats.floor_number);
+        updateElementText('flatInfo', stats.flat_info);
+        updateElementText('outstandingDues', '৳' + formatNumber(stats.outstanding_dues || 0));
+        updateElementText('advanceBalance', '৳' + formatNumber(stats.advance_balance || 0));
+        updateElementText('lastPaymentAmount', '৳' + formatNumber(stats.last_payment_amount || 0));
+        updateElementText('lastPaymentDate', stats.last_payment_date || 'No payments');
+        updateElementText('activeRequests', stats.active_service_requests || 0);
     } else if (stats.has_assignment === false) {
         updateElementText('flatInfo', 'No active flat assignment found');
     }
@@ -235,174 +182,43 @@ function updateDashboardStats(stats) {
 // Update element text safely
 function updateElementText(elementId, text) {
     var element = document.getElementById(elementId);
-    if (element && text !== undefined) {
+    if (element && text !== undefined && text !== null) {
         element.textContent = text;
     }
 }
 
-// Load notifications
-function loadNotifications() {
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '../controller/dashboard_controller.php', true);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-            try {
-                var response = JSON.parse(xhr.responseText);
-                if (response.success) {
-                    updateNotifications(response.notifications);
-                }
-            } catch (e) {
-                console.error('Failed to load notifications:', e);
-            }
+// Format number with commas
+function formatNumber(num) {
+    if (num === undefined || num === null) return '0';
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+// Load recent activity
+function loadRecentActivity() {
+    setTimeout(function() {
+        var activityList = document.getElementById('activityList');
+        if (activityList) {
+            activityList.innerHTML = 
+                '<div class="activity-item">' +
+                '<div class="activity-icon">✅</div>' +
+                '<div class="activity-content">' +
+                '<p><strong>Dashboard Loaded</strong></p>' +
+                '<p>Welcome to your SmartRent dashboard</p>' +
+                '<span class="activity-time">Just now</span>' +
+                '</div>' +
+                '</div>';
         }
-    };
-    
-    xhr.send('action=get_notifications');
-}
-
-// Update notifications display
-function updateNotifications(notifications) {
-    var notificationsList = document.getElementById('notificationsList');
-    var notificationBadge = document.getElementById('notificationBadge');
-    
-    if (!notificationsList) return;
-    
-    var unreadCount = 0;
-    
-    // Clear existing notifications
-    notificationsList.innerHTML = '';
-    
-    if (notifications.length === 0) {
-        notificationsList.innerHTML = '<div class="no-notifications">No new notifications</div>';
-    } else {
-        for (var i = 0; i < notifications.length; i++) {
-            var notification = notifications[i];
-            if (!notification.is_read) {
-                unreadCount++;
-            }
-            
-            var notificationElement = createNotificationElement(notification);
-            notificationsList.appendChild(notificationElement);
-        }
-    }
-    
-    // Update badge
-    if (unreadCount > 0) {
-        notificationBadge.textContent = unreadCount;
-        notificationBadge.style.display = 'flex';
-    } else {
-        notificationBadge.style.display = 'none';
-    }
-}
-
-// Create notification element
-function createNotificationElement(notification) {
-    var div = document.createElement('div');
-    div.className = 'notification-item' + (notification.is_read ? '' : ' unread');
-    div.setAttribute('data-notification-id', notification.notification_id);
-    
-    var title = notification.title || getNotificationTitle(notification.type);
-    var time = formatTime(notification.created_at);
-    
-    div.innerHTML = `
-        <div class="notification-content">
-            <div class="notification-header">
-                <strong>${escapeHtml(title)}</strong>
-                <span class="notification-time">${time}</span>
-            </div>
-            <p>${escapeHtml(notification.message)}</p>
-        </div>
-    `;
-    
-    div.addEventListener('click', function() {
-        markNotificationAsRead(notification.notification_id);
-    });
-    
-    return div;
-}
-
-// Get notification title based on type
-function getNotificationTitle(type) {
-    var titles = {
-        'info': 'Information',
-        'warning': 'Warning',
-        'alert': 'Alert',
-        'payment': 'Payment Update',
-        'assignment': 'Flat Assignment',
-        'move_out': 'Move Out Notice'
-    };
-    
-    return titles[type] || 'Notification';
-}
-
-// Start notification polling
-function startNotificationPolling() {
-    notificationInterval = setInterval(function() {
-        loadNotifications();
-    }, 60000); // Poll every minute
-}
-
-// Mark notification as read
-function markNotificationAsRead(notificationId) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '../controller/dashboard_controller.php', true);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-            try {
-                var response = JSON.parse(xhr.responseText);
-                if (response.success) {
-                    var element = document.querySelector('[data-notification-id="' + notificationId + '"]');
-                    if (element) {
-                        element.classList.remove('unread');
-                    }
-                    updateNotificationBadge();
-                }
-            } catch (e) {
-                console.error('Failed to mark notification as read:', e);
-            }
-        }
-    };
-    
-    xhr.send('action=mark_notification_read&notification_id=' + encodeURIComponent(notificationId));
-}
-
-// Mark all notifications as read
-function markAllNotificationsRead() {
-    var unreadNotifications = document.querySelectorAll('.notification-item.unread');
-    
-    for (var i = 0; i < unreadNotifications.length; i++) {
-        var notificationId = unreadNotifications[i].getAttribute('data-notification-id');
-        markNotificationAsRead(notificationId);
-    }
-}
-
-// Update notification badge
-function updateNotificationBadge() {
-    var unreadCount = document.querySelectorAll('.notification-item.unread').length;
-    var badge = document.getElementById('notificationBadge');
-    
-    if (unreadCount > 0) {
-        badge.textContent = unreadCount;
-        badge.style.display = 'flex';
-    } else {
-        badge.style.display = 'none';
-    }
+    }, 1000);
 }
 
 // Setup modal handlers
 function setupModalHandlers() {
-    // Close modals when clicking outside
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('modal')) {
             closeModal(e.target);
         }
     });
     
-    // Close modals with escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             var openModals = document.querySelectorAll('.modal[style*="block"]');
@@ -420,7 +236,6 @@ function showModal(modalId) {
         modal.style.display = 'block';
         document.body.style.overflow = 'hidden';
         
-        // Focus first input
         var firstInput = modal.querySelector('input, select, textarea');
         if (firstInput) {
             setTimeout(function() {
@@ -440,340 +255,64 @@ function closeModal(modal) {
         modal.style.display = 'none';
         document.body.style.overflow = 'auto';
         
-        // Clear form if exists
         var form = modal.querySelector('form');
         if (form) {
             form.reset();
-            clearFormErrors(form);
         }
     }
-}
-
-// Setup form validation
-function setupFormValidation() {
-    var forms = document.querySelectorAll('form');
-    
-    for (var i = 0; i < forms.length; i++) {
-        forms[i].addEventListener('submit', function(e) {
-            e.preventDefault();
-            handleFormSubmission(this);
-        });
-    }
-}
-
-// Handle form submission
-function handleFormSubmission(form) {
-    if (!validateForm(form)) {
-        return;
-    }
-    
-    var formData = new FormData(form);
-    var action = form.id;
-    
-    // Set loading state
-    var submitButton = form.querySelector('[type="submit"]');
-    setButtonLoading(submitButton, true);
-    
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', getFormActionUrl(action), true);
-    
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            setButtonLoading(submitButton, false);
-            
-            if (xhr.status === 200) {
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    handleFormResponse(response, form);
-                } catch (e) {
-                    showMessage('Invalid server response', 'error');
-                }
-            } else {
-                showMessage('Server error occurred', 'error');
-            }
-        }
-    };
-    
-    xhr.send(formData);
-}
-
-// Get form action URL based on form ID
-function getFormActionUrl(formId) {
-    var urls = {
-        'paymentForm': '../controller/payment_controller.php',
-        'serviceRequestForm': '../controller/service_controller.php',
-        'tenantAssignmentForm': '../controller/tenant_controller.php'
-    };
-    
-    return urls[formId] || '../controller/dashboard_controller.php';
-}
-
-// Handle form response
-function handleFormResponse(response, form) {
-    if (response.success) {
-        showMessage(response.message, 'success');
-        closeModal(form.closest('.modal'));
-        
-        // Refresh data if needed
-        if (response.refresh_stats) {
-            loadDashboardStats();
-        }
-        
-        if (response.refresh_notifications) {
-            loadNotifications();
-        }
-        
-    } else {
-        showMessage(response.message, 'error');
-        
-        // Show field errors
-        if (response.field_errors) {
-            showFormErrors(form, response.field_errors);
-        }
-    }
-}
-
-// Validate form
-function validateForm(form) {
-    var isValid = true;
-    var inputs = form.querySelectorAll('input[required], select[required], textarea[required]');
-    
-    clearFormErrors(form);
-    
-    for (var i = 0; i < inputs.length; i++) {
-        var input = inputs[i];
-        var value = input.value.trim();
-        
-        if (value === '') {
-            showFieldError(input, 'This field is required');
-            isValid = false;
-        } else {
-            // Specific validations
-            if (input.type === 'email' && !isValidEmail(value)) {
-                showFieldError(input, 'Please enter a valid email address');
-                isValid = false;
-            }
-            
-            if (input.type === 'number' && (isNaN(value) || parseFloat(value) < 0)) {
-                showFieldError(input, 'Please enter a valid number');
-                isValid = false;
-            }
-        }
-    }
-    
-    return isValid;
-}
-
-// Show field error
-function showFieldError(field, message) {
-    var errorElement = document.createElement('span');
-    errorElement.className = 'field-error';
-    errorElement.textContent = message;
-    errorElement.style.color = 'var(--danger-color)';
-    errorElement.style.fontSize = '13px';
-    errorElement.style.display = 'block';
-    errorElement.style.marginTop = '5px';
-    
-    field.style.borderColor = 'var(--danger-color)';
-    field.parentNode.appendChild(errorElement);
-}
-
-// Clear form errors
-function clearFormErrors(form) {
-    var errorElements = form.querySelectorAll('.field-error');
-    for (var i = 0; i < errorElements.length; i++) {
-        errorElements[i].remove();
-    }
-    
-    var inputs = form.querySelectorAll('input, select, textarea');
-    for (var i = 0; i < inputs.length; i++) {
-        inputs[i].style.borderColor = '';
-    }
-}
-
-// Show form errors
-function showFormErrors(form, errors) {
-    for (var fieldName in errors) {
-        var field = form.querySelector('[name="' + fieldName + '"]');
-        if (field) {
-            showFieldError(field, errors[fieldName]);
-        }
-    }
-}
-
-// Owner Dashboard Initialization
-function initOwnerDashboard() {
-    console.log('Initializing Owner Dashboard');
-    
-    // Load owner specific data
-    loadBuildingsOverview();
-    loadOutstandingPayments();
-    loadRecentActivity();
-}
-
-// Manager Dashboard Initialization
-function initManagerDashboard() {
-    console.log('Initializing Manager Dashboard');
-    
-    // Load manager specific data
-    loadServiceRequests();
-    loadTenantActivities();
-    loadManagedBuildings();
-    loadPaymentSummary();
-}
-
-// Tenant Dashboard Initialization
-function initTenantDashboard() {
-    console.log('Initializing Tenant Dashboard');
-    
-    // Load tenant specific data
-    loadMyServiceRequests();
-    loadPaymentHistory();
-    loadMessages();
-    loadFlatInformation();
-}
-
-// Load buildings overview (Owner)
-function loadBuildingsOverview() {
-    // This would make an AJAX call to get buildings data
-    console.log('Loading buildings overview...');
-}
-
-// Load outstanding payments (Owner)
-function loadOutstandingPayments() {
-    // This would make an AJAX call to get outstanding payments
-    console.log('Loading outstanding payments...');
-}
-
-// Load recent activity
-function loadRecentActivity() {
-    // This would make an AJAX call to get recent activities
-    console.log('Loading recent activity...');
-}
-
-// Load service requests (Manager)
-function loadServiceRequests() {
-    console.log('Loading service requests...');
-}
-
-// Load tenant activities (Manager)
-function loadTenantActivities() {
-    console.log('Loading tenant activities...');
-}
-
-// Load managed buildings (Manager)
-function loadManagedBuildings() {
-    console.log('Loading managed buildings...');
-}
-
-// Load payment summary (Manager)
-function loadPaymentSummary() {
-    console.log('Loading payment summary...');
-}
-
-// Load my service requests (Tenant)
-function loadMyServiceRequests() {
-    console.log('Loading my service requests...');
-}
-
-// Load payment history (Tenant)
-function loadPaymentHistory() {
-    console.log('Loading payment history...');
-}
-
-// Load messages (Tenant)
-function loadMessages() {
-    console.log('Loading messages...');
-}
-
-// Load flat information (Tenant)
-function loadFlatInformation() {
-    console.log('Loading flat information...');
 }
 
 // Quick action functions
-function showAddBuildingModal() {
-    showModal('addBuildingModal');
+function assignTenant() {
+    alert('Assign Tenant feature coming soon!');
 }
 
-function showAddTenantModal() {
-    showModal('tenantAssignmentModal');
+function generateOTP() {
+    alert('Generate OTP feature coming soon!');
 }
 
-function showAssignTenantModal() {
-    showModal('tenantAssignmentModal');
+function recordPayment() {
+    alert('Record Payment feature coming soon!');
 }
 
-function showPaymentModal() {
-    showModal('paymentModal');
+function handleServiceRequest() {
+    alert('Handle Service Request feature coming soon!');
+}
+
+function addBuilding() {
+    alert('Add Building feature coming soon!');
+}
+
+function assignManager() {
+    alert('Assign Manager feature coming soon!');
+}
+
+function viewReports() {
+    alert('View Reports feature coming soon!');
+}
+
+function backupData() {
+    alert('Backup Data feature coming soon!');
 }
 
 function makePayment() {
-    showModal('paymentModal');
+    alert('Make Payment feature coming soon!');
 }
 
 function createServiceRequest() {
-    showModal('serviceRequestModal');
+    alert('Create Service Request feature coming soon!');
 }
 
 function downloadReceipt() {
-    showMessage('Downloading receipt...', 'info');
-    // This would trigger a file download
+    alert('Download Receipt feature coming soon!');
 }
 
-function generateSlips() {
-    showMessage('Generating rent slips...', 'info');
-    // This would generate and download slips
+function updateProfile() {
+    alert('Update Profile feature coming soon!');
 }
 
-function sendNotice() {
-    showMessage('Opening notice composer...', 'info');
-    // This would open a notice composition modal
-}
-
-function backupDatabase() {
-    if (confirm('Are you sure you want to create a database backup?')) {
-        showMessage('Creating database backup...', 'info');
-        // This would trigger a backup process
-    }
-}
-
-// Modal close functions
-function closeTenantAssignmentModal() {
-    closeModal('tenantAssignmentModal');
-}
-
-function closePaymentModal() {
-    closeModal('paymentModal');
-}
-
-function closeServiceRequestModal() {
-    closeModal('serviceRequestModal');
-}
-
-function closeTwoFactorModal() {
-    closeModal('twoFactorModal');
-}
-
-// 2FA Setup
-function show2FASetupPrompt() {
-    if (confirm('For better security, would you like to set up Two-Factor Authentication now?')) {
-        showModal('twoFactorModal');
-    }
-}
-
-function verify2FA() {
-    var code = document.querySelector('.verification-input').value;
-    if (code.length === 6) {
-        showMessage('Verifying 2FA code...', 'info');
-        // This would verify the 2FA code
-        setTimeout(function() {
-            showMessage('2FA enabled successfully!', 'success');
-            closeModal('twoFactorModal');
-        }, 2000);
-    } else {
-        showMessage('Please enter a valid 6-digit code', 'error');
-    }
+function viewServiceRequests() {
+    alert('Service Requests feature coming soon!');
 }
 
 // Utility functions
@@ -793,25 +332,45 @@ function logout() {
     }
 }
 
-function showLoading(show) {
-    var overlay = document.getElementById('loadingOverlay');
-    if (overlay) {
-        overlay.style.display = show ? 'flex' : 'none';
-    }
-}
-
 function showMessage(message, type, onclick) {
     var container = document.getElementById('messageContainer');
     if (!container) {
         container = document.createElement('div');
         container.id = 'messageContainer';
-        container.className = 'message-container';
+        container.style.position = 'fixed';
+        container.style.top = '20px';
+        container.style.right = '20px';
+        container.style.zIndex = '10000';
         document.body.appendChild(container);
     }
     
     var messageDiv = document.createElement('div');
-    messageDiv.className = 'message ' + type;
     messageDiv.textContent = message;
+    messageDiv.style.padding = '1rem 1.5rem';
+    messageDiv.style.marginBottom = '10px';
+    messageDiv.style.borderRadius = '8px';
+    messageDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+    messageDiv.style.maxWidth = '400px';
+    messageDiv.style.fontWeight = '500';
+    
+    // Set color based on type
+    if (type === 'success') {
+        messageDiv.style.background = '#d4edda';
+        messageDiv.style.color = '#155724';
+        messageDiv.style.border = '1px solid #c3e6cb';
+    } else if (type === 'error') {
+        messageDiv.style.background = '#f8d7da';
+        messageDiv.style.color = '#721c24';
+        messageDiv.style.border = '1px solid #f5c6cb';
+    } else if (type === 'warning') {
+        messageDiv.style.background = '#fff3cd';
+        messageDiv.style.color = '#856404';
+        messageDiv.style.border = '1px solid #ffeeba';
+    } else {
+        messageDiv.style.background = '#d1ecf1';
+        messageDiv.style.color = '#0c5460';
+        messageDiv.style.border = '1px solid #bee5eb';
+    }
     
     if (onclick) {
         messageDiv.style.cursor = 'pointer';
@@ -820,9 +379,11 @@ function showMessage(message, type, onclick) {
     
     container.appendChild(messageDiv);
     
+    // Auto-remove after 5 seconds
     setTimeout(function() {
         if (messageDiv.parentNode) {
-            messageDiv.style.animation = 'slideOutRight 0.5s ease forwards';
+            messageDiv.style.opacity = '0';
+            messageDiv.style.transition = 'opacity 0.5s';
             setTimeout(function() {
                 if (messageDiv.parentNode) {
                     container.removeChild(messageDiv);
@@ -830,21 +391,6 @@ function showMessage(message, type, onclick) {
             }, 500);
         }
     }, 5000);
-}
-
-function setButtonLoading(button, loading) {
-    if (!button) return;
-    
-    if (loading) {
-        button.disabled = true;
-        button.originalText = button.textContent;
-        button.textContent = 'Loading...';
-        button.style.opacity = '0.7';
-    } else {
-        button.disabled = false;
-        button.textContent = button.originalText || 'Submit';
-        button.style.opacity = '1';
-    }
 }
 
 function isValidEmail(email) {
@@ -863,44 +409,29 @@ function formatTime(dateString) {
     var now = new Date();
     var diffInMinutes = Math.floor((now - date) / (1000 * 60));
     
-    if (diffInMinutes < 60) {
-        return diffInMinutes + ' minutes ago';
+    if (diffInMinutes < 1) {
+        return 'Just now';
+    } else if (diffInMinutes < 60) {
+        return diffInMinutes + ' minute' + (diffInMinutes === 1 ? '' : 's') + ' ago';
     } else if (diffInMinutes < 1440) {
-        return Math.floor(diffInMinutes / 60) + ' hours ago';
+        var hours = Math.floor(diffInMinutes / 60);
+        return hours + ' hour' + (hours === 1 ? '' : 's') + ' ago';
     } else {
-        return Math.floor(diffInMinutes / 1440) + ' days ago';
+        var days = Math.floor(diffInMinutes / 1440);
+        return days + ' day' + (days === 1 ? '' : 's') + ' ago';
     }
 }
 
 // Clean up intervals on page unload
 window.addEventListener('beforeunload', function() {
-    if (notificationInterval) {
-        clearInterval(notificationInterval);
-    }
     if (sessionCheckInterval) {
         clearInterval(sessionCheckInterval);
     }
 });
 
-// Prevent form resubmission
+// Prevent form resubmission on page refresh
 window.addEventListener('pageshow', function(event) {
     if (event.persisted) {
         window.location.reload();
     }
 });
-
-// Handle responsive navigation
-function setupResponsiveNavigation() {
-    var mainNav = document.querySelector('.main-nav');
-    if (window.innerWidth <= 768 && mainNav) {
-        mainNav.style.display = 'none';
-    }
-}
-
-// Initialize responsive features
-window.addEventListener('resize', function() {
-    setupResponsiveNavigation();
-});
-
-// Initialize responsive navigation on load
-setupResponsiveNavigation();
