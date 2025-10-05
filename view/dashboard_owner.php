@@ -395,28 +395,13 @@ if ($current_user['user_type'] !== 'owner') {
 
     <!-- Success/Error Messages -->
     <div id="messageContainer" class="message-container"></div>
-
-    <!-- Scripts -->
-    <script src="../view/js/dashboard.js"></script>
-    <script>
-        // Initialize owner dashboard
-        document.addEventListener('DOMContentLoaded', function() {
-            initOwnerDashboard();
-        });
-
-        // Check if 2FA needs setup
-        <?php if (!get_user_authenticator($current_user['user_id']) || !get_user_authenticator($current_user['user_id'])['is_enabled']): ?>
-        setTimeout(function() {
-            show2FASetupPrompt();
-        }, 3000); // Show 2FA setup after 3 seconds
-        <?php endif; ?>
-    </script>
+    
     <!-- Include Add Building Modal -->
     <?php include '../view/modals/add_building_modal.php'; ?>
     <!-- Scripts -->
     <script src="../view/js/dashboard.js"></script>
     <script src="../view/js/building.js"></script>
-    <script src="../view/js/session-manager.js"></script>
+    <script src="../view/js/session_manager.js"></script>
 </body>
 </body>
 </html>

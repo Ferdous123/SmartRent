@@ -326,6 +326,8 @@ function displayBuildingPreview() {
 }
 
 // Submit building to server
+// Submit building to server
+// Submit building to server
 function submitBuilding() {
     // Filter out excluded flats
     var flatsToCreate = [];
@@ -358,28 +360,56 @@ function submitBuilding() {
     
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
+            console.log('Response status:', xhr.status);
+            console.log('Response text:', xhr.responseText);
+            
             if (xhr.status === 200) {
                 try {
-                    var response = JSON.parse(xhr.responseText);
+                    // Try to extract JSON from response (in case there are PHP warnings)
+                    var jsonStart = xhr.responseText.indexOf('{');
+                    var jsonText = xhr.responseText;
+                    if (jsonStart > 0) {
+                        jsonText = xhr.responseText.substring(jsonStart);
+                    }
+                    
+                    var response = JSON.parse(jsonText);
+                    console.log('Parsed response:', response);
                     
                     if (response.success) {
                         showMessage(response.message, 'success');
-                        closeAddBuildingModal();
                         
-                        // Reload page after 1 second
-                        setTimeout(function() {
-                            location.reload();
-                        }, 1000);
+                        // Change the "Create Building" button to "Close"
+                        var createButton = document.querySelector('#buildingStep3 .btn-primary');
+                        if (createButton) {
+                            createButton.textContent = 'Close';
+                            createButton.onclick = function() {
+                                closeAddBuildingModal();
+                                window.location.reload();
+                            };
+                        }
+                        
+                        // Hide the Back button
+                        var backButton = document.querySelector('#buildingStep3 .btn-secondary');
+                        if (backButton) {
+                            backButton.style.display = 'none';
+                        }
+                        
                     } else {
-                        showMessage(response.message, 'error');
+                        showMessage(response.message || 'Failed to create building', 'error');
                     }
                 } catch (e) {
-                    showMessage('Failed to create building. Please try again.', 'error');
+                    console.error('JSON parse error:', e);
+                    console.error('Response was:', xhr.responseText);
+                    showMessage('Server response error. Building may have been created. Please refresh the page.', 'error');
                 }
             } else {
-                showMessage('Server error. Please try again.', 'error');
+                showMessage('Server error (Status: ' + xhr.status + '). Please try again.', 'error');
             }
         }
+    };
+    
+    xhr.onerror = function() {
+        showMessage('Network error. Please check your connection.', 'error');
     };
     
     xhr.send(formData);

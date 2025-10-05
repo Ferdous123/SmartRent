@@ -201,7 +201,7 @@ function delete_building($building_id, $user_id) {
 }
 
 // Create flat in building
-function create_flat($building_id, $flat_number, $floor_number, $bedrooms = null, $bathrooms = null, $base_rent = 0.00, $user_id) {
+function create_flat($building_id, $flat_number, $floor_number, $user_id, $bedrooms = null, $bathrooms = null, $base_rent = 0.00) {
     // Check building access
     $access_query = "SELECT b.building_id FROM buildings b
                      LEFT JOIN building_managers bm ON b.building_id = bm.building_id
