@@ -465,8 +465,8 @@ if (!isset($user_preferences)) {
                 <div class="user-dropdown">
                     <button class="user-btn" id="userBtn">
                         <div class="user-avatar">
-                            <?php if (!empty($current_user['profile_picture_url'])): ?>
-                                <img src="<?php echo htmlspecialchars($current_user['profile_picture_url']); ?>" alt="Profile">
+                            <?php if (!empty($current_user['profile_picture_url']) && file_exists('../' . $current_user['profile_picture_url'])): ?>
+                                <img src="../<?php echo htmlspecialchars($current_user['profile_picture_url']); ?>" alt="Profile">
                             <?php else: ?>
                                 <span><?php echo strtoupper(substr($current_user['full_name'], 0, 1)); ?></span>
                             <?php endif; ?>
@@ -476,7 +476,6 @@ if (!isset($user_preferences)) {
                     </button>
                     <div class="user-menu" id="userMenu">
                         <a href="../controller/dashboard_controller.php?redirect=profile">Profile Settings</a>
-                        <a href="#preferences">Preferences</a>
                         <hr>
                         <a href="../controller/working_login.php?action=logout">Logout</a>
                     </div>

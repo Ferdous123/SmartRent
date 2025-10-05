@@ -49,21 +49,23 @@ function setupEventListeners() {
         pictureUpload.addEventListener('change', uploadProfilePicture);
     }
     
-    // User dropdown - Copy from working dashboard.js
+    // User dropdown - SAME AS DASHBOARD
     var userBtn = document.getElementById('userBtn');
     var userMenu = document.getElementById('userMenu');
     
     if (userBtn && userMenu) {
         userBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            toggleDropdownFixed(userMenu);
+            userMenu.style.display = userMenu.style.display === 'none' ? 'block' : 'none';
+        });
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!userBtn.contains(e.target) && !userMenu.contains(e.target)) {
+                userMenu.style.display = 'none';
+            }
         });
     }
-    
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', function() {
-        closeAllDropdowns();
-    });
 }
 
 function showTab(tabName) {
@@ -589,26 +591,6 @@ function showMessage(message, type) {
     }, 3000);
 }
 
-function toggleDropdown(dropdown) {
-    if (dropdown.style.display === 'block') {
-        dropdown.style.display = 'none';
-    } else {
-        dropdown.style.display = 'block';
-    }
-}
-
-
-function closeAllDropdowns() {
-    var userMenu = document.getElementById('userMenu');
-    var notificationsPanel = document.getElementById('notificationsPanel');
-    
-    if (userMenu) {
-        userMenu.style.display = 'none';
-    }
-    if (notificationsPanel) {
-        notificationsPanel.style.display = 'none';
-    }
-}
 
 // Add CSS animation for slide out
 function addCSSAnimations() {
