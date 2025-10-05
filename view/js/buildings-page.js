@@ -342,18 +342,54 @@ function handleEditBuilding(e) {
     xhr.send(formData);
 }
 
-// Delete building
+// Delete building with detailed warning
 function confirmDeleteBuilding(buildingId) {
-    showConfirmDialog(
-        'Delete Building',
-        'Are you sure you want to delete this building? This action cannot be undone.',
-        function() {
-            deleteBuilding(buildingId);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/building_controller.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            try {
+                var response = JSON.parse(xhr.responseText);
+                
+                if (response.success && response.action === 'confirm_delete') {
+                    showDetailedDeleteWarning(buildingId, response.building_name, response.counts);
+                } else {
+                    showMessage(response.message, 'error');
+                }
+            } catch (e) {
+                showMessage('Failed to load building details', 'error');
+            }
         }
-    );
+    };
+    
+    xhr.send('action=delete_building&building_id=' + buildingId);
 }
 
-function deleteBuilding(buildingId) {
+function showDetailedDeleteWarning(buildingId, buildingName, counts) {
+    var message = 'Delete Building: "' + buildingName + '"\n\n';
+    message += 'This will PERMANENTLY delete:\n\n';
+    message += '• ' + counts.flats + ' flats\n';
+    message += '• ' + counts.assignments + ' tenant assignment records\n';
+    message += '• ' + counts.expenses + ' payment/expense records\n';
+    message += '• ' + counts.meters + ' utility meter readings\n';
+    message += '• ' + counts.managers + ' manager assignments\n\n';
+    
+    if (counts.active_tenants > 0) {
+        message += 'WARNING: ' + counts.active_tenants + ' tenants are currently living here!\n';
+        message += 'They will be removed from their flats.\n\n';
+    }
+    
+    message += 'This action CANNOT be undone!\n\n';
+    message += 'Are you absolutely sure?';
+    
+    if (confirm(message)) {
+        proceedWithBuildingDeletion(buildingId);
+    }
+}
+
+function proceedWithBuildingDeletion(buildingId) {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '../controller/building_controller.php', true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
@@ -372,7 +408,7 @@ function deleteBuilding(buildingId) {
         }
     };
     
-    xhr.send('action=delete_building&building_id=' + buildingId);
+    xhr.send('action=confirm_delete_building&building_id=' + buildingId);
 }
 
 // Add flat
