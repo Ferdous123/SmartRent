@@ -477,7 +477,7 @@ if (!isset($user_preferences)) {
                     <div class="user-menu" id="userMenu">
                         <a href="../controller/dashboard_controller.php?redirect=profile">Profile Settings</a>
                         <hr>
-                        <a href="../controller/working_login.php?action=logout">Logout</a>
+                        <a href="../controller/working_login.php?action=logout" style="color: #dc3545;">Logout</a>
                     </div>
                 </div>
             </div>
@@ -488,7 +488,7 @@ if (!isset($user_preferences)) {
         <div class="dashboard-header">
             <div class="header-content">
                 <h1>Welcome, <?php echo htmlspecialchars($current_user['full_name']); ?>!</h1>
-                <p>Manager Dashboard - Manage your assigned properties</p>
+                <p>Manage your assigned properties</p>
             </div>
             <div class="header-actions">
                 <button class="btn-primary" onclick="assignTenant()">

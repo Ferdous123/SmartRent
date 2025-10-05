@@ -1,0 +1,372 @@
+/* Building Modal Styles - W3Schools Basic Style */
+
+/* Modal overlay */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+/* Modal content box */
+.modal-content {
+    background-color: #fff;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 700px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Modal header */
+.modal-header {
+    padding: 20px 30px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 24px;
+}
+
+/* Close button */
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 32px;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    line-height: 28px;
+}
+
+.modal-close:hover {
+    color: #333;
+}
+
+/* Modal body */
+.modal-body {
+    padding: 30px;
+}
+
+/* Setup steps */
+.setup-step {
+    animation: fadeIn 0.3s;
+}
+
+.setup-step h4 {
+    color: #667eea;
+    margin-bottom: 20px;
+    font-size: 20px;
+}
+
+/* Form groups */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 500;
+}
+
+.required {
+    color: #dc3545;
+}
+
+/* Form inputs */
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 15px;
+    box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-group small {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+    font-size: 13px;
+}
+
+/* Form row */
+.form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+/* Form errors */
+.form-error {
+    display: block;
+    color: #dc3545;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+/* Radio group */
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.radio-option {
+    display: flex;
+    align-items: flex-start;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.radio-option:hover {
+    border-color: #667eea;
+    background-color: #f8f9ff;
+}
+
+.radio-option input[type="radio"] {
+    margin-right: 12px;
+    margin-top: 3px;
+}
+
+.radio-content strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #333;
+}
+
+.radio-content p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+
+/* Naming options */
+.naming-options {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+/* Modal actions */
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+/* Buttons */
+.btn-primary,
+.btn-secondary {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background-color: #667eea;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #5568d3;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-secondary {
+    background-color: #e0e0e0;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background-color: #d0d0d0;
+}
+
+/* Preview summary */
+.preview-summary {
+    background-color: #f8f9ff;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.preview-summary h5 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #667eea;
+}
+
+/* Summary table */
+.summary-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.summary-table td {
+    padding: 8px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.summary-table td:first-child {
+    width: 150px;
+    color: #666;
+}
+
+.summary-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Preview flats */
+.preview-flats {
+    margin-top: 20px;
+}
+
+.preview-flats h5 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+/* Flats grid */
+.flats-grid {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+/* Floor header */
+.floor-header {
+    background-color: #667eea;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    margin-top: 15px;
+    font-weight: 500;
+}
+
+.floor-header:first-child {
+    margin-top: 0;
+}
+
+/* Floor flats */
+.floor-flats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+/* Flat item */
+.flat-item {
+    background-color: #f0f0f0;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    color: #333;
+    min-width: 60px;
+    text-align: center;
+}
+
+/* Preview instruction */
+.preview-instruction {
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    color: #856404;
+    padding: 10px 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+/* Flat item clickable styles */
+.flat-item {
+    background-color: #f0f0f0;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    color: #333;
+    min-width: 60px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.flat-item:hover {
+    background-color: #667eea;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* Excluded flat state */
+.flat-item.excluded {
+    background-color: #ffebee;
+    color: #c62828;
+    text-decoration: line-through;
+    border: 2px solid #ef5350;
+}
+
+.flat-item.excluded:hover {
+    background-color: #e57373;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Add visual feedback on active state */
+.flat-item:active {
+    transform: translateY(0);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { 
+        opacity: 0; 
+    }
+    to { 
+        opacity: 1; 
+    }
+}

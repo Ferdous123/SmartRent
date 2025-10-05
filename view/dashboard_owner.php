@@ -26,6 +26,7 @@ if ($current_user['user_type'] !== 'owner') {
     <title>Owner Dashboard - SmartRent</title>
     <link rel="icon" type="image/x-icon" href="../favicon.ico">
     <link rel="stylesheet" href="../view/css/dashboard.css">
+    <link rel="stylesheet" href="../view/css/building.css">
     <style>
         /* Inline CSS for immediate loading with user preferences */
         :root {
@@ -93,12 +94,9 @@ if ($current_user['user_type'] !== 'owner') {
                     </button>
                     <div class="user-menu" id="userMenu" style="display: none;">
                         <a href="../controller/profile_controller.php">Profile Settings</a>
-                        <a href="#preferences">Preferences</a>
-                        <hr>
                         <a href="#backup">Backup Data</a>
                         <a href="#logs">Activity Logs</a>
-                        <hr>
-                        <a href="../controller/working_login.php?action=logout" style="display: block; padding: 0.5rem 0; color: #dc3545; text-decoration: none;">Logout</a>
+                        <a href="../controller/working_login.php?action=logout" style="color: #dc3545;">Logout</a>
                     </div>
                 </div>
             </div>
@@ -111,7 +109,7 @@ if ($current_user['user_type'] !== 'owner') {
         <div class="dashboard-header">
             <div class="header-content">
                 <h1>Welcome back, <?php echo htmlspecialchars($current_user['full_name']); ?>!</h1>
-                <p>Property Owner Dashboard - Manage your properties efficiently</p>
+                <p>Manage your properties efficiently</p>
             </div>
             <div class="header-actions">
                 <button class="btn-primary" onclick="showAddBuildingModal()">
@@ -413,6 +411,12 @@ if ($current_user['user_type'] !== 'owner') {
         }, 3000); // Show 2FA setup after 3 seconds
         <?php endif; ?>
     </script>
+    <!-- Include Add Building Modal -->
+    <?php include '../view/modals/add_building_modal.php'; ?>
+    <!-- Scripts -->
+    <script src="../view/js/dashboard.js"></script>
+    <script src="../view/js/building.js"></script>
     <script src="../view/js/session-manager.js"></script>
+</body>
 </body>
 </html>
