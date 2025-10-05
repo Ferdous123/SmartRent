@@ -2,43 +2,12 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Start session first
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+// Use centralized authentication
+require_once 'auth_header.php';
 
+// Include required models
 require_once '../model/database.php';
 require_once '../model/user_model.php';
-
-// SIMPLE session check - no complex validation that causes loops
-if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
-    header("Location: ../view/login.php?error=session_required");
-    exit();
-}
-
-// Get user data directly from session (no function calls that might fail)
-$current_user = array(
-    'user_id' => $_SESSION['user_id'],
-    'username' => $_SESSION['username'] ?? 'Unknown',
-    'user_type' => $_SESSION['user_type'] ?? 'tenant',
-    'full_name' => $_SESSION['full_name'] ?? 'Unknown User',
-    'email' => $_SESSION['email'] ?? '',
-    'profile_picture_url' => $_SESSION['profile_picture_url'] ?? ''
-);
-
-// Validate user type
-$valid_user_types = ['owner', 'manager', 'tenant'];
-if (!in_array($current_user['user_type'], $valid_user_types)) {
-    session_destroy();
-    header("Location: ../view/login.php?error=invalid_user_type");
-    exit();
-}
-
-// Update session timeout (simple approach)
-$_SESSION['last_activity'] = time();
-if (!isset($_SESSION['session_timeout'])) {
-    $_SESSION['session_timeout'] = time() + 3600; // 1 hour default
-}
 
 // Dashboard access control - redirect if accessing wrong dashboard
 $requested_dashboard = basename($_SERVER['PHP_SELF']);
@@ -56,16 +25,6 @@ if (isset($user_dashboard_map[$current_user['user_type']])) {
         exit();
     }
 }
-
-// Check if session expired
-if (time() > $_SESSION['session_timeout']) {
-    session_destroy();
-    header("Location: ../view/login.php?error=session_expired");
-    exit();
-}
-
-// Extend session
-$_SESSION['session_timeout'] = time() + 3600; // Extend 1 hour
 
 // Handle AJAX requests for dashboard data
 if (isset($_POST['action'])) {
@@ -87,16 +46,6 @@ if (isset($_POST['action'])) {
             exit();
     }
 }
-
-// Get user preferences (with defaults)
-$user_preferences = array(
-    'theme_mode' => 'light',
-    'language_code' => 'en',
-    'nav_color' => '#667eea',
-    'primary_bg_color' => '#ffffff',
-    'secondary_bg_color' => '#f5f7fa',
-    'font_size' => 'medium'
-);
 
 // Get notifications for the user
 $notifications = array(); // Will be loaded via AJAX

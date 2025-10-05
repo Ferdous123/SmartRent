@@ -11,108 +11,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Initialize common dashboard features
 function initCommonDashboard() {
-    setupUserMenu();
-    setupSessionCheck();
     loadDashboardStats();
     loadRecentActivity();
     setupModalHandlers();
 }
-
-// Setup user menu toggle
-function setupUserMenu() {
-    var userBtn = document.getElementById('userBtn');
-    var userMenu = document.getElementById('userMenu');
-    
-    if (userBtn && userMenu) {
-        userBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            userMenu.style.display = userMenu.style.display === 'none' ? 'block' : 'none';
-        });
-        
-        // Close menu when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!userBtn.contains(e.target) && !userMenu.contains(e.target)) {
-                userMenu.style.display = 'none';
-            }
-        });
-    }
-}
-
-// Setup session check
-function setupSessionCheck() {
-    sessionCheckInterval = setInterval(function() {
-        checkSession();
-    }, 60000); // Check every minute
-    
-    checkSession();
-}
-
-// Check session status
-function checkSession() {
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '../controller/session_controller.php', true);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-            try {
-                var response = JSON.parse(xhr.responseText);
-                if (!response.logged_in) {
-                    window.location.href = '../view/login.php';
-                } else if (response.session_info && response.session_info.timeout_warning) {
-                    showSessionTimeoutWarning(response.session_info.minutes_remaining);
-                }
-            } catch (e) {
-                console.error('Session check failed:', e);
-            }
-        }
-    };
-    
-    xhr.send('action=check_session');
-}
-
-// Show session timeout warning
-function showSessionTimeoutWarning(minutesRemaining) {
-    var warningShown = document.getElementById('sessionWarning');
-    
-    if (!warningShown && minutesRemaining <= 5) {
-        showMessage('Your session will expire in ' + minutesRemaining + ' minutes. Click here to extend.', 'warning', function() {
-            extendSession();
-        });
-        
-        var warningDiv = document.createElement('div');
-        warningDiv.id = 'sessionWarning';
-        warningDiv.style.display = 'none';
-        document.body.appendChild(warningDiv);
-    }
-}
-
-// Extend user session
-function extendSession() {
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '../controller/session_controller.php', true);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-            try {
-                var response = JSON.parse(xhr.responseText);
-                if (response.success) {
-                    showMessage('Session extended successfully', 'success');
-                    var warning = document.getElementById('sessionWarning');
-                    if (warning) {
-                        warning.remove();
-                    }
-                }
-            } catch (e) {
-                console.error('Session extension failed:', e);
-            }
-        }
-    };
-    
-    xhr.send('action=extend_session');
-}
-
 // Load dashboard statistics
 function loadDashboardStats() {
     var xhr = new XMLHttpRequest();

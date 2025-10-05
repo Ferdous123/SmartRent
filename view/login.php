@@ -1,10 +1,18 @@
 <?php
-
 session_start();
-require_once '../controller/session_controller.php';
 
-// Redirect if already logged in
-redirect_if_authenticated();
+// Simple redirect check if already logged in
+if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
+    // Check if session is still valid
+    if (isset($_SESSION['session_timeout']) && time() < $_SESSION['session_timeout']) {
+        header("Location: ../controller/dashboard_controller.php");
+        exit();
+    } else {
+        // Session expired, clear it
+        session_destroy();
+        session_start();
+    }
+}
 
 // Check for redirect URL after login
 $redirect_url = isset($_GET['redirect']) ? $_GET['redirect'] : '';

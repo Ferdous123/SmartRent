@@ -579,5 +579,6 @@ if (!isset($user_preferences)) {
     </main>
 
     <script src="../view/js/dashboard.js"></script>
+    <script src="../view/js/global-session.js"></script>
 </body>
 </html>

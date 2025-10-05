@@ -564,5 +564,6 @@ if ($current_user['user_type'] !== 'tenant') {
         document.getElementById('paymentDate').value = new Date().toISOString().split('T')[0];
     </script>
     <script src="../view/js/session-manager.js"></script>
+    <script src="../view/js/global-session.js"></script>
 </body>
 </html>

@@ -53,8 +53,8 @@ if ($current_user['user_type'] !== 'owner') {
                     <h2>SmartRent</h2>
                 </div>
                 <nav class="main-nav">
-                    <a href="#dashboard" class="nav-link active">Dashboard</a>
-                    <a href="#buildings" class="nav-link">Buildings</a>
+                    <a href="../controller/dashboard_controller.php" class="nav-link">Dashboard</a>
+                    <a href="../view/buildings.php" class="nav-link">Buildings</a>
                     <a href="#tenants" class="nav-link">Tenants</a>
                     <a href="#payments" class="nav-link">Payments</a>
                     <a href="#reports" class="nav-link">Reports</a>
@@ -131,8 +131,8 @@ if ($current_user['user_type'] !== 'owner') {
                     <h3 id="totalBuildings">--</h3>
                     <p>Total Buildings</p>
                     <div class="stat-trend">
-                        <span class="trend-indicator positive">↗</span>
-                        <span>+2 this month</span>
+                        <span class="trend-indicator positive"></span>
+                        <span></span>
                     </div>
                 </div>
             </div>
@@ -165,8 +165,8 @@ if ($current_user['user_type'] !== 'owner') {
                     <h3 id="monthlyRevenue">৳--</h3>
                     <p>This Month Revenue</p>
                     <div class="stat-trend">
-                        <span class="trend-indicator positive">↗</span>
-                        <span>+15% vs last month</span>
+                        <span class="trend-indicator positive"></span>
+                        <span></span>
                     </div>
                 </div>
             </div>
@@ -395,13 +395,13 @@ if ($current_user['user_type'] !== 'owner') {
 
     <!-- Success/Error Messages -->
     <div id="messageContainer" class="message-container"></div>
-    
+
     <!-- Include Add Building Modal -->
     <?php include '../view/modals/add_building_modal.php'; ?>
     <!-- Scripts -->
+    <script src="../view/js/global-session.js"></script>
     <script src="../view/js/dashboard.js"></script>
     <script src="../view/js/building.js"></script>
-    <script src="../view/js/session_manager.js"></script>
 </body>
 </body>
 </html>

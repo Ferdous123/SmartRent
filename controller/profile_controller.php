@@ -10,6 +10,8 @@ while (ob_get_level()) {
 }
 
 session_start();
+require_once 'auth_header.php';
+require_once '../model/user_model.php';
 require_once '../model/database.php';
 require_once '../model/user_model.php';
 require_once 'session_controller.php';

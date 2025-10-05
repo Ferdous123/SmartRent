@@ -343,5 +343,6 @@ if (!isset($current_user)) {
 
     <!-- Scripts -->
     <script src="../view/js/profile.js"></script>
+    <script src="../view/js/global-session.js"></script>
 </body>
 </html>

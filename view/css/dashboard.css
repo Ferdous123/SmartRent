@@ -454,24 +454,12 @@ body {
     letter-spacing: 0.5px;
 }
 
-.stat-detail, .stat-trend {
+.stat-detail {
     font-size: 13px;
     color: var(--text-muted);
     margin-top: 8px;
 }
 
-.trend-indicator {
-    font-weight: bold;
-    margin-right: 5px;
-}
-
-.trend-indicator.positive {
-    color: var(--success-color);
-}
-
-.trend-indicator.negative {
-    color: var(--danger-color);
-}
 
 /* Content Grid */
 .content-grid {
