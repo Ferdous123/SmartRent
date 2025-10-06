@@ -27,6 +27,7 @@ if ($current_user['user_type'] !== 'owner') {
     <link rel="icon" type="image/x-icon" href="../favicon.ico">
     <link rel="stylesheet" href="../view/css/dashboard.css">
     <link rel="stylesheet" href="../view/css/building.css">
+    <link rel="stylesheet" href="../view/css/add-building-modal.css">
     <style>
         /* Inline CSS for immediate loading with user preferences */
         :root {

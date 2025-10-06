@@ -16,6 +16,7 @@ if (!in_array($current_user['user_type'], ['owner', 'manager'])) {
     <link rel="stylesheet" href="../view/css/dashboard.css">
     <link rel="stylesheet" href="../view/css/building.css">
     <link rel="stylesheet" href="../view/css/buildings-page.css">
+    <link rel="stylesheet" href="../view/css/add-building-modal.css">
     <style>
         :root {
             --nav-color: <?php echo $user_preferences['nav_color'] ?? '#667eea'; ?>;
