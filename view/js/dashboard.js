@@ -394,6 +394,76 @@ function displayBuildingsOverview(buildings) {
     container.innerHTML = html;
 }
 
+// Load actions needed
+function loadActionsNeeded() {
+    var container = document.getElementById('actionsNeededList');
+    if (!container) return;
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/tenant_controller.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            try {
+                var response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    displayActionsNeeded(response.assignments);
+                }
+            } catch (e) {
+                console.error('Error loading actions:', e);
+            }
+        }
+    };
+    
+    xhr.send('action=get_pending_assignments');
+}
+
+// Display actions needed
+function displayActionsNeeded(assignments) {
+    var container = document.getElementById('actionsNeededList');
+    if (!container) return;
+    
+    if (!assignments || assignments.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #999;">No pending actions</p>';
+        return;
+    }
+    
+    var html = '<div style="display: flex; flex-direction: column; gap: 0.5rem;">';
+    
+    var count = 0;
+    for (var i = 0; i < assignments.length && count < 5; i++) {
+        var assignment = assignments[i];
+        var hours = Math.floor(assignment.seconds_remaining / 3600);
+        
+        html += '<div style="padding: 0.75rem; background: #fff3e0; border-left: 4px solid #f57c00; border-radius: 4px;">' +
+            '<p style="margin: 0; font-size: 13px; color: #333;">' +
+            '<strong>' + escapeHtml(assignment.building_name) + ' - ' + escapeHtml(assignment.flat_number) + '</strong><br>' +
+            (assignment.tenant_name ? 'Tenant: ' + escapeHtml(assignment.tenant_name) : 'Awaiting claim') +
+            ' - <span style="color: #f57c00;">Expires in ' + hours + ' hours</span>' +
+            '</p>' +
+            '</div>';
+        count++;
+    }
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// Go to tenants page and open add modal
+function goToAddTenant() {
+    window.location.href = '../view/tenants.php?action=add';
+}
+
+// Update initCommonDashboard to include actions needed
+function initCommonDashboard() {
+    loadDashboardStats();
+    loadBuildingsOverview();
+    loadActionsNeeded(); // Add this line
+    loadRecentActivity();
+    setupModalHandlers();
+}
+
 // View building - redirect to buildings page
 function viewBuilding(buildingId) {
     window.location.href = '../view/buildings.php?building_id=' + buildingId;

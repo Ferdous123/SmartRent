@@ -42,7 +42,7 @@ if (!in_array($current_user['user_type'], ['owner', 'manager'])) {
                 <nav class="main-nav">
                     <a href="../controller/dashboard_controller.php" class="nav-link">Dashboard</a>
                     <a href="../view/buildings.php" class="nav-link active">Buildings</a>
-                    <a href="#tenants" class="nav-link">Tenants</a>
+                    <a href="../view/tenants.php" class="nav-link">Tenants</a>
                     <a href="#payments" class="nav-link">Payments</a>
                 </nav>
             </div>

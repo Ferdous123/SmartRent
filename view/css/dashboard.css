@@ -1270,6 +1270,17 @@ body {
     color: white;
 }
 
+/* Actions Needed Card */
+.actions-needed-card {
+    border-left: 4px solid #f57c00;
+}
+
+.actions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
 /* Animations */
 
 @keyframes slideInRight {

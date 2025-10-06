@@ -56,7 +56,7 @@ if ($current_user['user_type'] !== 'owner') {
                 <nav class="main-nav">
                     <a href="../controller/dashboard_controller.php" class="nav-link">Dashboard</a>
                     <a href="../view/buildings.php" class="nav-link">Buildings</a>
-                    <a href="#tenants" class="nav-link">Tenants</a>
+                    <a href="../view/tenants.php" class="nav-link">Tenants</a>
                     <a href="#payments" class="nav-link">Payments</a>
                     <a href="#reports" class="nav-link">Reports</a>
                 </nav>
@@ -197,7 +197,7 @@ if ($current_user['user_type'] !== 'owner') {
                             <span class="action-icon">🏢</span>
                             <span>Add Building</span>
                         </button>
-                        <button class="quick-action-btn" onclick="showAddTenantModal()">
+                        <button class="quick-action-btn" onclick="goToAddTenant()">
                             <span class="action-icon">👤</span>
                             <span>Add Tenant</span>
                         </button>
@@ -229,38 +229,15 @@ if ($current_user['user_type'] !== 'owner') {
                 </div>
             </div>
 
-            <!-- Recent Activity -->
-            <div class="card activity-card">
+            <!-- Actions Needed Card -->
+            <div class="card actions-needed-card">
                 <div class="card-header">
-                    <h3>Recent Activity</h3>
-                    <button class="view-all-btn">View All</button>
+                    <h3>⚠️ Actions Needed</h3>
+                    <button class="view-all-btn" onclick="window.location.href='../view/tenants.php?tab=pending'">View All</button>
                 </div>
                 <div class="card-content">
-                    <div class="activity-list" id="activityList">
-                        <div class="activity-item">
-                            <div class="activity-icon">💰</div>
-                            <div class="activity-content">
-                                <p><strong>Payment Received</strong></p>
-                                <p>Tenant Ahmad paid ৳25,000 for Flat 3A</p>
-                                <span class="activity-time">2 hours ago</span>
-                            </div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-icon">👤</div>
-                            <div class="activity-content">
-                                <p><strong>New Tenant Added</strong></p>
-                                <p>Sarah Rahman assigned to Flat 2B</p>
-                                <span class="activity-time">5 hours ago</span>
-                            </div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-icon">🔧</div>
-                            <div class="activity-content">
-                                <p><strong>Maintenance Request</strong></p>
-                                <p>Plumbing issue in Building A, Flat 1C</p>
-                                <span class="activity-time">1 day ago</span>
-                            </div>
-                        </div>
+                    <div id="actionsNeededList" class="actions-list">
+                        <p style="text-align: center; color: #999;">Loading...</p>
                     </div>
                 </div>
             </div>
