@@ -216,6 +216,9 @@ function createFlatCard(flat) {
             '</div>';
     }
     
+    // Use monthly rent if available, otherwise base rent
+    var displayRent = flat.monthly_rent || flat.base_rent || 0;
+    
     return '<div class="flat-card ' + statusClass + '">' +
         '<div class="flat-header">' +
             '<div class="flat-number">' + escapeHtml(flat.flat_number) + '</div>' +
@@ -229,7 +232,7 @@ function createFlatCard(flat) {
                 '<span>Bedrooms:</span><span>' + (flat.bedrooms || 'N/A') + '</span>' +
             '</div>' +
             '<div class="flat-detail-row">' +
-                '<span>Rent:</span><span>৳' + formatNumber(flat.base_rent || 0) + '</span>' +
+                '<span>Monthly Rent:</span><span>৳' + formatNumber(displayRent) + '</span>' +
             '</div>' +
         '</div>' +
         tenantInfo +
@@ -305,12 +308,62 @@ function editBuilding(buildingId) {
     var building = findBuildingById(buildingId);
     if (!building) return;
     
+    // Fill building info
     document.getElementById('edit_building_id').value = building.building_id;
     document.getElementById('edit_building_name').value = building.building_name;
     document.getElementById('edit_building_address').value = building.address;
     document.getElementById('edit_total_floors').value = building.total_floors;
     
+    // Load first flat's charges to pre-fill defaults
+    loadFirstFlatChargesForEdit(building.building_id);
+    
     showEditBuildingModal();
+}
+
+function loadFirstFlatChargesForEdit(buildingId) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/building_controller.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            try {
+                var response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    // Set charges
+                    if (response.charges) {
+                        var c = response.charges;
+                        document.getElementById('edit_default_rent').value = c.rent || 0;
+                        document.getElementById('edit_default_gas_bill').value = c.gas_bill || 0;
+                        document.getElementById('edit_default_water_bill').value = c.water_bill || 0;
+                        document.getElementById('edit_default_service_charge').value = c.service_charge || 0;
+                        document.getElementById('edit_default_cleaning_charge').value = c.cleaning_charge || 0;
+                        document.getElementById('edit_default_miscellaneous').value = c.miscellaneous || 0;
+                    } else {
+                        document.getElementById('edit_default_rent').value = 0;
+                        document.getElementById('edit_default_gas_bill').value = 0;
+                        document.getElementById('edit_default_water_bill').value = 0;
+                        document.getElementById('edit_default_service_charge').value = 0;
+                        document.getElementById('edit_default_cleaning_charge').value = 0;
+                        document.getElementById('edit_default_miscellaneous').value = 0;
+                    }
+                    
+                    // Set meter defaults
+                    if (response.meter) {
+                        document.getElementById('edit_default_meter_type').value = response.meter.meter_type || '';
+                        document.getElementById('edit_default_per_unit_cost').value = response.meter.per_unit_cost || '';
+                    } else {
+                        document.getElementById('edit_default_meter_type').value = '';
+                        document.getElementById('edit_default_per_unit_cost').value = '';
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to parse charges:', e);
+            }
+        }
+    };
+    
+    xhr.send('action=get_first_flat_charges&building_id=' + buildingId);
 }
 
 function handleEditBuilding(e) {
@@ -329,7 +382,10 @@ function handleEditBuilding(e) {
                 if (response.success) {
                     showMessage(response.message, 'success');
                     closeEditBuildingModal();
-                    loadBuildings();
+                    // Reload the entire page to refresh all flat data with new defaults
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 1000);
                 } else {
                     showMessage(response.message, 'error');
                 }
@@ -464,25 +520,104 @@ function editFlat(flatId) {
         if (xhr.readyState === 4 && xhr.status === 200) {
             try {
                 var response = JSON.parse(xhr.responseText);
+                
                 if (response.success && response.flat) {
                     var flat = response.flat;
+                    
+                    // Basic info
                     document.getElementById('edit_flat_id').value = flat.flat_id;
                     document.getElementById('edit_flat_number').value = flat.flat_number;
                     document.getElementById('edit_floor_number').value = flat.floor_number;
                     document.getElementById('edit_bedrooms').value = flat.bedrooms || '';
                     document.getElementById('edit_bathrooms').value = flat.bathrooms || '';
                     document.getElementById('edit_base_rent').value = flat.base_rent || 0;
-                    document.getElementById('edit_flat_status').value = flat.status;
+                    
+                    // Load meters
+                    if (response.meters && response.meters.length > 0) {
+                        loadFlatMeters(response.meters);
+                    } else {
+                        document.getElementById('edit_electric_type').value = '';
+                        toggleMeterFields('electric');
+                    }
+                    
+                    // Load default charges - always from fresh data
+                    var charges = response.default_charges || {};
+                    document.getElementById('edit_rent').value = charges.rent || 0;
+                    document.getElementById('edit_gas_bill').value = charges.gas_bill || 0;
+                    document.getElementById('edit_water_bill').value = charges.water_bill || 0;
+                    document.getElementById('edit_service_charge').value = charges.service_charge || 0;
+                    document.getElementById('edit_cleaning_charge').value = charges.cleaning_charge || 0;
+                    document.getElementById('edit_miscellaneous').value = charges.miscellaneous || 0;
                     
                     showEditFlatModal();
+                } else {
+                    showMessage('Failed to load flat details', 'error');
                 }
             } catch (e) {
+                console.error('Parse error:', e);
                 showMessage('Failed to load flat details', 'error');
             }
         }
     };
     
     xhr.send('action=get_flat&flat_id=' + flatId);
+}
+
+// NEW FUNCTION - Same pattern as loadFirstFlatChargesForEdit
+function loadFlatChargesForEdit(flatId) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/building_controller.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            console.log('Response for flat charges:', xhr.responseText);
+            try {
+                var response = JSON.parse(xhr.responseText);
+                if (response.success && response.charges) {
+                    var c = response.charges;
+                    document.getElementById('edit_rent').value = c.rent || 0;
+                    document.getElementById('edit_gas_bill').value = c.gas_bill || 0;
+                    document.getElementById('edit_water_bill').value = c.water_bill || 0;
+                    document.getElementById('edit_service_charge').value = c.service_charge || 0;
+                    document.getElementById('edit_cleaning_charge').value = c.cleaning_charge || 0;
+                    document.getElementById('edit_miscellaneous').value = c.miscellaneous || 0;
+                } else {
+                    console.log('No charges found, setting to 0');
+                    // Set to 0 if no charges found
+                    document.getElementById('edit_rent').value = 0;
+                    document.getElementById('edit_gas_bill').value = 0;
+                    document.getElementById('edit_water_bill').value = 0;
+                    document.getElementById('edit_service_charge').value = 0;
+                    document.getElementById('edit_cleaning_charge').value = 0;
+                    document.getElementById('edit_miscellaneous').value = 0;
+                }
+            } catch (e) {
+                console.error('Failed to parse charges:', e);
+            }
+        }
+    };
+    
+    xhr.send('action=get_flat_charges&flat_id=' + flatId);
+}
+
+function loadFlatMeters(meters) {
+    // Reset electric meter fields first
+    document.getElementById('edit_electric_type').value = '';
+    
+    for (var i = 0; i < meters.length; i++) {
+        var meter = meters[i];
+        
+        // Only load electric meter
+        if (meter.meter_type === 'electric_prepaid' || meter.meter_type === 'electric_postpaid') {
+            document.getElementById('edit_electric_type').value = meter.meter_type;
+            document.getElementById('edit_electric_number').value = meter.meter_number || '';
+            document.getElementById('edit_electric_cost').value = meter.per_unit_cost || '';
+            document.getElementById('edit_electric_current').value = meter.current_reading || '';
+            document.getElementById('edit_electric_previous').value = meter.previous_reading || '';
+            toggleMeterFields('electric');
+        }
+    }
 }
 
 function showEditFlatModal() {
@@ -772,4 +907,157 @@ function showMessage(message, type) {
 
 function showError(message) {
     showMessage(message, 'error');
+}
+
+// Toggle meter field visibility - ONLY ELECTRIC
+function toggleMeterFields(meterType) {
+    if (meterType === 'electric') {
+        var type = document.getElementById('edit_electric_type').value;
+        var numberGroup = document.getElementById('edit_electric_number_group');
+        var costGroup = document.getElementById('edit_electric_cost_group');
+        var readingGroup = document.getElementById('edit_electric_reading_group');
+        
+        if (type === 'electric_postpaid') {
+            numberGroup.style.display = 'block';
+            costGroup.style.display = 'block';
+            readingGroup.style.display = 'flex';
+        } else if (type === 'electric_prepaid') {
+            numberGroup.style.display = 'block';
+            costGroup.style.display = 'none';
+            readingGroup.style.display = 'none';
+        } else {
+            numberGroup.style.display = 'none';
+            costGroup.style.display = 'none';
+            readingGroup.style.display = 'none';
+        }
+    }
+}
+
+// Update editFlat function to load meter data
+function editFlat(flatId) {
+    currentFlatId = flatId;
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/building_controller.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            try {
+                var response = JSON.parse(xhr.responseText);
+                
+                if (response.success && response.flat) {
+                    var flat = response.flat;
+                    
+                    // Basic info
+                    document.getElementById('edit_flat_id').value = flat.flat_id;
+                    document.getElementById('edit_flat_number').value = flat.flat_number;
+                    document.getElementById('edit_floor_number').value = flat.floor_number;
+                    document.getElementById('edit_bedrooms').value = flat.bedrooms || '';
+                    document.getElementById('edit_bathrooms').value = flat.bathrooms || '';
+                    
+                    // Load meters
+                    if (response.meters && response.meters.length > 0) {
+                        loadFlatMeters(response.meters);
+                    } else {
+                        document.getElementById('edit_electric_type').value = '';
+                        toggleMeterFields('electric');
+                    }
+                    
+                    // Load charges
+                    if (response.default_charges) {
+                        var c = response.default_charges;
+                        document.getElementById('edit_rent').value = c.rent || 0;
+                        document.getElementById('edit_gas_bill').value = c.gas_bill || 0;
+                        document.getElementById('edit_water_bill').value = c.water_bill || 0;
+                        document.getElementById('edit_service_charge').value = c.service_charge || 0;
+                        document.getElementById('edit_cleaning_charge').value = c.cleaning_charge || 0;
+                        document.getElementById('edit_miscellaneous').value = c.miscellaneous || 0;
+                    } else {
+                        document.getElementById('edit_rent').value = 0;
+                        document.getElementById('edit_gas_bill').value = 0;
+                        document.getElementById('edit_water_bill').value = 0;
+                        document.getElementById('edit_service_charge').value = 0;
+                        document.getElementById('edit_cleaning_charge').value = 0;
+                        document.getElementById('edit_miscellaneous').value = 0;
+                    }
+                    
+                    showEditFlatModal();
+                } else {
+                    showMessage('Failed to load flat details', 'error');
+                }
+            } catch (e) {
+                showMessage('Failed to load flat details', 'error');
+            }
+        }
+    };
+    
+    xhr.send('action=get_flat&flat_id=' + flatId);
+}
+
+function loadFlatMeters(meters) {
+    // Reset electric meter fields first
+    document.getElementById('edit_electric_type').value = '';
+    document.getElementById('edit_electric_number').value = '';
+    document.getElementById('edit_electric_cost').value = '';
+    document.getElementById('edit_electric_current').value = '';
+    document.getElementById('edit_electric_previous').value = '';
+    
+    for (var i = 0; i < meters.length; i++) {
+        var meter = meters[i];
+        
+        // Only process electric meters
+        if (meter.meter_type === 'electric_prepaid' || meter.meter_type === 'electric_postpaid') {
+            document.getElementById('edit_electric_type').value = meter.meter_type;
+            document.getElementById('edit_electric_number').value = meter.meter_number || '';
+            document.getElementById('edit_electric_cost').value = meter.per_unit_cost || '';
+            document.getElementById('edit_electric_current').value = meter.current_reading || '';
+            document.getElementById('edit_electric_previous').value = meter.previous_reading || '';
+            toggleMeterFields('electric');
+            break; // Only one electric meter per flat
+        }
+    }
+    
+    // If no electric meter found, ensure fields are hidden
+    if (document.getElementById('edit_electric_type').value === '') {
+        toggleMeterFields('electric');
+    }
+}
+
+// Fix handleEditFlat function
+function handleEditFlat(e) {
+    e.preventDefault();
+    
+    var formData = new FormData(e.target);
+    formData.append('action', 'update_flat');
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/building_controller.php', true);
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            console.log('Status:', xhr.status);
+            console.log('Response:', xhr.responseText);
+            
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        showMessage(response.message, 'success');
+                        closeEditFlatModal();
+                        loadBuildings();
+                    } else {
+                        showMessage(response.message, 'error');
+                    }
+                } catch (e) {
+                    console.error('Parse error:', e);
+                    showMessage('Failed to update flat', 'error');
+                }
+            } else {
+                showMessage('Server error', 'error');
+            }
+        }
+    };
+    
+    xhr.send(formData);
 }

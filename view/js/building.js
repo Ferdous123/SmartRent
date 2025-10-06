@@ -169,6 +169,156 @@ function toggleNamingOptions() {
     buildingFormData.naming_scheme = selectedScheme;
 }
 
+// Open Edit Building Modal
+function openEditBuildingModal(buildingId) {
+    var modal = document.getElementById('editBuildingModal');
+    if (!modal) return;
+    
+    modal.style.display = 'flex';
+    
+    // Show loading
+    showMessage('Loading building details...', 'info');
+    
+    // Get building details
+    var formData = new FormData();
+    formData.append('action', 'get_building_details');
+    formData.append('building_id', buildingId);
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/building_controller.php', true);
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            try {
+                var response = JSON.parse(xhr.responseText);
+                
+                if (response.success) {
+                    populateEditBuildingForm(response.building);
+                    
+                    // Load first flat's charges as defaults
+                    loadFirstFlatCharges(buildingId);
+                } else {
+                    showMessage(response.message || 'Failed to load building', 'error');
+                    closeEditBuildingModal();
+                }
+            } catch (e) {
+                console.error('Parse error:', e);
+                showMessage('Error loading building details', 'error');
+                closeEditBuildingModal();
+            }
+        }
+    };
+    
+    xhr.send(formData);
+}
+
+// Populate the edit form
+function populateEditBuildingForm(building) {
+    document.getElementById('edit_building_id').value = building.building_id;
+    document.getElementById('edit_building_name').value = building.building_name;
+    document.getElementById('edit_building_address').value = building.address;
+    document.getElementById('edit_total_floors').value = building.total_floors;
+}
+
+// Load first flat's charges to pre-fill defaults
+function loadFirstFlatCharges(buildingId) {
+    var formData = new FormData();
+    formData.append('action', 'get_first_flat_charges');
+    formData.append('building_id', buildingId);
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/building_controller.php', true);
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            try {
+                var response = JSON.parse(xhr.responseText);
+                
+                if (response.success && response.charges) {
+                    var charges = response.charges;
+                    
+                    // Pre-fill charge fields
+                    document.getElementById('edit_default_rent').value = charges.rent || 0;
+                    document.getElementById('edit_default_gas_bill').value = charges.gas_bill || 0;
+                    document.getElementById('edit_default_water_bill').value = charges.water_bill || 0;
+                    document.getElementById('edit_default_service_charge').value = charges.service_charge || 0;
+                    document.getElementById('edit_default_cleaning_charge').value = charges.cleaning_charge || 0;
+                    document.getElementById('edit_default_miscellaneous').value = charges.miscellaneous || 0;
+                }
+                
+                // Pre-fill meter settings if available
+                if (response.success && response.meter) {
+                    document.getElementById('edit_default_meter_type').value = response.meter.meter_type || '';
+                    document.getElementById('edit_default_per_unit_cost').value = response.meter.per_unit_cost || '';
+                }
+            } catch (e) {
+                console.error('Error loading charges:', e);
+            }
+        }
+    };
+    
+    xhr.send(formData);
+}
+
+// Close Edit Building Modal
+function closeEditBuildingModal() {
+    var modal = document.getElementById('editBuildingModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Handle Edit Building Form Submit
+document.addEventListener('DOMContentLoaded', function() {
+    var editForm = document.getElementById('editBuildingForm');
+    if (editForm) {
+        editForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            var formData = new FormData(this);
+            formData.append('action', 'update_building');
+            
+            showMessage('Updating building...', 'info');
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '../controller/building_controller.php', true);
+            
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    console.log('Update response:', xhr.responseText);
+                    
+                    if (xhr.status === 200) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            
+                            if (response.success) {
+                                showMessage(response.message, 'success');
+                                closeEditBuildingModal();
+                                
+                                // Reload buildings list
+                                setTimeout(function() {
+                                    window.location.reload();
+                                }, 1000);
+                            } else {
+                                showMessage(response.message || 'Failed to update building', 'error');
+                            }
+                        } catch (e) {
+                            console.error('Parse error:', e);
+                            showMessage('Error updating building', 'error');
+                        }
+                    } else {
+                        showMessage('Server error. Please try again.', 'error');
+                    }
+                }
+            };
+            
+            xhr.send(formData);
+        });
+    }
+});
+
+
+
 // Generate flat preview
 function generateFlatPreview() {
     // Save naming preferences

@@ -211,6 +211,7 @@ function create_flat($building_id, $flat_number, $floor_number, $user_id, $bedro
     $access_result = execute_prepared_query($access_query, array($building_id, $user_id, $user_id), 'iii');
     
     if (!$access_result || mysqli_num_rows($access_result) == 0) {
+        error_log("create_flat: Access denied for building_id=$building_id, user_id=$user_id");
         return array('success' => false, 'message' => 'Access denied');
     }
     
@@ -219,19 +220,27 @@ function create_flat($building_id, $flat_number, $floor_number, $user_id, $bedro
     $check_result = execute_prepared_query($check_query, array($building_id, $flat_number), 'is');
     
     if ($check_result && mysqli_num_rows($check_result) > 0) {
+        error_log("create_flat: Flat $flat_number already exists in building $building_id");
         return array('success' => false, 'message' => 'Flat number already exists in this building');
     }
     
-    // Insert flat
+    // Handle NULL values - convert to 0 for binding
+    $bedrooms_value = ($bedrooms === null) ? 0 : $bedrooms;
+    $bathrooms_value = ($bathrooms === null) ? 0 : $bathrooms;
+    
+    // Insert flat WITH base_rent
     $query = "INSERT INTO flats (building_id, flat_number, floor_number, bedrooms, bathrooms, base_rent) 
               VALUES (?, ?, ?, ?, ?, ?)";
-    $params = array($building_id, $flat_number, $floor_number, $bedrooms, $bathrooms, $base_rent);
+    $params = array($building_id, $flat_number, $floor_number, $bedrooms_value, $bathrooms_value, $base_rent);
     $types = 'isiiid';
+    
+    error_log("create_flat: Attempting to create flat $flat_number in building $building_id");
     
     $result = execute_prepared_query($query, $params, $types);
     
     if ($result) {
         $flat_id = get_last_insert_id();
+        error_log("create_flat: SUCCESS - Created flat_id=$flat_id");
         
         // Update building's total flats count
         update_building_flats_count($building_id);
@@ -242,44 +251,29 @@ function create_flat($building_id, $flat_number, $floor_number, $user_id, $bedro
         
         return array('success' => true, 'message' => 'Flat created successfully', 'flat_id' => $flat_id);
     } else {
+        error_log("create_flat: FAILED - Could not insert flat $flat_number");
         return array('success' => false, 'message' => 'Failed to create flat');
     }
 }
 
 // Get flats in building
-function get_flats_by_building($building_id, $user_id = null, $user_type = null) {
-    $query = "SELECT f.*, 
-                     fa.assignment_id,
-                     fa.tenant_id,
-                     fa.status as assignment_status,
-                     fa.confirmed_at as move_in_date,
-                     fa.move_out_date as planned_move_out,
-                     up.full_name as tenant_name,
-                     u.email as tenant_email,
-                     fa.advance_balance
+function get_flats_by_building($building_id, $user_id, $user_type) {
+    $query = "SELECT f.*,
+              fdc.rent as monthly_rent,
+              fa.assignment_id,
+              fa.status as assignment_status,
+              fa.tenant_id,
+              up.full_name as tenant_name
               FROM flats f
+              LEFT JOIN flat_default_charges fdc ON f.flat_id = fdc.flat_id
               LEFT JOIN flat_assignments fa ON f.flat_id = fa.flat_id 
-                        AND fa.status = 'confirmed' 
-                        AND fa.actual_ended_at IS NULL
-              LEFT JOIN users u ON fa.tenant_id = u.user_id
+                  AND fa.status = 'confirmed' 
+                  AND fa.actual_ended_at IS NULL
               LEFT JOIN user_profiles up ON fa.tenant_id = up.user_id
-              WHERE f.building_id = ?";
+              WHERE f.building_id = ?
+              ORDER BY f.floor_number, f.flat_number";
     
-    // Add access control if needed
-    if ($user_type === 'manager') {
-        $query .= " AND EXISTS (SELECT 1 FROM building_managers bm 
-                                WHERE bm.building_id = ? AND bm.manager_id = ? AND bm.is_active = 1)";
-        $params = array($building_id, $building_id, $user_id);
-        $types = 'iii';
-    } else {
-        $params = array($building_id);
-        $types = 'i';
-    }
-    
-    $query .= " ORDER BY f.floor_number, f.flat_number";
-    
-    $result = execute_prepared_query($query, $params, $types);
-    
+    $result = execute_prepared_query($query, array($building_id), 'i');
     return $result ? fetch_all_rows($result) : array();
 }
 
@@ -319,7 +313,7 @@ function get_available_flats($building_id = null, $future_date = null) {
 }
 
 // Update flat information
-function update_flat($flat_id, $flat_number, $floor_number, $bedrooms, $bathrooms, $base_rent, $status, $user_id) {
+function update_flat($flat_id, $flat_number, $floor_number, $bedrooms, $bathrooms, $status, $user_id) {
     // Check access rights
     $access_query = "SELECT f.flat_id FROM flats f
                      JOIN buildings b ON f.building_id = b.building_id
@@ -333,23 +327,128 @@ function update_flat($flat_id, $flat_number, $floor_number, $bedrooms, $bathroom
         return array('success' => false, 'message' => 'Access denied');
     }
     
-    // Update flat
+    // Update flat (removed base_rent from here)
     $query = "UPDATE flats 
-              SET flat_number = ?, floor_number = ?, bedrooms = ?, bathrooms = ?, 
-                  base_rent = ?, status = ?
+              SET flat_number = ?, floor_number = ?, bedrooms = ?, bathrooms = ?, status = ?
               WHERE flat_id = ?";
-    $params = array($flat_number, $floor_number, $bedrooms, $bathrooms, $base_rent, $status, $flat_id);
-    $types = 'siiiidi';
+    $params = array($flat_number, $floor_number, $bedrooms, $bathrooms, $status, $flat_id);
+    $types = 'siiisi';
     
     $result = execute_prepared_query($query, $params, $types);
     
     if ($result) {
         log_user_activity($user_id, 'update', 'flats', $flat_id, null,
-                         array('flat_number' => $flat_number, 'base_rent' => $base_rent));
+                         array('flat_number' => $flat_number, 'status' => $status));
         
         return array('success' => true, 'message' => 'Flat updated successfully');
     } else {
         return array('success' => false, 'message' => 'Failed to update flat');
+    }
+}
+
+// Add function to update flat default charges
+function update_flat_default_charges($flat_id, $charges, $user_id) {
+    // Check access rights
+    $access_query = "SELECT f.flat_id FROM flats f
+                     JOIN buildings b ON f.building_id = b.building_id
+                     LEFT JOIN building_managers bm ON b.building_id = bm.building_id
+                     WHERE f.flat_id = ? 
+                     AND (b.owner_id = ? OR (bm.manager_id = ? AND bm.is_active = 1))";
+    
+    $access_result = execute_prepared_query($access_query, array($flat_id, $user_id, $user_id), 'iii');
+    
+    if (!$access_result || mysqli_num_rows($access_result) == 0) {
+        return array('success' => false, 'message' => 'Access denied');
+    }
+    
+    // If rent is being updated, use the stored procedure
+    if (isset($charges['rent'])) {
+        $query = "CALL update_flat_rent(?, ?)";
+        $result = execute_prepared_query($query, array($flat_id, $charges['rent']), 'id');
+        
+        if (!$result) {
+            return array('success' => false, 'message' => 'Failed to update rent');
+        }
+        
+        unset($charges['rent']); // Remove from array since already updated
+    }
+    
+    // Update other charges
+    if (!empty($charges)) {
+        // First check if record exists
+        $check_query = "SELECT flat_id FROM flat_default_charges WHERE flat_id = ?";
+        $check_result = execute_prepared_query($check_query, array($flat_id), 'i');
+        
+        if (!$check_result || mysqli_num_rows($check_result) == 0) {
+            // Insert new record
+            $query = "INSERT INTO flat_default_charges (flat_id, gas_bill, water_bill, service_charge, cleaning_charge, miscellaneous) 
+                      VALUES (?, ?, ?, ?, ?, ?)";
+            $params = array(
+                $flat_id,
+                isset($charges['gas_bill']) ? $charges['gas_bill'] : 0,
+                isset($charges['water_bill']) ? $charges['water_bill'] : 0,
+                isset($charges['service_charge']) ? $charges['service_charge'] : 0,
+                isset($charges['cleaning_charge']) ? $charges['cleaning_charge'] : 0,
+                isset($charges['miscellaneous']) ? $charges['miscellaneous'] : 0
+            );
+            $types = 'iddddd';
+        } else {
+            // Update existing record
+            $set_parts = array();
+            $params = array();
+            $types = '';
+            
+            foreach ($charges as $field => $value) {
+                $set_parts[] = "$field = ?";
+                $params[] = $value;
+                $types .= 'd';
+            }
+            
+            $params[] = $flat_id;
+            $types .= 'i';
+            
+            $query = "UPDATE flat_default_charges SET " . implode(', ', $set_parts) . " WHERE flat_id = ?";
+        }
+        
+        $result = execute_prepared_query($query, $params, $types);
+        
+        if (!$result) {
+            return array('success' => false, 'message' => 'Failed to update charges');
+        }
+    }
+    
+    log_user_activity($user_id, 'update', 'flat_default_charges', $flat_id, null, $charges);
+    
+    return array('success' => true, 'message' => 'Charges updated successfully');
+}
+
+
+// Add this new function to property_model.php
+function update_flat_rent($flat_id, $new_rent, $user_id) {
+    // Check access rights
+    $access_query = "SELECT f.flat_id FROM flats f
+                     JOIN buildings b ON f.building_id = b.building_id
+                     LEFT JOIN building_managers bm ON b.building_id = bm.building_id
+                     WHERE f.flat_id = ? 
+                     AND (b.owner_id = ? OR (bm.manager_id = ? AND bm.is_active = 1))";
+    
+    $access_result = execute_prepared_query($access_query, array($flat_id, $user_id, $user_id), 'iii');
+    
+    if (!$access_result || mysqli_num_rows($access_result) == 0) {
+        return array('success' => false, 'message' => 'Access denied');
+    }
+    
+    // Call the stored procedure
+    $query = "CALL update_flat_rent(?, ?)";
+    $result = execute_prepared_query($query, array($flat_id, $new_rent), 'id');
+    
+    if ($result) {
+        log_user_activity($user_id, 'update', 'flats', $flat_id, null,
+                         array('action' => 'rent_updated', 'new_rent' => $new_rent));
+        
+        return array('success' => true, 'message' => 'Rent updated successfully');
+    } else {
+        return array('success' => false, 'message' => 'Failed to update rent');
     }
 }
 

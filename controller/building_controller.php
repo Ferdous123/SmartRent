@@ -50,6 +50,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         case 'delete_flat':
             handle_delete_flat($user_id, $user_type);
             break;
+        case 'get_building_details':
+            handle_get_building_details($user_id, $user_type);
+            break;
             
         case 'get_managers':
             handle_get_managers($user_id, $user_type);
@@ -69,6 +72,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         case 'confirm_delete_building':
             handle_confirm_delete_building($user_id, $user_type);
+            break;
+
+        case 'get_first_flat_charges':
+            handle_get_first_flat_charges($user_id, $user_type);
+            break;
+
+        case 'get_flat_charges':
+            handle_get_flat_charges($user_id, $user_type);
             break;
             
         default:
@@ -117,20 +128,31 @@ function handle_create_building($user_id, $user_type) {
         $building_id = $building_result['building_id'];
         
         $flats_created = 0;
-        foreach ($flats_data as $flat) {
-            $flat_number = $flat['flat_number'];
-            $floor_number = $flat['floor_number'];
-            
-            $flat_result = create_flat($flat['building_id'], $flat_number, $floor_number, $user_id, null, null, 0.00);
-            
-            if ($flat_result['success']) {
-                $flats_created++;
+            error_log("Starting to create $total_flats flats for building $building_id");
+
+            foreach ($flats_data as $flat) {
+                $flat_number = $flat['flat_number'];
+                $floor_number = $flat['floor_number'];
+                
+                error_log("Attempting to create flat: $flat_number on floor: $floor_number");
+                
+                $flat_result = create_flat($building_id, $flat_number, $floor_number, $user_id, null, null, 0.00);
+                
+                error_log("Flat creation result: " . json_encode($flat_result));
+                
+                if ($flat_result['success']) {
+                    $flats_created++;
+                    error_log("Flat created successfully. Total created: $flats_created");
+                } else {
+                    error_log("Flat creation FAILED: " . $flat_result['message']);
+                }
             }
-        }
-        
-        if ($flats_created !== $total_flats) {
-            throw new Exception("Only $flats_created out of $total_flats flats were created");
-        }
+
+            error_log("Final count: $flats_created created out of $total_flats expected");
+
+            if ($flats_created !== $total_flats) {
+                throw new Exception("Only $flats_created out of $total_flats flats were created");
+            }
         
         commit_transaction();
         
@@ -174,6 +196,19 @@ function handle_get_buildings($user_id, $user_type) {
     exit();
 }
 
+function handle_get_building_details($user_id, $user_type) {
+    $building_id = isset($_POST['building_id']) ? intval($_POST['building_id']) : 0;
+    
+    $building = get_building_details($building_id, $user_id, $user_type);
+    
+    if ($building) {
+        echo json_encode(array('success' => true, 'building' => $building));
+    } else {
+        echo json_encode(array('success' => false, 'message' => 'Building not found'));
+    }
+    exit();
+}
+
 // Update building
 function handle_update_building($user_id, $user_type) {
     $building_id = isset($_POST['building_id']) ? intval($_POST['building_id']) : 0;
@@ -181,14 +216,140 @@ function handle_update_building($user_id, $user_type) {
     $address = isset($_POST['address']) ? trim($_POST['address']) : '';
     $total_floors = isset($_POST['total_floors']) ? intval($_POST['total_floors']) : 0;
     
-    if (empty($building_name) || empty($address) || $total_floors < 1) {
-        echo json_encode(array('success' => false, 'message' => 'Invalid building data'));
+    // Default charges
+    $default_rent = isset($_POST['default_rent']) ? floatval($_POST['default_rent']) : 0;
+    $default_gas_bill = isset($_POST['default_gas_bill']) ? floatval($_POST['default_gas_bill']) : 0;
+    $default_water_bill = isset($_POST['default_water_bill']) ? floatval($_POST['default_water_bill']) : 0;
+    $default_service_charge = isset($_POST['default_service_charge']) ? floatval($_POST['default_service_charge']) : 0;
+    $default_cleaning_charge = isset($_POST['default_cleaning_charge']) ? floatval($_POST['default_cleaning_charge']) : 0;
+    $default_miscellaneous = isset($_POST['default_miscellaneous']) ? floatval($_POST['default_miscellaneous']) : 0;
+    
+    // Default meter settings
+    $default_meter_type = isset($_POST['default_meter_type']) ? trim($_POST['default_meter_type']) : '';
+    $default_per_unit_cost = isset($_POST['default_per_unit_cost']) && $_POST['default_per_unit_cost'] !== '' 
+        ? floatval($_POST['default_per_unit_cost']) 
+        : null;
+    
+    // Check access
+    $access_query = "SELECT building_id FROM buildings WHERE building_id = ?";
+    if ($user_type === 'owner') {
+        $access_query .= " AND owner_id = ?";
+        $result = execute_prepared_query($access_query, array($building_id, $user_id), 'ii');
+    } else {
+        echo json_encode(array('success' => false, 'message' => 'Access denied'));
         exit();
     }
     
-    $result = update_building($building_id, $building_name, $address, $total_floors, $user_id);
-    echo json_encode($result);
-    exit();
+    if (!$result || $result->num_rows == 0) {
+        echo json_encode(array('success' => false, 'message' => 'Access denied'));
+        exit();
+    }
+    
+    begin_transaction();
+    
+    try {
+        // Update building info
+        $building_query = "UPDATE buildings 
+                          SET building_name = ?, address = ?, total_floors = ?
+                          WHERE building_id = ?";
+        execute_prepared_query($building_query, 
+            array($building_name, $address, $total_floors, $building_id), 
+            'ssii');
+        
+        // Get all flats in this building
+        $flats_query = "SELECT flat_id FROM flats WHERE building_id = ?";
+        $flats_result = execute_prepared_query($flats_query, array($building_id), 'i');
+        
+        $flats_updated = 0;
+        
+        if ($flats_result && $flats_result->num_rows > 0) {
+            $flats = fetch_all_rows($flats_result);
+            
+            foreach ($flats as $flat) {
+                $flat_id = $flat['flat_id'];
+                
+                // STEP 1: Update rent in BOTH tables manually (no stored procedure)
+                if ($default_rent > 0) {
+                    // Update flats.base_rent
+                    $update_flat_rent = "UPDATE flats SET base_rent = ? WHERE flat_id = ?";
+                    execute_prepared_query($update_flat_rent, array($default_rent, $flat_id), 'di');
+                    
+                    // Update flat_default_charges.rent (or insert if doesn't exist)
+                    $update_charges_rent = "INSERT INTO flat_default_charges (flat_id, rent) 
+                                            VALUES (?, ?)
+                                            ON DUPLICATE KEY UPDATE rent = VALUES(rent)";
+                    execute_prepared_query($update_charges_rent, array($flat_id, $default_rent), 'id');
+                }
+                
+                // STEP 2: Update OTHER charges in flat_default_charges
+                $charges_query = "INSERT INTO flat_default_charges 
+                                 (flat_id, gas_bill, water_bill, service_charge, cleaning_charge, miscellaneous)
+                                 VALUES (?, ?, ?, ?, ?, ?)
+                                 ON DUPLICATE KEY UPDATE
+                                 gas_bill = VALUES(gas_bill),
+                                 water_bill = VALUES(water_bill),
+                                 service_charge = VALUES(service_charge),
+                                 cleaning_charge = VALUES(cleaning_charge),
+                                 miscellaneous = VALUES(miscellaneous)";
+                
+                execute_prepared_query($charges_query, 
+                    array($flat_id, $default_gas_bill, $default_water_bill, 
+                          $default_service_charge, $default_cleaning_charge, $default_miscellaneous),
+                    'iddddd');
+                
+                // STEP 3: Apply meter settings if provided
+                if (!empty($default_meter_type) && 
+                    ($default_meter_type === 'electric_prepaid' || $default_meter_type === 'electric_postpaid')) {
+                    
+                    // Delete existing electric meters for this flat
+                    $delete_meter = "DELETE FROM flat_meters 
+                                    WHERE flat_id = ? 
+                                    AND (meter_type = 'electric_prepaid' OR meter_type = 'electric_postpaid')";
+                    execute_prepared_query($delete_meter, array($flat_id), 'i');
+                    
+                    // Insert new meter
+                    if ($default_per_unit_cost !== null && $default_per_unit_cost > 0) {
+                        $meter_query = "INSERT INTO flat_meters 
+                                       (flat_id, meter_type, per_unit_cost) 
+                                       VALUES (?, ?, ?)";
+                        execute_prepared_query($meter_query, 
+                            array($flat_id, $default_meter_type, $default_per_unit_cost),
+                            'isd');
+                    } else {
+                        $meter_query = "INSERT INTO flat_meters 
+                                       (flat_id, meter_type) 
+                                       VALUES (?, ?)";
+                        execute_prepared_query($meter_query, 
+                            array($flat_id, $default_meter_type),
+                            'is');
+                    }
+                }
+                
+                $flats_updated++;
+            }
+        }
+        
+        commit_transaction();
+        
+        log_user_activity($user_id, 'update', 'buildings', $building_id, null,
+                         array('building_name' => $building_name, 
+                               'default_charges_applied' => true,
+                               'flats_updated' => $flats_updated,
+                               'default_rent' => $default_rent,
+                               'default_meter_applied' => !empty($default_meter_type)));
+        
+        echo json_encode(array(
+            'success' => true, 
+            'message' => 'Building updated successfully. Default settings applied to ' . $flats_updated . ' flats.'
+        ));
+        exit();
+        
+    } catch (Exception $e) {
+        rollback_transaction();
+        error_log("Building update error: " . $e->getMessage());
+        echo json_encode(array('success' => false, 'message' => 'Failed to update building: ' . $e->getMessage()));
+        exit();
+    }
 }
 
 // Delete building with detailed check
@@ -397,7 +558,7 @@ function handle_get_flats($user_id, $user_type) {
     exit();
 }
 
-// Get single flat
+// Get single flat with meters and default charges
 function handle_get_flat($user_id, $user_type) {
     $flat_id = isset($_POST['flat_id']) ? intval($_POST['flat_id']) : 0;
     
@@ -419,7 +580,23 @@ function handle_get_flat($user_id, $user_type) {
     
     if ($result && $result->num_rows > 0) {
         $flat = fetch_single_row($result);
-        echo json_encode(array('success' => true, 'flat' => $flat));
+        
+        // Get meters
+        $meters_query = "SELECT * FROM flat_meters WHERE flat_id = ?";
+        $meters_result = execute_prepared_query($meters_query, array($flat_id), 'i');
+        $meters = $meters_result ? fetch_all_rows($meters_result) : array();
+        
+        // Get default charges
+        $charges_query = "SELECT * FROM flat_default_charges WHERE flat_id = ?";
+        $charges_result = execute_prepared_query($charges_query, array($flat_id), 'i');
+        $charges = ($charges_result && $charges_result->num_rows > 0) ? fetch_single_row($charges_result) : null;
+        
+        echo json_encode(array(
+            'success' => true, 
+            'flat' => $flat,
+            'meters' => $meters,
+            'default_charges' => $charges
+        ));
     } else {
         echo json_encode(array('success' => false, 'message' => 'Flat not found'));
     }
@@ -440,19 +617,117 @@ function handle_add_flat($user_id, $user_type) {
     exit();
 }
 
-// Update flat
+// Update flat with meters
+// Update flat with meter and charges
 function handle_update_flat($user_id, $user_type) {
     $flat_id = isset($_POST['flat_id']) ? intval($_POST['flat_id']) : 0;
     $flat_number = isset($_POST['flat_number']) ? trim($_POST['flat_number']) : '';
     $floor_number = isset($_POST['floor_number']) ? intval($_POST['floor_number']) : 0;
-    $bedrooms = isset($_POST['bedrooms']) ? intval($_POST['bedrooms']) : null;
-    $bathrooms = isset($_POST['bathrooms']) ? intval($_POST['bathrooms']) : null;
-    $base_rent = isset($_POST['base_rent']) ? floatval($_POST['base_rent']) : 0;
-    $status = isset($_POST['status']) ? $_POST['status'] : 'available';
+    $bedrooms = isset($_POST['bedrooms']) && $_POST['bedrooms'] !== '' ? intval($_POST['bedrooms']) : null;
+    $bathrooms = isset($_POST['bathrooms']) && $_POST['bathrooms'] !== '' ? intval($_POST['bathrooms']) : null;
     
-    $result = update_flat($flat_id, $flat_number, $floor_number, $bedrooms, $bathrooms, $base_rent, $status, $user_id);
-    echo json_encode($result);
-    exit();
+    // Charges from form
+    $rent = isset($_POST['rent']) ? floatval($_POST['rent']) : 0;
+    $gas_bill = isset($_POST['gas_bill']) ? floatval($_POST['gas_bill']) : 0;
+    $water_bill = isset($_POST['water_bill']) ? floatval($_POST['water_bill']) : 0;
+    $service_charge = isset($_POST['service_charge']) ? floatval($_POST['service_charge']) : 0;
+    $cleaning_charge = isset($_POST['cleaning_charge']) ? floatval($_POST['cleaning_charge']) : 0;
+    $miscellaneous = isset($_POST['miscellaneous']) ? floatval($_POST['miscellaneous']) : 0;
+    
+    // Check access
+    $access_query = "SELECT f.flat_id, f.building_id FROM flats f 
+                     JOIN buildings b ON f.building_id = b.building_id 
+                     WHERE f.flat_id = ?";
+    
+    if ($user_type === 'owner') {
+        $access_query .= " AND b.owner_id = ?";
+        $access_result = execute_prepared_query($access_query, array($flat_id, $user_id), 'ii');
+    } elseif ($user_type === 'manager') {
+        $access_query .= " AND EXISTS (SELECT 1 FROM building_managers bm 
+                          WHERE bm.building_id = b.building_id AND bm.manager_id = ? AND bm.is_active = 1)";
+        $access_result = execute_prepared_query($access_query, array($flat_id, $user_id), 'ii');
+    } else {
+        echo json_encode(array('success' => false, 'message' => 'Access denied'));
+        exit();
+    }
+    
+    if (!$access_result || $access_result->num_rows == 0) {
+        echo json_encode(array('success' => false, 'message' => 'Access denied'));
+        exit();
+    }
+    
+    begin_transaction();
+    
+    try {
+        // Update flat basic info (WITHOUT base_rent)
+        $update_query = "UPDATE flats 
+                        SET flat_number = ?, floor_number = ?, bedrooms = ?, bathrooms = ?
+                        WHERE flat_id = ?";
+        $update_result = execute_prepared_query($update_query, 
+            array($flat_number, $floor_number, $bedrooms, $bathrooms, $flat_id), 
+            'siiii');
+        
+        if (!$update_result) {
+            throw new Exception('Failed to update flat');
+        }
+        
+        // Update rent using stored procedure (this syncs both tables)
+        $rent_query = "CALL update_flat_rent(?, ?)";
+        $rent_result = execute_prepared_query($rent_query, array($flat_id, $rent), 'id');
+        
+        if (!$rent_result) {
+            throw new Exception('Failed to update rent');
+        }
+        
+        // Update other charges in flat_default_charges
+        $charges_query = "INSERT INTO flat_default_charges 
+                         (flat_id, rent, gas_bill, water_bill, service_charge, cleaning_charge, miscellaneous) 
+                         VALUES (?, ?, ?, ?, ?, ?, ?)
+                         ON DUPLICATE KEY UPDATE 
+                         gas_bill = VALUES(gas_bill),
+                         water_bill = VALUES(water_bill),
+                         service_charge = VALUES(service_charge),
+                         cleaning_charge = VALUES(cleaning_charge),
+                         miscellaneous = VALUES(miscellaneous)";
+                         
+        execute_prepared_query($charges_query, 
+            array($flat_id, $rent, $gas_bill, $water_bill, $service_charge, $cleaning_charge, $miscellaneous),
+            'idddddd');
+        
+        // Delete existing meters for this flat (ONLY ELECTRIC)
+        $delete_meters = "DELETE FROM flat_meters WHERE flat_id = ?";
+        execute_prepared_query($delete_meters, array($flat_id), 'i');
+        
+        // Insert electric meter if provided
+        $electric_type = isset($_POST['electric_type']) ? $_POST['electric_type'] : '';
+        if (!empty($electric_type) && ($electric_type === 'electric_prepaid' || $electric_type === 'electric_postpaid')) {
+            $electric_number = isset($_POST['electric_number']) ? trim($_POST['electric_number']) : null;
+            $electric_cost = isset($_POST['electric_cost']) && $_POST['electric_cost'] !== '' ? floatval($_POST['electric_cost']) : null;
+            $electric_current = isset($_POST['electric_current']) && $_POST['electric_current'] !== '' ? floatval($_POST['electric_current']) : null;
+            $electric_previous = isset($_POST['electric_previous']) && $_POST['electric_previous'] !== '' ? floatval($_POST['electric_previous']) : null;
+            
+            $meter_query = "INSERT INTO flat_meters 
+                           (flat_id, meter_type, meter_number, current_reading, previous_reading, per_unit_cost) 
+                           VALUES (?, ?, ?, ?, ?, ?)";
+            execute_prepared_query($meter_query, 
+                array($flat_id, $electric_type, $electric_number, $electric_current, $electric_previous, $electric_cost),
+                'issddd');
+        }
+        
+        commit_transaction();
+        
+        log_user_activity($user_id, 'update', 'flats', $flat_id, null,
+                         array('flat_number' => $flat_number, 'rent' => $rent));
+        
+        echo json_encode(array('success' => true, 'message' => 'Flat updated successfully'));
+        exit();
+        
+    } catch (Exception $e) {
+        rollback_transaction();
+        error_log("Flat update error: " . $e->getMessage());
+        echo json_encode(array('success' => false, 'message' => 'Failed to update flat: ' . $e->getMessage()));
+        exit();
+    }
 }
 
 // Delete flat
@@ -537,6 +812,92 @@ function handle_remove_manager($user_id, $user_type) {
     
     $result = remove_manager_from_building($building_id, $manager_id, $user_id);
     echo json_encode($result);
+    exit();
+}
+
+// Get charges from first flat (for pre-filling the building defaults form)
+function handle_get_first_flat_charges($user_id, $user_type) {
+    $building_id = isset($_POST['building_id']) ? intval($_POST['building_id']) : 0;
+    
+    // Check access
+    $access_query = "SELECT building_id FROM buildings WHERE building_id = ?";
+    if ($user_type === 'owner') {
+        $access_query .= " AND owner_id = ?";
+        $result = execute_prepared_query($access_query, array($building_id, $user_id), 'ii');
+    } elseif ($user_type === 'manager') {
+        $access_query .= " AND EXISTS (SELECT 1 FROM building_managers bm 
+                          WHERE bm.building_id = ? AND bm.manager_id = ? AND bm.is_active = 1)";
+        $result = execute_prepared_query($access_query, array($building_id, $user_id), 'ii');
+    } else {
+        echo json_encode(array('success' => false, 'message' => 'Access denied'));
+        exit();
+    }
+    
+    if (!$result || $result->num_rows == 0) {
+        echo json_encode(array('success' => false, 'message' => 'Access denied'));
+        exit();
+    }
+    
+    // Get first flat's charges
+    $query = "SELECT fdc.* FROM flat_default_charges fdc
+              JOIN flats f ON fdc.flat_id = f.flat_id
+              WHERE f.building_id = ?
+              ORDER BY f.flat_id ASC
+              LIMIT 1";
+    $result = execute_prepared_query($query, array($building_id), 'i');
+    $charges = $result && $result->num_rows > 0 ? fetch_single_row($result) : null;
+    
+    // Get first flat's electric meter
+    $meter_query = "SELECT fm.meter_type, fm.per_unit_cost 
+                    FROM flat_meters fm
+                    JOIN flats f ON fm.flat_id = f.flat_id
+                    WHERE f.building_id = ?
+                    AND (fm.meter_type = 'electric_prepaid' OR fm.meter_type = 'electric_postpaid')
+                    ORDER BY f.flat_id ASC
+                    LIMIT 1";
+    $meter_result = execute_prepared_query($meter_query, array($building_id), 'i');
+    $meter = $meter_result && $meter_result->num_rows > 0 ? fetch_single_row($meter_result) : null;
+    
+    echo json_encode(array(
+        'success' => true, 
+        'charges' => $charges,
+        'meter' => $meter
+    ));
+    exit();
+}
+
+// Get charges for a specific flat (for edit modal)
+function handle_get_flat_charges($user_id, $user_type) {
+    $flat_id = isset($_POST['flat_id']) ? intval($_POST['flat_id']) : 0;
+    
+    // Check access
+    $access_query = "SELECT f.flat_id FROM flats f
+                     JOIN buildings b ON f.building_id = b.building_id
+                     WHERE f.flat_id = ?";
+    
+    if ($user_type === 'owner') {
+        $access_query .= " AND b.owner_id = ?";
+        $result = execute_prepared_query($access_query, array($flat_id, $user_id), 'ii');
+    } elseif ($user_type === 'manager') {
+        $access_query .= " AND EXISTS (SELECT 1 FROM building_managers bm 
+                          WHERE bm.building_id = b.building_id AND bm.manager_id = ? AND bm.is_active = 1)";
+        $result = execute_prepared_query($access_query, array($flat_id, $user_id), 'ii');
+    } else {
+        echo json_encode(array('success' => false, 'message' => 'Access denied'));
+        exit();
+    }
+    
+    if (!$result || $result->num_rows == 0) {
+        echo json_encode(array('success' => false, 'message' => 'Access denied'));
+        exit();
+    }
+    
+    // Get charges from flat_default_charges table
+    $query = "SELECT * FROM flat_default_charges WHERE flat_id = ?";
+    $result = execute_prepared_query($query, array($flat_id), 'i');
+    $charges = $result && $result->num_rows > 0 ? fetch_single_row($result) : null;
+    
+    echo json_encode(array('success' => true, 'charges' => $charges));
     exit();
 }
 ?>
