@@ -550,10 +550,39 @@ body {
 }
 
 /* Activity Lists */
-.activity-list, .outstanding-list, .buildings-list {
+.activity-list, .outstanding-list{
     display: flex;
     flex-direction: column;
     gap: 15px;
+}
+
+/* Buildings Overview */
+.buildings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+/* Scrollbar styling */
+.buildings-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.buildings-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.buildings-list::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.buildings-list::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 
 .activity-item, .outstanding-item, .building-item {

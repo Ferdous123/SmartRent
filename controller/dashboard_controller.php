@@ -40,6 +40,11 @@ if (isset($_POST['action'])) {
             $notifications = get_user_notifications($current_user['user_id']);
             echo json_encode(array('success' => true, 'notifications' => $notifications));
             exit();
+
+        case 'get_buildings_overview':
+            $buildings = get_owner_buildings_overview($current_user['user_id']);
+            echo json_encode(array('success' => true, 'buildings' => $buildings));
+            exit();
             
         default:
             echo json_encode(array('success' => false, 'message' => 'Unknown action'));
@@ -158,6 +163,23 @@ function get_tenant_statistics($tenant_id) {
         'last_payment_date' => 'Oct 15, 2024',
         'active_service_requests' => 1
     );
+}
+
+// Get building overview for dashboard
+function get_owner_buildings_overview($owner_id, $limit = 5) {
+    $query = "SELECT b.building_id, b.building_name, b.address,
+              COUNT(f.flat_id) as total_flats,
+              COUNT(CASE WHEN fa.status = 'confirmed' AND fa.actual_ended_at IS NULL THEN 1 END) as occupied_flats
+              FROM buildings b
+              LEFT JOIN flats f ON b.building_id = f.building_id
+              LEFT JOIN flat_assignments fa ON f.flat_id = fa.flat_id
+              WHERE b.owner_id = ?
+              GROUP BY b.building_id
+              ORDER BY b.created_at DESC
+              LIMIT ?";
+    
+    $result = execute_prepared_query($query, array($owner_id, $limit), 'ii');
+    return $result ? fetch_all_rows($result) : array();
 }
 
 function get_user_notifications($user_id) {

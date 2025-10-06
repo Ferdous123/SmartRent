@@ -9,6 +9,17 @@ var confirmCallback = null;
 document.addEventListener('DOMContentLoaded', function() {
     loadBuildings();
     setupEventListeners();
+    
+    // Handle URL parameters for direct building access
+    var urlParams = new URLSearchParams(window.location.search);
+    var buildingId = urlParams.get('building_id');
+    var action = urlParams.get('action');
+    
+    if (buildingId && action === 'edit') {
+        setTimeout(function() {
+            openEditBuildingModal(parseInt(buildingId));
+        }, 500);
+    }
 });
 
 // Setup event listeners

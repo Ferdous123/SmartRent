@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Initialize common dashboard features
 function initCommonDashboard() {
     loadDashboardStats();
+    loadBuildingsOverview();
     loadRecentActivity();
     setupModalHandlers();
 }
@@ -322,6 +323,85 @@ function formatTime(dateString) {
         var days = Math.floor(diffInMinutes / 1440);
         return days + ' day' + (days === 1 ? '' : 's') + ' ago';
     }
+}
+
+// Load buildings overview
+function loadBuildingsOverview() {
+    var container = document.getElementById('buildingsList');
+    if (!container) return;
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/dashboard_controller.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            try {
+                var response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    displayBuildingsOverview(response.buildings);
+                }
+            } catch (e) {
+                console.error('Error loading buildings overview:', e);
+            }
+        }
+    };
+    
+    xhr.send('action=get_buildings_overview');
+}
+
+// Display buildings overview
+function displayBuildingsOverview(buildings) {
+    var container = document.getElementById('buildingsList');
+    
+    if (!container) return;
+    
+    if (!buildings || buildings.length === 0) {
+        container.innerHTML = '<div class="empty-state">' +
+            '<p>No buildings added yet</p>' +
+            '<button class="btn-primary" onclick="showAddBuildingModal()">Add Building</button>' +
+            '</div>';
+        return;
+    }
+    
+    var html = '';
+    for (var i = 0; i < buildings.length; i++) {
+        var building = buildings[i];
+        var occupancyPercent = 0;
+        
+        if (building.total_flats > 0) {
+            occupancyPercent = Math.round((building.occupied_flats / building.total_flats) * 100);
+        }
+        
+        html += '<div class="building-item">' +
+            '<div class="building-info">' +
+                '<h4>' + escapeHtml(building.building_name) + '</h4>' +
+                '<p>' + escapeHtml(building.address) + '</p>' +
+            '</div>' +
+            '<div class="building-stats">' +
+                '<span class="stat">' + building.occupied_flats + '/' + building.total_flats + ' occupied</span>' +
+                '<span class="occupancy-bar">' +
+                    '<span class="occupancy-fill" style="width: ' + occupancyPercent + '%;"></span>' +
+                '</span>' +
+            '</div>' +
+            '<div class="building-actions">' +
+                '<button class="btn-small" onclick="viewBuilding(' + building.building_id + ')">View</button>' +
+                '<button class="btn-small" onclick="manageBuilding(' + building.building_id + ')">Manage</button>' +
+            '</div>' +
+        '</div>';
+    }
+    
+    container.innerHTML = html;
+}
+
+// View building - redirect to buildings page
+function viewBuilding(buildingId) {
+    window.location.href = '../view/buildings.php?building_id=' + buildingId;
+}
+
+// Manage building - redirect to buildings page with edit action
+function manageBuilding(buildingId) {
+    window.location.href = '../view/buildings.php?building_id=' + buildingId + '&action=edit';
 }
 
 // Clean up intervals on page unload

@@ -308,45 +308,17 @@ if ($current_user['user_type'] !== 'owner') {
             <div class="card buildings-overview-card">
                 <div class="card-header">
                     <h3>Buildings Overview</h3>
-                    <button class="view-all-btn">Manage Buildings</button>
+                    <button class="view-all-btn" onclick="window.location.href='../view/buildings.php'">Manage Buildings</button>
                 </div>
                 <div class="card-content">
                     <div class="buildings-list" id="buildingsList">
-                        <div class="building-item">
-                            <div class="building-info">
-                                <h4>Green Valley Apartments</h4>
-                                <p>123 Main Street, Dhaka</p>
-                            </div>
-                            <div class="building-stats">
-                                <span class="stat">12/15 occupied</span>
-                                <span class="occupancy-bar">
-                                    <span class="occupancy-fill" style="width: 80%;"></span>
-                                </span>
-                            </div>
-                            <div class="building-actions">
-                                <button class="btn-small" onclick="viewBuilding(1)">View</button>
-                                <button class="btn-small" onclick="manageBuilding(1)">Manage</button>
-                            </div>
-                        </div>
-                        <div class="building-item">
-                            <div class="building-info">
-                                <h4>Sunset Towers</h4>
-                                <p>456 Park Avenue, Dhaka</p>
-                            </div>
-                            <div class="building-stats">
-                                <span class="stat">8/10 occupied</span>
-                                <span class="occupancy-bar">
-                                    <span class="occupancy-fill" style="width: 80%;"></span>
-                                </span>
-                            </div>
-                            <div class="building-actions">
-                                <button class="btn-small" onclick="viewBuilding(2)">View</button>
-                                <button class="btn-small" onclick="manageBuilding(2)">Manage</button>
-                            </div>
+                        <div class="empty-state">
+                            <p>Loading buildings...</p>
                         </div>
                     </div>
                 </div>
             </div>
+            
         </div>
     </main>
 
