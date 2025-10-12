@@ -74,6 +74,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         case 'search_tenants':
             handle_search_tenants($user_id, $user_type);
             break;
+
+        case 'search_all_tenants':
+            handle_search_all_tenants($user_id, $user_type);
+            break;
             
         default:
             echo json_encode(array('success' => false, 'message' => 'Invalid action'));
@@ -275,6 +279,39 @@ function handle_update_tenant_profile($user_id, $user_type) {
     
     $result = update_tenant_profile($tenant_id, $full_name, $nid_number, $permanent_address, $contact_number, $user_id);
     echo json_encode($result);
+    exit();
+}
+
+// Search ALL tenants for direct assignment (not limited to existing assignments)
+function handle_search_all_tenants($user_id, $user_type) {
+    if (!in_array($user_type, array('owner', 'manager'))) {
+        echo json_encode(array('success' => false, 'message' => 'Access denied'));
+        exit();
+    }
+    
+    $search_term = isset($_POST['search_term']) ? trim($_POST['search_term']) : '';
+    
+    if (empty($search_term)) {
+        echo json_encode(array('success' => true, 'tenants' => array()));
+        exit();
+    }
+    
+    $search_param = '%' . $search_term . '%';
+    
+    // Search ALL active tenants (for direct assignment)
+    $query = "SELECT DISTINCT u.user_id, u.username, u.email, up.full_name
+              FROM users u
+              JOIN user_profiles up ON u.user_id = up.user_id
+              WHERE u.user_type = 'tenant' 
+              AND u.is_active = 1
+              AND (up.full_name LIKE ? OR u.username LIKE ? OR u.email LIKE ?)
+              ORDER BY up.full_name 
+              LIMIT 20";
+    
+    $result = execute_prepared_query($query, array($search_param, $search_param, $search_param), 'sss');
+    
+    $tenants = $result ? fetch_all_rows($result) : array();
+    echo json_encode(array('success' => true, 'tenants' => $tenants));
     exit();
 }
 

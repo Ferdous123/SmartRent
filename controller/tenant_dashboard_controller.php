@@ -409,7 +409,60 @@ function handle_simulate_payment($user_id) {
 
 // Verify and pay
 function handle_verify_and_pay($user_id) {
-    echo json_encode(array('success' => false, 'message' => 'Payment verification not yet implemented'));
+    try {
+        $assignment_id = isset($_POST['assignment_id']) ? intval($_POST['assignment_id']) : 0;
+        $transaction_id = isset($_POST['transaction_id']) ? trim($_POST['transaction_id']) : '';
+        $amount = isset($_POST['amount']) ? floatval($_POST['amount']) : 0;
+        
+        if (!$assignment_id || !$transaction_id || $amount <= 0) {
+            echo json_encode(array('success' => false, 'message' => 'Invalid input'));
+            exit();
+        }
+        
+        // Get assignment
+        $query = "SELECT * FROM flat_assignments WHERE assignment_id = ? AND tenant_id = ? AND status = 'pending'";
+        $result = execute_prepared_query($query, array($assignment_id, $user_id), 'ii');
+        
+        if (!$result || mysqli_num_rows($result) == 0) {
+            echo json_encode(array('success' => false, 'message' => 'Assignment not found'));
+            exit();
+        }
+        
+        $assignment = fetch_single_row($result);
+        $remaining = $assignment['advance_amount'] - $amount;
+        
+        // In handle_verify_and_pay(), replace the partial payment section:
+
+        if ($remaining <= 0) {
+            // Full payment - confirm
+            begin_transaction();
+            
+            $update = "UPDATE flat_assignments 
+                    SET status = 'confirmed', 
+                        confirmed_at = NOW(), 
+                        advance_balance = 0,
+                        payment_transaction = ? 
+                    WHERE assignment_id = ?";
+            execute_prepared_query($update, array($transaction_id, $assignment_id), 'si');
+            
+            $flat_update = "UPDATE flats SET status = 'occupied' WHERE flat_id = ?";
+            execute_prepared_query($flat_update, array($assignment['flat_id']), 'i');
+            
+            commit_transaction();
+            
+            echo json_encode(array('success' => true, 'status' => 'confirmed', 'message' => 'Payment verified! Flat confirmed.'));
+        } else {
+            // Partial payment - reduce advance_balance
+            $update = "UPDATE flat_assignments SET advance_balance = ? WHERE assignment_id = ?";
+            execute_prepared_query($update, array($remaining, $assignment_id), 'di');
+            
+            echo json_encode(array('success' => true, 'status' => 'partial', 'message' => 'Partial payment recorded', 'remaining' => $remaining, 'total_paid' => $amount));
+        }
+        
+    } catch (Exception $e) {
+        rollback_transaction();
+        echo json_encode(array('success' => false, 'message' => 'Error: ' . $e->getMessage()));
+    }
     exit();
 }
 

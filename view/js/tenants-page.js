@@ -749,7 +749,7 @@ function searchTenantsForAssign() {
     }
     
     var formData = new FormData();
-    formData.append('action', 'search_tenants');
+    formData.append('action', 'search_all_tenants'); // CHANGED from 'search_tenants'
     formData.append('search_term', searchTerm);
     
     var xhr = new XMLHttpRequest();

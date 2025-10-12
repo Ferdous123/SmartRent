@@ -455,7 +455,7 @@ if (!isset($user_preferences)) {
                 <nav class="main-nav">
                     <a href="#dashboard" class="nav-link active">Dashboard</a>
                     <a href="#buildings" class="nav-link">My Buildings</a>
-                    <a href="#tenants" class="nav-link">Tenants</a>
+                    <a href="../view/tenants.php" class="nav-link">Tenants</a>
                     <a href="#maintenance" class="nav-link">Maintenance</a>
                     <a href="#payments" class="nav-link">Payments</a>
                 </nav>

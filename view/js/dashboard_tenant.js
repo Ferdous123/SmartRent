@@ -655,10 +655,11 @@ function processGatewayPayment() {
                     var response = JSON.parse(responseText);
                     
                     if (response.success) {
-                        gatewayTransaction = response.transaction;
+                        window.gatewayTransaction = response;
+                        console.log('Set gatewayTransaction:', window.gatewayTransaction); // ADD THIS
                         
-                        document.getElementById('gateway_txn_id').textContent = response.transaction.transaction_id;
-                        document.getElementById('gateway_paid_amount').textContent = formatNumber(response.transaction.amount);
+                        document.getElementById('gateway_txn_id').textContent = response.transaction_id;
+                        document.getElementById('gateway_paid_amount').textContent = formatNumber(response.amount);
                         
                         document.getElementById('gatewayPaymentForm').style.display = 'none';
                         document.getElementById('gatewayResult').style.display = 'block';
@@ -681,11 +682,6 @@ function processGatewayPayment() {
 function proceedToVerification() {
     closePaymentGatewayModal();
     
-    if (!gatewayTransaction) {
-        showMessage('No payment transaction found', 'error');
-        return;
-    }
-    
     var assignmentId = document.getElementById('gateway_assignment_id').value;
     
     var xhr = new XMLHttpRequest();
@@ -705,8 +701,9 @@ function proceedToVerification() {
                     document.getElementById('verify_paid').textContent = '0.00';
                     document.getElementById('verify_remaining').textContent = formatNumber(assignment.advance_amount);
                     
-                    document.getElementById('verify_transaction_id').value = gatewayTransaction.transaction_id;
-                    document.getElementById('verify_amount').value = gatewayTransaction.amount;
+                    var gw = window.gatewayTransaction;
+                    document.getElementById('verify_transaction_id').value = gw ? gw.transaction_id : '';
+                    document.getElementById('verify_amount').value = gw ? gw.amount : '';
                     
                     document.getElementById('paymentVerifyModal').style.display = 'flex';
                 }
