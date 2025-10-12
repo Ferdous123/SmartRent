@@ -164,13 +164,14 @@ function handle_assign_tenant_direct($user_id, $user_type) {
     $flat_id = isset($_POST['flat_id']) ? intval($_POST['flat_id']) : 0;
     $tenant_id = isset($_POST['tenant_id']) ? intval($_POST['tenant_id']) : 0;
     $advance_amount = isset($_POST['advance_amount']) ? floatval($_POST['advance_amount']) : 0;
+    $auto_confirm = isset($_POST['auto_confirm']) && $_POST['auto_confirm'] === 'true'; // NEW
     
     if ($advance_amount <= 0) {
         echo json_encode(array('success' => false, 'message' => 'Advance amount must be greater than zero'));
         exit();
     }
     
-    $result = assign_tenant_direct($flat_id, $tenant_id, $advance_amount, $user_id);
+    $result = assign_tenant_direct($flat_id, $tenant_id, $advance_amount, $user_id, $auto_confirm); // UPDATED
     echo json_encode($result);
     exit();
 }

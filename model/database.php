@@ -337,5 +337,4 @@ function test_registration() {
         return ['success' => false, 'message' => 'Test failed: ' . $e->getMessage()];
     }
 }
-
 ?>

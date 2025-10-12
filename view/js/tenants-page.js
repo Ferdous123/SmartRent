@@ -699,6 +699,7 @@ function handleDirectAssignment() {
     var flatId = document.getElementById('direct_flat_id').value;
     var tenantId = document.getElementById('direct_tenant_id').value;
     var advanceAmount = document.getElementById('direct_advance_amount').value;
+    var autoConfirm = document.getElementById('auto_confirm').checked; // NEW
     
     if (!flatId || !tenantId || !advanceAmount || advanceAmount <= 0) {
         showMessage('Please fill all required fields', 'error');
@@ -710,6 +711,7 @@ function handleDirectAssignment() {
     formData.append('flat_id', flatId);
     formData.append('tenant_id', tenantId);
     formData.append('advance_amount', advanceAmount);
+    formData.append('auto_confirm', autoConfirm ? 'true' : 'false'); // NEW
     
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '../controller/tenant_controller.php', true);
@@ -723,6 +725,7 @@ function handleDirectAssignment() {
                     showMessage(response.message, 'success');
                     closeAddTenantModal();
                     loadPendingAssignments();
+                    loadTenants(); // Refresh tenant list
                 } else {
                     showMessage(response.message, 'error');
                 }

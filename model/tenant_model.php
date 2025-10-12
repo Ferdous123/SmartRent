@@ -197,7 +197,7 @@ function generate_flat_otp($flat_id, $advance_amount, $assigned_by) {
 }
 
 // Direct tenant assignment
-function assign_tenant_direct($flat_id, $tenant_id, $advance_amount, $assigned_by) {
+function assign_tenant_direct($flat_id, $tenant_id, $advance_amount, $assigned_by, $auto_confirm = true) {
     // Check flat availability
     $check_query = "SELECT flat_id FROM flats WHERE flat_id = ? AND status = 'available'";
     $check_result = execute_prepared_query($check_query, array($flat_id), 'i');
@@ -214,33 +214,75 @@ function assign_tenant_direct($flat_id, $tenant_id, $advance_amount, $assigned_b
         return array('success' => false, 'message' => 'Tenant not found');
     }
     
-    $expires_at = date('Y-m-d H:i:s', strtotime('+24 hours'));
+    begin_transaction();
     
-    // Create assignment
-    $query = "INSERT INTO flat_assignments 
-              (flat_id, tenant_id, assigned_by, assignment_type, advance_amount, advance_balance, expires_at)
-              VALUES (?, ?, ?, 'direct', ?, ?, ?)";
-    
-    $result = execute_prepared_query($query,
-        array($flat_id, $tenant_id, $assigned_by, $advance_amount, $advance_amount, $expires_at),
-        'iiiids');
-    
-    if ($result) {
-        $assignment_id = get_last_insert_id();
+    try {
+        if ($auto_confirm) {
+            // AUTO-CONFIRM: Directly confirmed, no waiting
+            $query = "INSERT INTO flat_assignments 
+                      (flat_id, tenant_id, assigned_by, assignment_type, advance_amount, advance_balance, status, confirmed_at)
+                      VALUES (?, ?, ?, 'direct', ?, ?, 'confirmed', NOW())";
+            
+            $result = execute_prepared_query($query,
+                array($flat_id, $tenant_id, $assigned_by, $advance_amount, $advance_amount),
+                'iiidd');
+            
+            if ($result) {
+                $assignment_id = get_last_insert_id();
+                
+                // Update flat status to occupied
+                $update_flat = "UPDATE flats SET status = 'occupied' WHERE flat_id = ?";
+                execute_prepared_query($update_flat, array($flat_id), 'i');
+                
+                commit_transaction();
+                
+                // Create notification for tenant
+                create_tenant_notification($tenant_id, 'assignment', 
+                    'Flat Assignment Confirmed', 
+                    'You have been assigned to a flat. Check your dashboard for details.',
+                    'flat_assignments', $assignment_id);
+                
+                log_user_activity($assigned_by, 'assign', 'flat_assignments', $assignment_id, null,
+                    array('flat_id' => $flat_id, 'tenant_id' => $tenant_id, 'advance_amount' => $advance_amount, 'auto_confirmed' => true));
+                
+                return array('success' => true, 'message' => 'Tenant assigned and confirmed successfully!');
+            }
+        } else {
+            // MANUAL CONFIRM: Requires tenant confirmation
+            $expires_at = date('Y-m-d H:i:s', strtotime('+24 hours'));
+            
+            $query = "INSERT INTO flat_assignments 
+                      (flat_id, tenant_id, assigned_by, assignment_type, advance_amount, advance_balance, expires_at)
+                      VALUES (?, ?, ?, 'direct', ?, ?, ?)";
+            
+            $result = execute_prepared_query($query,
+                array($flat_id, $tenant_id, $assigned_by, $advance_amount, $advance_amount, $expires_at),
+                'iiiids');
+            
+            if ($result) {
+                $assignment_id = get_last_insert_id();
+                
+                commit_transaction();
+                
+                // Create notification for tenant
+                create_tenant_notification($tenant_id, 'assignment', 
+                    'Flat Assignment Pending', 
+                    'You have been assigned a flat. Please confirm within 24 hours by providing advance payment transaction number.',
+                    'flat_assignments', $assignment_id);
+                
+                log_user_activity($assigned_by, 'assign', 'flat_assignments', $assignment_id, null,
+                    array('flat_id' => $flat_id, 'tenant_id' => $tenant_id, 'advance_amount' => $advance_amount));
+                
+                return array('success' => true, 'message' => 'Tenant assigned successfully. Awaiting confirmation.');
+            }
+        }
         
-        // Create notification for tenant
-        create_tenant_notification($tenant_id, 'assignment', 
-            'Flat Assignment Pending', 
-            'You have been assigned a flat. Please confirm within 24 hours by providing advance payment transaction number.',
-            'flat_assignments', $assignment_id);
+        throw new Exception('Failed to create assignment');
         
-        log_user_activity($assigned_by, 'assign', 'flat_assignments', $assignment_id, null,
-            array('flat_id' => $flat_id, 'tenant_id' => $tenant_id, 'advance_amount' => $advance_amount));
-        
-        return array('success' => true, 'message' => 'Tenant assigned successfully. Awaiting confirmation.');
+    } catch (Exception $e) {
+        rollback_transaction();
+        return array('success' => false, 'message' => $e->getMessage());
     }
-    
-    return array('success' => false, 'message' => 'Failed to assign tenant');
 }
 
 // Generate random tenant credentials
@@ -278,14 +320,22 @@ function generate_tenant_credentials($flat_id, $advance_amount, $assigned_by) {
         
         $expires_at = date('Y-m-d H:i:s', strtotime('+24 hours'));
         
-        // Create assignment
+        // Create assignment - AUTO-CONFIRMED (no waiting period)
         $assign_query = "INSERT INTO flat_assignments 
-                         (flat_id, tenant_id, assigned_by, assignment_type, advance_amount, advance_balance, expires_at)
-                         VALUES (?, ?, ?, 'generated', ?, ?, ?)";
-        
+                        (flat_id, tenant_id, assigned_by, assignment_type, advance_amount, advance_balance, status, confirmed_at)
+                        VALUES (?, ?, ?, 'generated', ?, ?, 'confirmed', NOW())";
+
         $assign_result = execute_prepared_query($assign_query,
-            array($flat_id, $tenant_id, $assigned_by, $advance_amount, $advance_amount, $expires_at),
-            'iiiids');
+            array($flat_id, $tenant_id, $assigned_by, $advance_amount, $advance_amount),
+            'iiidd');
+
+        if (!$assign_result) {
+            throw new Exception('Failed to create assignment');
+        }
+
+        // Update flat status to occupied
+        $update_flat = "UPDATE flats SET status = 'occupied' WHERE flat_id = ?";
+        execute_prepared_query($update_flat, array($flat_id), 'i');
         
         if (!$assign_result) {
             throw new Exception('Failed to create assignment');

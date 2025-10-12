@@ -77,8 +77,19 @@
                     <div class="form-group">
                         <label>Advance Amount <span class="required">*</span></label>
                         <input type="number" id="direct_advance_amount" name="advance_amount" 
-                               min="0" step="0.01" placeholder="Enter advance amount" required>
+                            min="0" step="0.01" placeholder="Enter advance amount" required>
                         <span class="form-error" id="direct_advance_error"></span>
+                    </div>
+
+                    <!-- ADD THIS NEW CHECKBOX -->
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="auto_confirm" name="auto_confirm" checked>
+                            <span>Auto-confirm assignment (tenant can access immediately)</span>
+                        </label>
+                        <small style="color: #666; display: block; margin-top: 0.25rem;">
+                            If unchecked, tenant must confirm with transaction number within 24 hours
+                        </small>
                     </div>
                     
                     <div class="modal-actions">
@@ -448,5 +459,18 @@
 
 .btn-secondary:hover {
     background: #e0e0e0;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: auto;
+    cursor: pointer;
 }
 </style>
