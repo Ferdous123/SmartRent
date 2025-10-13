@@ -1,8 +1,4 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-// Authentication Controller for SmartRent
 // Handles login, logout, and registration processes
 
 require_once '../model/database.php';
@@ -334,7 +330,7 @@ if (!function_exists('update_user_preferences')) {
     }
 }
 
-// Get user authenticator info (if not already defined)
+// already defined in user_model.php
 if (!function_exists('get_user_authenticator')) {
     function get_user_authenticator($user_id) {
         $query = "SELECT * FROM user_authenticators WHERE user_id = ?";

@@ -1456,6 +1456,129 @@ function closeFlatActionsModal() {
     document.getElementById('flatActionsModal').style.display = 'none';
 }
 
+// ============================================
+// UTILITY FUNCTIONS FOR FEATURES
+// ============================================
+
+// Download receipt for specific payment
+function downloadReceipt(paymentId) {
+    if (!paymentId) {
+        showMessage('Invalid payment ID', 'error');
+        return;
+    }
+    
+    showLoadingOverlay();
+    
+    // Open receipt in new window
+    var url = '../controller/tenant_dashboard_controller.php?action=download_receipt&payment_id=' + paymentId;
+    var newWindow = window.open(url, '_blank');
+    
+    if (newWindow) {
+        showMessage('Opening receipt...', 'info');
+    } else {
+        showMessage('Please allow pop-ups to download receipt', 'warning');
+    }
+    
+    setTimeout(function() {
+        hideLoadingOverlay();
+    }, 1000);
+}
+
+// Download latest rent slip
+function downloadSlip() {
+    showLoadingOverlay();
+    
+    var url = '../controller/tenant_dashboard_controller.php?action=download_latest_slip';
+    var newWindow = window.open(url, '_blank');
+    
+    if (newWindow) {
+        showMessage('Opening slip...', 'info');
+    } else {
+        showMessage('Please allow pop-ups to download slip', 'warning');
+    }
+    
+    setTimeout(function() {
+        hideLoadingOverlay();
+    }, 1000);
+}
+
+// Navigate to profile page
+function updateProfile() {
+    window.location.href = '../view/profile.php';
+}
+
+// Close pending assignment modal
+function closePendingModal() {
+    var modal = document.getElementById('pendingAssignmentModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Contact manager/owner
+function contactManager() {
+    showMessage('Messaging feature coming soon! You can call your manager for now.', 'info');
+}
+
+// View all documents
+function viewDocuments() {
+    showMessage('Document management feature coming soon!', 'info');
+}
+
+// View full payment history
+function viewPaymentHistory() {
+    if (dashboardData && dashboardData.recent_payments) {
+        // Show modal with all payments
+        var modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.display = 'flex';
+        
+        var content = '<div class="modal-content" style="max-width: 800px;">' +
+            '<div class="modal-header">' +
+            '<h3>💰 Complete Payment History</h3>' +
+            '<button class="modal-close" onclick="this.closest(\'.modal\').remove()">&times;</button>' +
+            '</div>' +
+            '<div class="modal-body">';
+        
+        if (dashboardData.recent_payments.length === 0) {
+            content += '<p style="text-align: center; padding: 2rem; color: #999;">No payment history available</p>';
+        } else {
+            content += '<table style="width: 100%; border-collapse: collapse;">' +
+                '<thead><tr style="background: #f5f7fa;">' +
+                '<th style="padding: 0.75rem; text-align: left;">Date</th>' +
+                '<th style="padding: 0.75rem; text-align: left;">Type</th>' +
+                '<th style="padding: 0.75rem; text-align: left;">Flat</th>' +
+                '<th style="padding: 0.75rem; text-align: right;">Amount</th>' +
+                '<th style="padding: 0.75rem; text-align: center;">Status</th>' +
+                '<th style="padding: 0.75rem; text-align: center;">Action</th>' +
+                '</tr></thead><tbody>';
+            
+            for (var i = 0; i < dashboardData.recent_payments.length; i++) {
+                var payment = dashboardData.recent_payments[i];
+                var statusColor = payment.is_verified ? '#28a745' : '#ffc107';
+                var statusText = payment.is_verified ? 'Verified' : 'Pending';
+                
+                content += '<tr style="border-bottom: 1px solid #e0e0e0;">' +
+                    '<td style="padding: 0.75rem;">' + formatDate(payment.payment_date) + '</td>' +
+                    '<td style="padding: 0.75rem;">' + escapeHtml(payment.payment_type) + '</td>' +
+                    '<td style="padding: 0.75rem;">' + (payment.flat_number || 'N/A') + '</td>' +
+                    '<td style="padding: 0.75rem; text-align: right;">৳' + formatNumber(payment.amount) + '</td>' +
+                    '<td style="padding: 0.75rem; text-align: center;"><span style="background: ' + statusColor + '; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 12px;">' + statusText + '</span></td>' +
+                    '<td style="padding: 0.75rem; text-align: center;"><button onclick="downloadReceipt(' + payment.payment_id + ')" class="btn-small">Receipt</button></td>' +
+                    '</tr>';
+            }
+            
+            content += '</tbody></table>';
+        }
+        
+        content += '</div></div>';
+        modal.innerHTML = content;
+        document.body.appendChild(modal);
+    } else {
+        showMessage('No payment data available', 'info');
+    }
+}
+
 // 1. View Full Details
 function viewFlatDetails() {
     closeFlatActionsModal();
@@ -1627,54 +1750,19 @@ function viewFlatOutstanding() {
     xhr.send('action=get_flat_outstanding&flat_id=' + flat.flat_id);
 }
 
-function displayFlatOutstanding(dues) {
-    var content = document.getElementById('flatOutstandingContent');
-    
-    if (!dues || dues.length === 0) {
-        content.innerHTML = '<div style="text-align: center; padding: 2rem; color: #28a745;">' +
-            '<div style="font-size: 48px;">✅</div>' +
-            '<h3 style="margin: 0.5rem 0;">All Paid!</h3>' +
-            '<p style="color: #666;">You have no outstanding dues for this flat</p>' +
-            '</div>';
-    } else {
-        var totalOutstanding = 0;
-        var html = '<table style="width: 100%; border-collapse: collapse;">' +
-            '<thead><tr style="background: #f5f7fa;">' +
-            '<th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e0e0e0;">Month</th>' +
-            '<th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e0e0e0;">Total</th>' +
-            '<th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e0e0e0;">Paid</th>' +
-            '<th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e0e0e0;">Remaining</th>' +
-            '</tr></thead><tbody>';
-        
-        for (var i = 0; i < dues.length; i++) {
-            var due = dues[i];
-            totalOutstanding += parseFloat(due.remaining_amount);
-            
-            html += '<tr style="border-bottom: 1px solid #f0f0f0;">' +
-                '<td style="padding: 0.75rem;">' + formatDate(due.billing_month) + '</td>' +
-                '<td style="padding: 0.75rem; text-align: right;">৳' + formatNumber(due.total_due) + '</td>' +
-                '<td style="padding: 0.75rem; text-align: right;">৳' + formatNumber(due.paid_amount) + '</td>' +
-                '<td style="padding: 0.75rem; text-align: right; color: #f44336; font-weight: bold;">৳' + formatNumber(due.remaining_amount) + '</td>' +
-                '</tr>';
-        }
-        
-        html += '<tr style="background: #fff3cd; font-weight: bold;">' +
-            '<td colspan="3" style="padding: 0.75rem; text-align: right;">Total Outstanding:</td>' +
-            '<td style="padding: 0.75rem; text-align: right; color: #f44336;">৳' + formatNumber(totalOutstanding) + '</td>' +
-            '</tr>';
-        
-        html += '</tbody></table>';
-        content.innerHTML = html;
-    }
-    
-    document.getElementById('flatOutstandingModal').style.display = 'flex';
-}
+
 
 function closeFlatOutstandingModal() {
     document.getElementById('flatOutstandingModal').style.display = 'none';
 }
 
-// 4. Create Service Request
+
+
+function closeServiceRequestModal() {
+    document.getElementById('serviceRequestModal').style.display = 'none';
+}
+
+// 4. Create Service Request (COMPLETE)
 function createServiceRequest() {
     closeFlatActionsModal();
     var flat = window.selectedFlatForActions;
@@ -1683,11 +1771,19 @@ function createServiceRequest() {
     document.getElementById('serviceRequestForm').reset();
     document.getElementById('service_flat_id').value = flat.flat_id;
     
+    // Add file input if not exists
+    var fileInput = document.getElementById('service_attachments');
+    if (!fileInput) {
+        var formGroup = document.createElement('div');
+        formGroup.className = 'form-group';
+        formGroup.innerHTML = '<label>Attachments (Max 3 images)</label>' +
+            '<input type="file" id="service_attachments" name="attachments[]" accept="image/*" multiple max="3">';
+        
+        var descGroup = document.querySelector('#serviceRequestForm .form-group:last-of-type');
+        descGroup.parentNode.insertBefore(formGroup, descGroup.nextSibling);
+    }
+    
     document.getElementById('serviceRequestModal').style.display = 'flex';
-}
-
-function closeServiceRequestModal() {
-    document.getElementById('serviceRequestModal').style.display = 'none';
 }
 
 function submitServiceRequest(event) {
@@ -1697,6 +1793,13 @@ function submitServiceRequest(event) {
     var type = document.getElementById('service_type').value;
     var priority = document.getElementById('service_priority').value;
     var description = document.getElementById('service_description').value;
+    var fileInput = document.getElementById('service_attachments');
+    
+    // Validate file count
+    if (fileInput && fileInput.files.length > 3) {
+        showMessage('Maximum 3 images allowed', 'error');
+        return;
+    }
     
     showLoadingOverlay();
     
@@ -1706,6 +1809,13 @@ function submitServiceRequest(event) {
     formData.append('request_type', type);
     formData.append('priority', priority);
     formData.append('description', description);
+    
+    // Add files
+    if (fileInput && fileInput.files.length > 0) {
+        for (var i = 0; i < fileInput.files.length; i++) {
+            formData.append('attachments[]', fileInput.files[i]);
+        }
+    }
     
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '../controller/tenant_dashboard_controller.php', true);
@@ -1731,6 +1841,334 @@ function submitServiceRequest(event) {
     };
     
     xhr.send(formData);
+}
+
+// 5. View Service Requests (ADD CANCEL BUTTON)
+function displayServiceRequests(requests) {
+    var content = document.getElementById('serviceRequestsContent');
+    
+    if (!requests || requests.length === 0) {
+        content.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No service requests yet</p>';
+    } else {
+        var html = '<div style="display: grid; gap: 1rem;">';
+        
+        for (var i = 0; i < requests.length; i++) {
+            var request = requests[i];
+            var statusColors = {
+                'pending': '#ffc107',
+                'assigned': '#2196f3',
+                'in_progress': '#ff9800',
+                'completed': '#28a745',
+                'cancelled': '#dc3545'
+            };
+            var statusColor = statusColors[request.status] || '#999';
+            
+            var priorityColors = {
+                'low': '#999',
+                'medium': '#2196f3',
+                'high': '#ff9800',
+                'urgent': '#dc3545'
+            };
+            var priorityColor = priorityColors[request.priority] || '#999';
+            
+            html += '<div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid ' + statusColor + ';">' +
+                '<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">' +
+                    '<div>' +
+                        '<strong style="font-size: 16px;">' + escapeHtml(request.request_type).toUpperCase() + '</strong>' +
+                        '<span style="background: ' + priorityColor + '; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 11px; margin-left: 0.5rem;">' + request.priority + '</span>' +
+                    '</div>' +
+                    '<div style="display: flex; gap: 0.5rem; align-items: center;">' +
+                        '<span style="background: ' + statusColor + '; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 12px;">' + request.status + '</span>';
+            
+            // Add cancel button for pending requests
+            if (request.status === 'pending') {
+                html += '<button onclick="cancelServiceRequestConfirm(' + request.request_id + ')" style="background: #dc3545; color: white; border: none; padding: 0.25rem 0.75rem; border-radius: 12px; cursor: pointer; font-size: 12px;">Cancel</button>';
+            }
+            
+            html += '</div>' +
+                '</div>' +
+                '<p style="margin: 0.5rem 0; color: #666;">' + escapeHtml(request.description) + '</p>' +
+                '<small style="color: #999;">Created: ' + formatDate(request.created_at) + '</small>';
+            
+            if (request.resolution_notes) {
+                html += '<div style="margin-top: 0.5rem; padding: 0.5rem; background: #e8f5e9; border-radius: 4px;">' +
+                    '<strong style="color: #2e7d32;">Resolution:</strong> ' + escapeHtml(request.resolution_notes) +
+                    '</div>';
+            }
+            
+            html += '</div>';
+        }
+        
+        html += '</div>';
+        content.innerHTML = html;
+    }
+    
+    document.getElementById('viewServiceRequestsModal').style.display = 'flex';
+}
+
+function cancelServiceRequestConfirm(requestId) {
+    if (!confirm('Are you sure you want to cancel this service request?')) {
+        return;
+    }
+    
+    showLoadingOverlay();
+    
+    var formData = new FormData();
+    formData.append('action', 'cancel_service_request');
+    formData.append('request_id', requestId);
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/tenant_dashboard_controller.php', true);
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            hideLoadingOverlay();
+            
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        showMessage(response.message, 'success');
+                        // Reload service requests
+                        var flat = window.selectedFlatForActions;
+                        if (flat) {
+                            viewServiceRequests();
+                        }
+                    } else {
+                        showMessage(response.message, 'error');
+                    }
+                } catch (e) {
+                    showMessage('Error cancelling request', 'error');
+                }
+            }
+        }
+    };
+    
+    xhr.send(formData);
+}
+
+// 7. Download Rent Slip with Month Selection (UPDATE)
+function downloadFlatSlip() {
+    closeFlatActionsModal();
+    var flat = window.selectedFlatForActions;
+    
+    showLoadingOverlay();
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/tenant_dashboard_controller.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            hideLoadingOverlay();
+            
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success && response.months && response.months.length > 0) {
+                        showMonthSelectionModal(response.months, flat.flat_id);
+                    } else {
+                        showMessage('No slips available for this flat', 'error');
+                    }
+                } catch (e) {
+                    showMessage('Error loading months', 'error');
+                }
+            }
+        }
+    };
+    
+    xhr.send('action=get_expense_months&flat_id=' + flat.flat_id);
+}
+
+function closeServiceRequestModal() {
+    document.getElementById('serviceRequestModal').style.display = 'none';
+    // Reset form
+    var form = document.getElementById('serviceRequestForm');
+    if (form) form.reset();
+    // Clear file input
+    var fileInput = document.getElementById('service_attachments');
+    if (fileInput) fileInput.value = '';
+}
+
+function showMonthSelectionModal(months, flatId) {
+    var html = '<div class="modal" id="monthSelectionModal" style="display: flex;">' +
+        '<div class="modal-content" style="max-width: 400px;">' +
+        '<div class="modal-header"><h3>Select Month</h3><button class="modal-close" onclick="closeMonthSelectionModal()">&times;</button></div>' +
+        '<div class="modal-body">' +
+        '<div class="form-group"><label>Billing Month</label><select id="selected_month" style="width: 100%; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 8px;">';
+    
+    for (var i = 0; i < months.length; i++) {
+        var month = months[i];
+        var date = new Date(month.billing_month);
+        var monthName = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+        html += '<option value="' + month.expense_id + '">' + monthName + '</option>';
+    }
+    
+    html += '</select></div>' +
+        '<div class="modal-actions">' +
+        '<button class="btn-secondary" onclick="closeMonthSelectionModal()">Cancel</button>' +
+        '<button class="btn-primary" onclick="downloadSelectedSlip(' + flatId + ')">Download</button>' +
+        '</div></div></div></div>';
+    
+    document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function closeMonthSelectionModal() {
+    var modal = document.getElementById('monthSelectionModal');
+    if (modal) modal.remove();
+}
+
+function downloadSelectedSlip(flatId) {
+    var expenseId = document.getElementById('selected_month').value;
+    window.open('../controller/tenant_dashboard_controller.php?action=download_slip&flat_id=' + flatId + '&expense_id=' + expenseId, '_blank');
+    closeMonthSelectionModal();
+}
+
+// 8. View Meter Readings with Trend (UPDATE displayMeterReadings)
+// Keep the existing displayMeterReadings function but add chart at the end
+
+// 9. Move Out with Settlement Display (UPDATE submitMoveOut)
+function submitMoveOut(event) {
+    event.preventDefault();
+    
+    var flatId = document.getElementById('moveout_flat_id').value;
+    var assignmentId = document.getElementById('moveout_assignment_id').value;
+    var moveOutDate = document.getElementById('moveout_date').value;
+    var reason = document.getElementById('moveout_reason').value;
+    
+    // Validate date is 1st of month
+    var date = new Date(moveOutDate);
+    if (date.getDate() !== 1) {
+        showMessage('Move-out date must be the 1st day of a month', 'error');
+        return;
+    }
+    
+    showLoadingOverlay();
+    
+    var formData = new FormData();
+    formData.append('action', 'request_move_out');
+    formData.append('flat_id', flatId);
+    formData.append('assignment_id', assignmentId);
+    formData.append('move_out_date', moveOutDate);
+    formData.append('reason', reason);
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/tenant_dashboard_controller.php', true);
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            hideLoadingOverlay();
+            
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        // Show settlement details
+                        if (response.settlement) {
+                            showSettlementDetails(response.settlement);
+                        } else {
+                            showMessage(response.message, 'success');
+                            closeMoveOutModal();
+                            setTimeout(function() {
+                                loadTenantDashboardData();
+                            }, 1500);
+                        }
+                    } else {
+                        showMessage(response.message, 'error');
+                    }
+                } catch (e) {
+                    showMessage('Error submitting request', 'error');
+                }
+            }
+        }
+    };
+    
+    xhr.send(formData);
+}
+
+function showSettlementDetails(settlement) {
+    var html = '<div style="background: #e3f2fd; padding: 1.5rem; border-radius: 8px; margin-top: 1rem;">' +
+        '<h4 style="margin: 0 0 1rem 0; color: #1976d2;">📊 Settlement Breakdown</h4>' +
+        '<table style="width: 100%; font-size: 14px;">' +
+        '<tr><td style="padding: 0.5rem 0;">Months Until Move-out:</td><td style="text-align: right; font-weight: bold;">' + settlement.months_until_moveout + ' months</td></tr>' +
+        '<tr><td style="padding: 0.5rem 0;">Total Rent:</td><td style="text-align: right;">৳' + formatNumber(settlement.total_rent) + '</td></tr>' +
+        '<tr><td style="padding: 0.5rem 0;">Fixed Charges:</td><td style="text-align: right;">৳' + formatNumber(settlement.fixed_charges) + '</td></tr>' +
+        '<tr style="border-top: 2px solid #1976d2;"><td style="padding: 0.5rem 0; font-weight: bold;">Total Due:</td><td style="text-align: right; font-weight: bold;">৳' + formatNumber(settlement.total_due) + '</td></tr>' +
+        '<tr><td style="padding: 0.5rem 0; color: #28a745;">Less: Advance Balance:</td><td style="text-align: right; color: #28a745;">-৳' + formatNumber(settlement.advance_balance) + '</td></tr>' +
+        '<tr style="border-top: 2px solid #1976d2; background: #fff3cd;"><td style="padding: 0.75rem 0; font-weight: bold; font-size: 16px;">Final Amount:</td><td style="text-align: right; font-weight: bold; font-size: 16px; color: ' + (settlement.final_amount >= 0 ? '#dc3545' : '#28a745') + ';">৳' + formatNumber(Math.abs(settlement.final_amount)) + ' ' + (settlement.final_amount >= 0 ? '(to pay)' : '(refund)') + '</td></tr>' +
+        '</table>' +
+        '<div style="margin-top: 1rem; padding: 0.75rem; background: #fff3e0; border-radius: 4px; font-size: 13px; color: #f57c00;">' +
+        '<strong>Note:</strong> ' + settlement.note +
+        '</div>' +
+        '<button class="btn-primary full-width" style="margin-top: 1rem;" onclick="closeMoveOutModal(); loadTenantDashboardData();">Close</button>' +
+        '</div>';
+    
+    document.getElementById('moveOutForm').style.display = 'none';
+    document.querySelector('#moveOutModal .modal-body').insertAdjacentHTML('beforeend', html);
+}
+
+// 3. Outstanding Dues with Pay Button (UPDATE displayFlatOutstanding)
+function displayFlatOutstanding(dues) {
+    var content = document.getElementById('flatOutstandingContent');
+    
+    if (!dues || dues.length === 0) {
+        content.innerHTML = '<div style="text-align: center; padding: 2rem; color: #28a745;">' +
+            '<div style="font-size: 48px;">✅</div>' +
+            '<h3 style="margin: 0.5rem 0;">All Paid!</h3>' +
+            '<p style="color: #666;">You have no outstanding dues for this flat</p>' +
+            '</div>';
+    } else {
+        var totalOutstanding = 0;
+        var html = '<table style="width: 100%; border-collapse: collapse;">' +
+            '<thead><tr style="background: #f5f7fa;">' +
+            '<th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e0e0e0;">Month</th>' +
+            '<th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e0e0e0;">Remaining</th>' +
+            '<th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #e0e0e0;">Action</th>' +
+            '</tr></thead><tbody>';
+        
+        for (var i = 0; i < dues.length; i++) {
+            var due = dues[i];
+            totalOutstanding += parseFloat(due.remaining_amount);
+            
+            html += '<tr style="border-bottom: 1px solid #f0f0f0;">' +
+                '<td style="padding: 0.75rem;">' +
+                    '<strong>' + formatDate(due.billing_month) + '</strong><br>' +
+                    '<small style="color: #666;">Rent: ৳' + formatNumber(due.rent) + ' | Utils: ৳' + formatNumber(parseFloat(due.electric_bill) + parseFloat(due.gas_bill) + parseFloat(due.water_bill)) + '</small>' +
+                '</td>' +
+                '<td style="padding: 0.75rem; text-align: right; color: #f44336; font-weight: bold; font-size: 16px;">৳' + formatNumber(due.remaining_amount) + '</td>' +
+                '<td style="padding: 0.75rem; text-align: center;">' +
+                    '<button onclick="payOutstanding(' + due.expense_id + ', ' + due.remaining_amount + ')" style="background: #667eea; color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer;">Pay Now</button>' +
+                '</td>' +
+                '</tr>';
+        }
+        
+        html += '<tr style="background: #fff3cd; font-weight: bold;">' +
+            '<td colspan="2" style="padding: 0.75rem; text-align: right; font-size: 18px;">Total Outstanding:</td>' +
+            '<td style="padding: 0.75rem; text-align: center; color: #f44336; font-size: 18px;">৳' + formatNumber(totalOutstanding) + '</td>' +
+            '</tr>';
+        
+        html += '</tbody></table>';
+        content.innerHTML = html;
+    }
+    
+    document.getElementById('flatOutstandingModal').style.display = 'flex';
+}
+
+function payOutstanding(expenseId, amount) {
+    closeFlatOutstandingModal();
+    
+    // Open payment gateway with pre-filled amount
+    var flat = window.selectedFlatForActions;
+    document.getElementById('gateway_assignment_id').value = flat.assignment_id;
+    document.getElementById('gateway_amount').value = amount;
+    
+    // Store expense_id for payment tracking
+    window.currentExpenseId = expenseId;
+    
+    document.getElementById('gatewayPaymentForm').style.display = 'block';
+    document.getElementById('gatewayResult').style.display = 'none';
+    
+    document.getElementById('paymentGatewayModal').style.display = 'flex';
 }
 
 // 5. View Service Requests
@@ -1766,59 +2204,6 @@ function viewServiceRequests() {
     xhr.send('action=get_flat_service_requests&flat_id=' + flat.flat_id);
 }
 
-function displayServiceRequests(requests) {
-    var content = document.getElementById('serviceRequestsContent');
-    
-    if (!requests || requests.length === 0) {
-        content.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No service requests yet</p>';
-    } else {
-        var html = '<div style="display: grid; gap: 1rem;">';
-        
-        for (var i = 0; i < requests.length; i++) {
-            var request = requests[i];
-            var statusColors = {
-                'pending': '#ffc107',
-                'assigned': '#2196f3',
-                'in_progress': '#ff9800',
-                'completed': '#28a745',
-                'cancelled': '#dc3545'
-            };
-            var statusColor = statusColors[request.status] || '#999';
-            
-            var priorityColors = {
-                'low': '#999',
-                'medium': '#2196f3',
-                'high': '#ff9800',
-                'urgent': '#dc3545'
-            };
-            var priorityColor = priorityColors[request.priority] || '#999';
-            
-            html += '<div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid ' + statusColor + ';">' +
-                '<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">' +
-                    '<div>' +
-                        '<strong style="font-size: 16px;">' + escapeHtml(request.request_type).toUpperCase() + '</strong>' +
-                        '<span style="background: ' + priorityColor + '; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 11px; margin-left: 0.5rem;">' + request.priority + '</span>' +
-                    '</div>' +
-                    '<span style="background: ' + statusColor + '; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 12px;">' + request.status + '</span>' +
-                '</div>' +
-                '<p style="margin: 0.5rem 0; color: #666;">' + escapeHtml(request.description) + '</p>' +
-                '<small style="color: #999;">Created: ' + formatDate(request.created_at) + '</small>';
-            
-            if (request.resolution_notes) {
-                html += '<div style="margin-top: 0.5rem; padding: 0.5rem; background: #e8f5e9; border-radius: 4px;">' +
-                    '<strong style="color: #2e7d32;">Resolution:</strong> ' + escapeHtml(request.resolution_notes) +
-                    '</div>';
-            }
-            
-            html += '</div>';
-        }
-        
-        html += '</div>';
-        content.innerHTML = html;
-    }
-    
-    document.getElementById('viewServiceRequestsModal').style.display = 'flex';
-}
 
 function closeViewServiceRequestsModal() {
     document.getElementById('viewServiceRequestsModal').style.display = 'none';
@@ -1894,14 +2279,6 @@ function closeFlatExpensesModal() {
     document.getElementById('flatExpensesModal').style.display = 'none';
 }
 
-// 7. Download Rent Slip
-function downloadFlatSlip() {
-    closeFlatActionsModal();
-    var flat = window.selectedFlatForActions;
-    
-    window.open('../controller/tenant_dashboard_controller.php?action=download_flat_slip&flat_id=' + flat.flat_id, '_blank');
-    showMessage('Downloading slip...', 'info');
-}
 
 // 8. View Meter Readings
 function viewMeterReadings() {
@@ -2008,10 +2385,14 @@ function closeMeterReadingsModal() {
     document.getElementById('meterReadingsModal').style.display = 'none';
 }
 
-// 9. Request Move Out
+// 9. Request Move Out (COMPLETE)
 function requestMoveOut() {
     closeFlatActionsModal();
     var flat = window.selectedFlatForActions;
+    
+    // Reset and setup form
+    var form = document.getElementById('moveOutForm');
+    if (form) form.reset();
     
     document.getElementById('moveout_flat_id').value = flat.flat_id;
     document.getElementById('moveout_assignment_id').value = flat.assignment_id;
@@ -2020,16 +2401,26 @@ function requestMoveOut() {
     var today = new Date();
     var nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
     var minDate = nextMonth.toISOString().split('T')[0];
-    document.getElementById('moveout_date').setAttribute('min', minDate);
+    var dateInput = document.getElementById('moveout_date');
+    dateInput.setAttribute('min', minDate);
+    dateInput.value = ''; // Clear any previous value
     
-    // Validate only 1st of month
-    document.getElementById('moveout_date').addEventListener('change', function() {
+    // Remove old listeners and add new validation
+    var newDateInput = dateInput.cloneNode(true);
+    dateInput.parentNode.replaceChild(newDateInput, dateInput);
+    
+    newDateInput.addEventListener('change', function() {
         var selectedDate = new Date(this.value);
         if (selectedDate.getDate() !== 1) {
             showMessage('Move-out date must be the 1st day of a month', 'error');
             this.value = '';
         }
     });
+    
+    // Show form, hide any previous settlement
+    document.getElementById('moveOutForm').style.display = 'block';
+    var existingSettlement = document.querySelector('#moveOutModal .settlement-details');
+    if (existingSettlement) existingSettlement.remove();
     
     document.getElementById('moveOutModal').style.display = 'flex';
 }
@@ -2038,63 +2429,6 @@ function closeMoveOutModal() {
     document.getElementById('moveOutModal').style.display = 'none';
 }
 
-function submitMoveOut(event) {
-    event.preventDefault();
-    
-    var flatId = document.getElementById('moveout_flat_id').value;
-    var assignmentId = document.getElementById('moveout_assignment_id').value;
-    var moveOutDate = document.getElementById('moveout_date').value;
-    var reason = document.getElementById('moveout_reason').value;
-    
-    // Validate date is 1st of month
-    var date = new Date(moveOutDate);
-    if (date.getDate() !== 1) {
-        showMessage('Move-out date must be the 1st day of a month', 'error');
-        return;
-    }
-    
-    // Confirm
-    if (!confirm('Are you sure you want to request move-out on ' + formatDate(moveOutDate) + '?')) {
-        return;
-    }
-    
-    showLoadingOverlay();
-    
-    var formData = new FormData();
-    formData.append('action', 'request_move_out');
-    formData.append('flat_id', flatId);
-    formData.append('assignment_id', assignmentId);
-    formData.append('move_out_date', moveOutDate);
-    formData.append('reason', reason);
-    
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', '../controller/tenant_dashboard_controller.php', true);
-    
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            hideLoadingOverlay();
-            
-            if (xhr.status === 200) {
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    if (response.success) {
-                        showMessage(response.message, 'success');
-                        closeMoveOutModal();
-                        setTimeout(function() {
-                            loadTenantDashboardData();
-                        }, 1500);
-                    } else {
-                        showMessage(response.message, 'error');
-                    }
-                } catch (e) {
-                    showMessage('Error submitting request', 'error');
-                }
-            }
-        }
-    };
-    
-    xhr.send(formData);
-}
 
 // 10. Cancel Move Out
 function cancelMoveOut() {
@@ -2155,41 +2489,7 @@ function makePayment() {
     showMessage('Payment modal coming soon', 'info');
 }
 
-function createServiceRequest() {
-    showMessage('Service request feature coming soon', 'info');
-}
 
-function downloadReceipt(paymentId) {
-    window.open('../controller/tenant_dashboard_controller.php?action=download_latest_slip', '_blank');
-}
-
-function downloadSlip() {
-    window.open('../controller/tenant_dashboard_controller.php?action=download_latest_slip', '_blank');
-}
-
-function viewPaymentHistory() {
-    showMessage('Full payment history feature coming soon', 'info');
-}
-
-function contactManager() {
-    showMessage('Messaging feature coming soon', 'info');
-}
-
-function requestMoveOut() {
-    showMessage('Move out request feature coming soon', 'info');
-}
-
-function updateProfile() {
-    window.location.href = '../controller/profile_controller.php';
-}
-
-function viewDocuments() {
-    showMessage('Documents feature coming soon', 'info');
-}
-
-function closePendingModal() {
-    document.getElementById('pendingAssignmentModal').style.display = 'none';
-}
 
 // ============================================
 // CLEANUP

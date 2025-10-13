@@ -2,9 +2,6 @@
 session_start();
 require_once '../model/database.php';
 
-// Debug what we received
-error_log("Request method: " . $_SERVER['REQUEST_METHOD']);
-error_log("POST data: " . print_r($_POST, true));
 
 // Handle POST request
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

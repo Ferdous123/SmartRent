@@ -1,6 +1,4 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
 require_once 'auth_header.php';
 require_once '../model/database.php';
@@ -91,7 +89,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 exit();
 
-// Handle building creation (already exists - keep it)
 function handle_create_building($user_id, $user_type) {
     if ($user_type !== 'owner') {
         echo json_encode(array('success' => false, 'message' => 'Access denied'));

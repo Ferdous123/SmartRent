@@ -1,7 +1,4 @@
 <?php
-// Centralized Authentication Header
-// Include at top of ALL authenticated pages (dashboards, profile, etc.)
-
 if (basename($_SERVER['PHP_SELF']) == 'auth_header.php') {
     die('Direct access not permitted');
 }
@@ -22,7 +19,7 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
 
 // Initialize session timeout if not set
 if (!isset($_SESSION['session_timeout'])) {
-    $_SESSION['session_timeout'] = time() + 3600;
+    $_SESSION['session_timeout'] = time() + 60;
 }
 
 // Check session timeout

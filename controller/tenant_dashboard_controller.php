@@ -1,8 +1,5 @@
 <?php
-// Safe error handling
 ob_start();
-error_reporting(0);
-ini_set('display_errors', 0);
 
 try {
     require_once 'auth_header.php';
@@ -67,10 +64,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 handle_get_payment_history($user_id);
                 break;
                 
-            case 'request_move_out':
-                handle_request_move_out($user_id);
-                break;
-                
             case 'get_notifications':
                 handle_get_notifications($user_id);
                 break;
@@ -81,6 +74,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
             case 'mark_all_notifications_read':
                 handle_mark_all_notifications_read($user_id);
+                break;
+
+            case 'download_receipt':
+                handle_download_receipt($user_id);
                 break;
 
             case 'claim_otp':
@@ -142,6 +139,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             case 'cancel_move_out':
                 handle_cancel_move_out($user_id);
                 break;
+
+            case 'get_flat_full_details':
+                handle_get_flat_full_details($user_id);
+                break;
+
+            case 'get_flat_payment_history':
+                handle_get_flat_payment_history($user_id);
+                break;
+
+            case 'get_flat_outstanding':
+                handle_get_flat_outstanding($user_id);
+                break;
+
+            case 'create_service_request':
+                handle_create_service_request($user_id);
+                break;
+
+            case 'cancel_service_request':
+                handle_cancel_service_request($user_id);
+                break;
+
+            case 'get_flat_service_requests':
+                handle_get_flat_service_requests($user_id);
+                break;
+
+            case 'get_flat_expenses':
+                handle_get_flat_expenses($user_id);
+                break;
+
+            case 'get_expense_months':
+                handle_get_expense_months($user_id);
+                break;
+
+            case 'get_meter_readings':
+                handle_get_meter_readings($user_id);
+                break;
+
+            case 'request_move_out':
+                handle_request_move_out($user_id);
+                break;
+
+            case 'cancel_move_out':
+                handle_cancel_move_out($user_id);
+                break;
+
+            case 'pay_outstanding':
+                handle_pay_outstanding($user_id);
+                break;
+                
             default:
                 echo json_encode(array('success' => false, 'message' => 'Invalid action: ' . $action));
                 break;
@@ -177,9 +223,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 exit();
 
-// ============================================================================
-// HANDLER FUNCTIONS
-// ============================================================================
 
 // Get complete dashboard data
 function handle_get_dashboard_data($user_id) {
@@ -348,29 +391,6 @@ function handle_get_payment_history($user_id) {
     exit();
 }
 
-// Request move out
-function handle_request_move_out($user_id) {
-    try {
-        $move_out_date = isset($_POST['move_out_date']) ? trim($_POST['move_out_date']) : '';
-        $reason = isset($_POST['reason']) ? trim($_POST['reason']) : '';
-        
-        if (empty($move_out_date)) {
-            echo json_encode(array('success' => false, 'message' => 'Move out date is required'));
-            exit();
-        }
-        
-        if (function_exists('request_tenant_move_out')) {
-            $result = request_tenant_move_out($user_id, $move_out_date, $reason);
-            echo json_encode($result);
-        } else {
-            echo json_encode(array('success' => false, 'message' => 'Function not available'));
-        }
-    } catch (Exception $e) {
-        error_log("Move out error: " . $e->getMessage());
-        echo json_encode(array('success' => false, 'message' => 'Error processing request'));
-    }
-    exit();
-}
 
 // Get notifications
 function handle_get_notifications($user_id) {
@@ -784,4 +804,293 @@ function generate_statement_html($payments, $user_id) {
     
     return $html;
 }
+
+// ============================================================================
+// FLAT ACTION HANDLERS
+// ============================================================================
+
+function handle_get_flat_full_details($user_id) {
+    $flat_id = isset($_POST['flat_id']) ? intval($_POST['flat_id']) : 0;
+    $result = get_tenant_flat_full_details($user_id, $flat_id);
+    echo json_encode($result);
+    exit();
+}
+
+function handle_get_flat_payment_history($user_id) {
+    $flat_id = isset($_POST['flat_id']) ? intval($_POST['flat_id']) : 0;
+    $payments = get_flat_specific_payments($user_id, $flat_id);
+    echo json_encode(array('success' => true, 'payments' => $payments));
+    exit();
+}
+
+function handle_get_flat_outstanding($user_id) {
+    $flat_id = isset($_POST['flat_id']) ? intval($_POST['flat_id']) : 0;
+    $dues = get_flat_specific_dues($user_id, $flat_id);
+    echo json_encode(array('success' => true, 'dues' => $dues));
+    exit();
+}
+
+function handle_create_service_request($user_id) {
+    $flat_id = isset($_POST['flat_id']) ? intval($_POST['flat_id']) : 0;
+    $request_type = isset($_POST['request_type']) ? trim($_POST['request_type']) : '';
+    $priority = isset($_POST['priority']) ? trim($_POST['priority']) : 'medium';
+    $description = isset($_POST['description']) ? trim($_POST['description']) : '';
+    
+    // Handle file uploads
+    $attachments = array();
+    if (isset($_FILES['attachments'])) {
+        $files = $_FILES['attachments'];
+        
+        // Create temporary placeholder - will be updated after getting request_id
+        for ($i = 0; $i < count($files['name']); $i++) {
+            if ($files['error'][$i] === UPLOAD_ERR_OK) {
+                $attachments[] = array(
+                    'tmp_name' => $files['tmp_name'][$i],
+                    'name' => $files['name'][$i],
+                    'type' => $files['type'][$i]
+                );
+            }
+        }
+    }
+    
+    $result = create_service_request($user_id, $flat_id, $request_type, $priority, $description, null);
+    
+    if ($result['success'] && !empty($attachments)) {
+        $request_id = $result['request_id'];
+        $upload_dir = '../uploads/service_requests/' . $request_id . '/';
+        
+        if (!file_exists($upload_dir)) {
+            mkdir($upload_dir, 0755, true);
+        }
+        
+        $uploaded_files = array();
+        foreach ($attachments as $file) {
+            $filename = time() . '_' . basename($file['name']);
+            $filepath = $upload_dir . $filename;
+            
+            if (move_uploaded_file($file['tmp_name'], $filepath)) {
+                $uploaded_files[] = 'uploads/service_requests/' . $request_id . '/' . $filename;
+            }
+        }
+        
+        // Update attachments in database
+        if (!empty($uploaded_files)) {
+            $update_query = "UPDATE service_requests SET attachments = ? WHERE request_id = ?";
+            execute_prepared_query($update_query, array(json_encode($uploaded_files), $request_id), 'si');
+        }
+    }
+    
+    echo json_encode($result);
+    exit();
+}
+
+function handle_cancel_service_request($user_id) {
+    $request_id = isset($_POST['request_id']) ? intval($_POST['request_id']) : 0;
+    $result = cancel_service_request($user_id, $request_id);
+    echo json_encode($result);
+    exit();
+}
+
+function handle_get_flat_service_requests($user_id) {
+    $flat_id = isset($_POST['flat_id']) ? intval($_POST['flat_id']) : 0;
+    $requests = get_flat_service_requests($user_id, $flat_id);
+    echo json_encode(array('success' => true, 'requests' => $requests));
+    exit();
+}
+
+function handle_get_flat_expenses($user_id) {
+    $flat_id = isset($_POST['flat_id']) ? intval($_POST['flat_id']) : 0;
+    $expenses = get_flat_monthly_expenses($user_id, $flat_id);
+    echo json_encode(array('success' => true, 'expenses' => $expenses));
+    exit();
+}
+
+function handle_get_expense_months($user_id) {
+    $flat_id = isset($_POST['flat_id']) ? intval($_POST['flat_id']) : 0;
+    $months = get_flat_expense_months($user_id, $flat_id);
+    echo json_encode(array('success' => true, 'months' => $months));
+    exit();
+}
+
+function handle_get_meter_readings($user_id) {
+    $flat_id = isset($_POST['flat_id']) ? intval($_POST['flat_id']) : 0;
+    $meters = get_flat_meter_readings($user_id, $flat_id);
+    echo json_encode(array('success' => true, 'meters' => $meters));
+    exit();
+}
+
+function handle_request_move_out($user_id) {
+    $flat_id = isset($_POST['flat_id']) ? intval($_POST['flat_id']) : 0;
+    $assignment_id = isset($_POST['assignment_id']) ? intval($_POST['assignment_id']) : 0;
+    $move_out_date = isset($_POST['move_out_date']) ? trim($_POST['move_out_date']) : '';
+    $reason = isset($_POST['reason']) ? trim($_POST['reason']) : '';
+    
+    $result = request_flat_move_out($user_id, $flat_id, $assignment_id, $move_out_date, $reason);
+    echo json_encode($result);
+    exit();
+}
+
+function handle_cancel_move_out($user_id) {
+    $assignment_id = isset($_POST['assignment_id']) ? intval($_POST['assignment_id']) : 0;
+    $result = cancel_flat_move_out($user_id, $assignment_id);
+    echo json_encode($result);
+    exit();
+}
+
+function handle_pay_outstanding($user_id) {
+    $expense_id = isset($_POST['expense_id']) ? intval($_POST['expense_id']) : 0;
+    $amount = isset($_POST['amount']) ? floatval($_POST['amount']) : 0;
+    
+    // Get expense details
+    $query = "SELECT fe.*, td.remaining_amount 
+              FROM flat_expenses fe
+              JOIN tenant_dues td ON fe.expense_id = td.expense_id
+              WHERE fe.expense_id = ? AND td.tenant_id = ?";
+    
+    $result = execute_prepared_query($query, array($expense_id, $user_id), 'ii');
+    
+    if (!$result || mysqli_num_rows($result) == 0) {
+        echo json_encode(array('success' => false, 'message' => 'Expense not found'));
+        exit();
+    }
+    
+    $expense = fetch_single_row($result);
+    
+    echo json_encode(array(
+        'success' => true, 
+        'expense' => $expense,
+        'suggested_amount' => $expense['remaining_amount']
+    ));
+    exit();
+}
+
+// Download specific payment receipt
+function handle_download_receipt($user_id) {
+    try {
+        $payment_id = isset($_GET['payment_id']) ? intval($_GET['payment_id']) : 0;
+        
+        if (!$payment_id) {
+            header('Location: ../view/dashboard_tenant.php?error=invalid_payment');
+            exit();
+        }
+        
+        // Get payment details
+        $query = "SELECT p.*, f.flat_number, b.building_name, b.address, up.full_name as tenant_name
+                  FROM payments p
+                  JOIN flats f ON p.flat_id = f.flat_id
+                  JOIN buildings b ON f.building_id = b.building_id
+                  JOIN user_profiles up ON up.user_id = p.tenant_id
+                  WHERE p.payment_id = ? AND p.tenant_id = ?";
+        
+        $result = execute_prepared_query($query, array($payment_id, $user_id), 'ii');
+        
+        if (!$result || mysqli_num_rows($result) == 0) {
+            header('Location: ../view/dashboard_tenant.php?error=payment_not_found');
+            exit();
+        }
+        
+        $payment = fetch_single_row($result);
+        
+        header('Content-Type: text/html; charset=utf-8');
+        header('Content-Disposition: attachment; filename="receipt_' . $payment_id . '.html"');
+        
+        echo generate_receipt_html($payment);
+        
+    } catch (Exception $e) {
+        error_log("Download receipt error: " . $e->getMessage());
+        header('Location: ../view/dashboard_tenant.php?error=download_failed');
+    }
+    exit();
+}
+
+// Generate receipt HTML
+function generate_receipt_html($payment) {
+    $html = '<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Payment Receipt - ' . $payment['payment_id'] . '</title>
+        <style>
+            body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+            .receipt { border: 2px solid #333; padding: 30px; }
+            .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 20px; }
+            .header h1 { margin: 0; color: #667eea; }
+            .row { display: flex; justify-content: space-between; margin: 10px 0; padding: 8px 0; }
+            .row.highlight { background: #f5f7fa; padding: 12px; border-radius: 4px; }
+            .label { font-weight: bold; color: #666; }
+            .value { color: #333; }
+            .total { font-size: 24px; font-weight: bold; margin-top: 20px; padding-top: 20px; border-top: 2px solid #333; text-align: center; color: #667eea; }
+            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc; text-align: center; color: #999; font-size: 12px; }
+            .status { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+            .status.verified { background: #28a745; color: white; }
+            .status.pending { background: #ffc107; color: #333; }
+        </style>
+    </head>
+    <body>
+        <div class="receipt">
+            <div class="header">
+                <h1>PAYMENT RECEIPT</h1>
+                <p style="margin: 5px 0; color: #666;">Receipt #' . str_pad($payment['payment_id'], 6, '0', STR_PAD_LEFT) . '</p>
+            </div>
+            
+            <div class="row highlight">
+                <span class="label">Tenant Name:</span>
+                <span class="value">' . htmlspecialchars($payment['tenant_name']) . '</span>
+            </div>
+            
+            <div class="row">
+                <span class="label">Property:</span>
+                <span class="value">' . htmlspecialchars($payment['building_name']) . '</span>
+            </div>
+            
+            <div class="row">
+                <span class="label">Flat:</span>
+                <span class="value">' . htmlspecialchars($payment['flat_number']) . '</span>
+            </div>
+            
+            <div class="row">
+                <span class="label">Address:</span>
+                <span class="value">' . htmlspecialchars($payment['address']) . '</span>
+            </div>
+            
+            <div class="row highlight">
+                <span class="label">Payment Date:</span>
+                <span class="value">' . date('F d, Y', strtotime($payment['payment_date'])) . '</span>
+            </div>
+            
+            <div class="row">
+                <span class="label">Payment Type:</span>
+                <span class="value">' . ucwords(str_replace('_', ' ', $payment['payment_type'])) . '</span>
+            </div>
+            
+            <div class="row">
+                <span class="label">Payment Method:</span>
+                <span class="value">' . ucwords(str_replace('_', ' ', $payment['method'])) . '</span>
+            </div>
+            
+            <div class="row">
+                <span class="label">Transaction Number:</span>
+                <span class="value">' . htmlspecialchars($payment['transaction_number']) . '</span>
+            </div>
+            
+            <div class="row">
+                <span class="label">Status:</span>
+                <span class="value"><span class="status ' . ($payment['is_verified'] ? 'verified' : 'pending') . '">' . ($payment['is_verified'] ? 'VERIFIED' : 'PENDING') . '</span></span>
+            </div>
+            
+            <div class="total">
+                Amount Paid: ৳' . number_format($payment['amount'], 2) . '
+            </div>
+            
+            <div class="footer">
+                <p>This is a computer-generated receipt and does not require a signature.</p>
+                <p>Generated on ' . date('F d, Y h:i A') . '</p>
+            </div>
+        </div>
+    </body>
+    </html>';
+    
+    return $html;
+}
+
 ?>

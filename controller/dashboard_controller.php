@@ -1,11 +1,5 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-// Use centralized authentication
 require_once 'auth_header.php';
-
-// Include required models
 require_once '../model/database.php';
 require_once '../model/user_model.php';
 
@@ -82,7 +76,6 @@ function get_dashboard_statistics($current_user) {
 }
 
 function get_manager_statistics($manager_id) {
-    // For now, return demo data since we don't have the full database structure
     return array(
         'managed_buildings' => 2,
         'total_flats' => 25,

@@ -1,6 +1,4 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
 require_once 'auth_header.php';
 require_once '../model/database.php';

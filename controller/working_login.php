@@ -1,11 +1,8 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
 require_once '../model/database.php';
 require_once 'session_controller.php';
 
-// Handle POST login
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'login') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';

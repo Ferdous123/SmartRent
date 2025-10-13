@@ -1,6 +1,4 @@
 <?php
-// Password Reset Controller with 2FA Support for SmartRent
-// Handles multi-step password reset process
 session_start();
 
 require_once '../model/database.php';
@@ -351,7 +349,6 @@ function send_password_reset_email($user_email, $user_name, $reset_token) {
     $message .= "If you didn't request this, please ignore this email.\n\n";
     $message .= "Best regards,\nSmartRent Team";
     
-    // Log email attempt (in production, actually send email)
     error_log("Password Reset Email: To: $user_email, Token: $reset_token");
     
     return true;

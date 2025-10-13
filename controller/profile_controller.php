@@ -1,8 +1,5 @@
 <?php
-// Add this immediately after opening PHP tag
 ob_start();
-error_reporting(E_ALL);
-ini_set('display_errors', 1); // Change to 0 for production
 
 // Clean any previous output
 while (ob_get_level()) {
@@ -59,7 +56,6 @@ if (isset($_POST['action'])) {
             echo json_encode(['success' => false, 'message' => 'Unknown action']);
             exit();
     }
-    // EXIT HERE - Don't include the view for AJAX requests
     exit();
 }
 
@@ -117,14 +113,6 @@ function handle_update_profile() {
     function handle_change_password() {
     // Clear any output buffer
     if (ob_get_length()) ob_clean();
-    
-    global $current_user;
-    
-    $current_password = $_POST['current_password'] ?? '';
-    $new_password = $_POST['new_password'] ?? '';
-    $confirm_password = $_POST['confirm_password'] ?? '';
-    
-    // ... rest of the function
 
     global $current_user;
     
@@ -177,7 +165,6 @@ function handle_upload_picture() {
         mkdir($upload_dir, 0755, true);
     }
     
-    // Generate unique filename using uniqid() + random bytes for maximum uniqueness
     $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
     $unique_hash = uniqid('profile_', true) . '_' . bin2hex(random_bytes(8));
     $filename = $current_user['user_id'] . '_' . $unique_hash . '.' . $extension;
