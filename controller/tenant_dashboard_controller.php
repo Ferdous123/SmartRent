@@ -87,6 +87,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 handle_claim_otp($user_id);
                 break;
                 
+            case 'get_all_my_flats':
+                if (function_exists('get_all_tenant_flats')) {
+                    $flats = get_all_tenant_flats($user_id);
+                    echo json_encode(array('success' => true, 'flats' => $flats));
+                } else {
+                    echo json_encode(array('success' => false, 'message' => 'Function not available'));
+                }
+                break;
+            case 'get_flat_full_details':
+                $flat_id = isset($_POST['flat_id']) ? intval($_POST['flat_id']) : 0;
+                $result = get_tenant_flat_full_details($user_id, $flat_id);
+                echo json_encode($result);
+                break;
+
+            case 'get_flat_payment_history':
+                $flat_id = isset($_POST['flat_id']) ? intval($_POST['flat_id']) : 0;
+                $payments = get_flat_specific_payments($user_id, $flat_id);
+                echo json_encode(array('success' => true, 'payments' => $payments));
+                break;
+
+            case 'get_flat_outstanding':
+                $flat_id = isset($_POST['flat_id']) ? intval($_POST['flat_id']) : 0;
+                $dues = get_flat_specific_dues($user_id, $flat_id);
+                echo json_encode(array('success' => true, 'dues' => $dues));
+                break;
+
+            case 'create_service_request':
+                handle_create_service_request($user_id);
+                break;
+
+            case 'get_flat_service_requests':
+                $flat_id = isset($_POST['flat_id']) ? intval($_POST['flat_id']) : 0;
+                $requests = get_flat_service_requests($user_id, $flat_id);
+                echo json_encode(array('success' => true, 'requests' => $requests));
+                break;
+
+            case 'get_flat_expenses':
+                $flat_id = isset($_POST['flat_id']) ? intval($_POST['flat_id']) : 0;
+                $expenses = get_flat_monthly_expenses($user_id, $flat_id);
+                echo json_encode(array('success' => true, 'expenses' => $expenses));
+                break;
+
+            case 'get_meter_readings':
+                $flat_id = isset($_POST['flat_id']) ? intval($_POST['flat_id']) : 0;
+                $meters = get_flat_meter_readings($user_id, $flat_id);
+                echo json_encode(array('success' => true, 'meters' => $meters));
+                break;
+
+            case 'request_move_out':
+                handle_move_out_request($user_id);
+                break;
+
+            case 'cancel_move_out':
+                handle_cancel_move_out($user_id);
+                break;
             default:
                 echo json_encode(array('success' => false, 'message' => 'Invalid action: ' . $action));
                 break;
@@ -408,6 +463,7 @@ function handle_simulate_payment($user_id) {
 }
 
 // Verify and pay
+
 function handle_verify_and_pay($user_id) {
     try {
         $assignment_id = isset($_POST['assignment_id']) ? intval($_POST['assignment_id']) : 0;
@@ -416,6 +472,19 @@ function handle_verify_and_pay($user_id) {
         
         if (!$assignment_id || !$transaction_id || $amount <= 0) {
             echo json_encode(array('success' => false, 'message' => 'Invalid input'));
+            exit();
+        }
+        
+        // Verify transaction in gateway
+        $gateway_txn = verify_transaction($transaction_id);
+        if (!$gateway_txn) {
+            echo json_encode(array('success' => false, 'message' => 'Transaction not found'));
+            exit();
+        }
+        
+        // Check if already used
+        if (is_transaction_used($transaction_id)) {
+            echo json_encode(array('success' => false, 'message' => 'Transaction already used'));
             exit();
         }
         
@@ -429,34 +498,58 @@ function handle_verify_and_pay($user_id) {
         }
         
         $assignment = fetch_single_row($result);
-        $remaining = $assignment['advance_amount'] - $amount;
+        $total_paid = get_total_paid_for_assignment($assignment_id);
+        $remaining = $assignment['advance_amount'] - $total_paid;
         
-        // In handle_verify_and_pay(), replace the partial payment section:
-
-        if ($remaining <= 0) {
-            // Full payment - confirm
-            begin_transaction();
-            
+        begin_transaction();
+        
+        // Mark transaction as used
+        mark_transaction_used($transaction_id);
+        
+        // Create payment record
+        $payment_query = "INSERT INTO payments 
+                         (transaction_number, tenant_id, flat_id, assignment_id, amount, 
+                          method, payment_type, payment_date, is_verified)
+                         VALUES (?, ?, ?, ?, ?, 'bank_transfer', 'advance', NOW(), 1)";
+        execute_prepared_query($payment_query, 
+            array($transaction_id, $user_id, $assignment['flat_id'], $assignment_id, $amount),
+            'siiid');
+        
+        $new_total_paid = $total_paid + $amount;
+        $new_remaining = $assignment['advance_amount'] - $new_total_paid;
+        
+        if ($new_remaining <= 0) {
+            // Full payment - confirm assignment
             $update = "UPDATE flat_assignments 
-                    SET status = 'confirmed', 
-                        confirmed_at = NOW(), 
-                        advance_balance = 0,
-                        payment_transaction = ? 
-                    WHERE assignment_id = ?";
-            execute_prepared_query($update, array($transaction_id, $assignment_id), 'si');
+                      SET status = 'confirmed', 
+                          confirmed_at = NOW(), 
+                          advance_balance = ?,
+                          payment_transaction = ? 
+                      WHERE assignment_id = ?";
+            execute_prepared_query($update, array($assignment['advance_amount'], $transaction_id, $assignment_id), 'dsi');
             
             $flat_update = "UPDATE flats SET status = 'occupied' WHERE flat_id = ?";
             execute_prepared_query($flat_update, array($assignment['flat_id']), 'i');
             
             commit_transaction();
             
-            echo json_encode(array('success' => true, 'status' => 'confirmed', 'message' => 'Payment verified! Flat confirmed.'));
+            echo json_encode(array(
+                'success' => true, 
+                'status' => 'confirmed', 
+                'message' => 'Full payment verified! Flat confirmed.',
+                'total_paid' => $new_total_paid
+            ));
         } else {
-            // Partial payment - reduce advance_balance
-            $update = "UPDATE flat_assignments SET advance_balance = ? WHERE assignment_id = ?";
-            execute_prepared_query($update, array($remaining, $assignment_id), 'di');
+            // Partial payment
+            commit_transaction();
             
-            echo json_encode(array('success' => true, 'status' => 'partial', 'message' => 'Partial payment recorded', 'remaining' => $remaining, 'total_paid' => $amount));
+            echo json_encode(array(
+                'success' => true, 
+                'status' => 'partial', 
+                'message' => 'Partial payment recorded', 
+                'remaining' => $new_remaining,
+                'total_paid' => $new_total_paid
+            ));
         }
         
     } catch (Exception $e) {
@@ -566,7 +659,7 @@ function handle_claim_otp($user_id) {
         }
         
         // Find OTP assignment
-        $query = "SELECT fa.*, f.flat_number, b.building_name, b.address
+        $query = "SELECT fa.*, f.flat_number, f.floor_number, b.building_name, b.address
                   FROM flat_assignments fa
                   JOIN flats f ON fa.flat_id = f.flat_id
                   JOIN buildings b ON f.building_id = b.building_id
@@ -588,46 +681,61 @@ function handle_claim_otp($user_id) {
         begin_transaction();
         
         $update_query = "UPDATE flat_assignments 
-                        SET tenant_id = ?, 
-                            otp_claimed_at = NOW()
+                        SET tenant_id = ? 
                         WHERE assignment_id = ?";
         
         $update_result = execute_prepared_query($update_query, 
             array($user_id, $assignment['assignment_id']), 
             'ii');
         
-        if ($update_result) {
-            commit_transaction();
-            
-            // Create notification
-            if (function_exists('create_tenant_notification')) {
-                create_tenant_notification($user_id, 'assignment', 
-                    'Flat Claimed Successfully',
-                    'You have claimed ' . $assignment['building_name'] . ' - ' . 
-                    $assignment['flat_number'] . '. Please complete payment within 24 hours.',
-                    'flat_assignments', $assignment['assignment_id']);
-            }
-            
-            echo json_encode(array(
-                'success' => true, 
-                'message' => 'Flat claimed successfully! Please complete your advance payment.',
-                'assignment' => array(
-                    'building_name' => $assignment['building_name'],
-                    'flat_number' => $assignment['flat_number'],
-                    'advance_amount' => $assignment['advance_amount']
-                )
-            ));
-        } else {
+        if (!$update_result) {
             rollback_transaction();
-            echo json_encode(array('success' => false, 'message' => 'Failed to claim flat'));
+            echo json_encode(array('success' => false, 'message' => 'Database error updating assignment'));
+            exit();
         }
+        
+        // Verify the update
+        $verify_query = "SELECT tenant_id FROM flat_assignments WHERE assignment_id = ?";
+        $verify_result = execute_prepared_query($verify_query, array($assignment['assignment_id']), 'i');
+        $verify_data = fetch_single_row($verify_result);
+        
+        if ($verify_data['tenant_id'] != $user_id) {
+            rollback_transaction();
+            echo json_encode(array('success' => false, 'message' => 'Failed to claim - verification failed'));
+            exit();
+        }
+        
+        commit_transaction();
+        
+        // Create notification
+        if (function_exists('create_tenant_notification')) {
+            create_tenant_notification($user_id, 'assignment', 
+                'Flat Claimed Successfully',
+                'You have claimed ' . $assignment['building_name'] . ' - ' . 
+                $assignment['flat_number'] . '. Please complete payment within 24 hours.',
+                'flat_assignments', $assignment['assignment_id']);
+        }
+        
+        // Log activity
+        log_user_activity($user_id, 'assign', 'flat_assignments', $assignment['assignment_id'], null,
+            array('action' => 'otp_claimed', 'otp_code' => $otp_code));
+        
+        echo json_encode(array(
+            'success' => true, 
+            'message' => 'Flat claimed successfully! Please complete your advance payment.',
+            'assignment' => array(
+                'building_name' => $assignment['building_name'],
+                'flat_number' => $assignment['flat_number'],
+                'advance_amount' => $assignment['advance_amount']
+            )
+        ));
         
     } catch (Exception $e) {
         if (function_exists('rollback_transaction')) {
             rollback_transaction();
         }
         error_log("OTP claim error: " . $e->getMessage());
-        echo json_encode(array('success' => false, 'message' => 'Error claiming flat'));
+        echo json_encode(array('success' => false, 'message' => 'Error claiming flat: ' . $e->getMessage()));
     }
     exit();
 }

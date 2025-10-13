@@ -42,6 +42,51 @@ if ($current_user['user_type'] !== 'tenant') {
         .tenant-theme .stats-grid .stat-card.advance-card { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
         .tenant-theme .stats-grid .stat-card.requests-card { background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%); }
 
+        .user-dropdown {
+            position: relative;
+        }
+
+        .user-btn {
+            cursor: pointer;
+        }
+
+        .user-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            min-width: 200px;
+            z-index: 10001;
+        }
+
+        .user-menu a {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: #333;
+            text-decoration: none;
+        }
+
+        .user-menu a:hover {
+            background: #f5f7fa;
+        }
+
+        .notifications-panel {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            width: 350px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 10001;
+        }
+
         /* Modal Styles */
         .modal {
             position: fixed;
@@ -340,6 +385,10 @@ if ($current_user['user_type'] !== 'tenant') {
             </div>
             
             <div class="nav-right">
+                <!-- Add OTP Button -->
+                <button class="btn-primary" onclick="showClaimFlatModal()" style="margin-right: 1rem; padding: 0.5rem 1rem; font-size: 14px; border: none; cursor: pointer; border-radius: 8px;">
+                    🔑 Claim Flat
+                </button>
                 <!-- Notifications -->
                 <div class="notifications-dropdown">
                     <button class="notification-btn" id="notificationBtn">
@@ -372,13 +421,14 @@ if ($current_user['user_type'] !== 'tenant') {
                     </button>
                     <div class="user-menu" id="userMenu" style="display: none;">
                         <a href="../controller/profile_controller.php">Profile Settings</a>
-                        <a href="#preferences">Preferences</a>
                         <a href="../controller/working_login.php?action=logout" style="color: #dc3545;">Logout</a>
                     </div>
                 </div>
             </div>
         </div>
     </header>
+
+<main class="dashboard-main">
         <!-- Actions Needed Banner -->
         <div id="actionsNeededSection" style="display: none;">
             <div style="background: #fff3cd; border-left: 4px solid #f57c00; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
@@ -424,29 +474,27 @@ if ($current_user['user_type'] !== 'tenant') {
             <div class="stat-card flat-card">
                 <div class="stat-icon">🏠</div>
                 <div class="stat-content">
-                    <h3 id="flatDetails">Loading...</h3>
-                    <p>My Flat</p>
-                    <div class="stat-detail" id="floorInfo">Loading...</div>
+                    <h3 id="flatCount">0 Flats</h3>
+                    <p>My Properties</p>
+                    <div class="stat-detail" id="flatsList">Loading...</div>
                 </div>
             </div>
 
             <div class="stat-card dues-card">
                 <div class="stat-icon">💰</div>
                 <div class="stat-content">
-                    <h3 id="outstandingDues">৳--</h3>
-                    <p>Outstanding Dues</p>
-                    <div class="stat-detail">
-                        <span id="dueStatus">Checking...</span>
-                    </div>
+                    <h3 id="totalOutstanding">৳--</h3>
+                    <p>Total Outstanding</p>
+                    <div class="stat-detail" id="dueStatus">Across all properties</div>
                 </div>
             </div>
 
             <div class="stat-card advance-card">
                 <div class="stat-icon">💎</div>
                 <div class="stat-content">
-                    <h3 id="advanceBalance">৳--</h3>
-                    <p>Advance Balance</p>
-                    <div class="stat-detail">Available for adjustment</div>
+                    <h3 id="totalAdvance">৳--</h3>
+                    <p>Total Security Deposit</p>
+                    <div class="stat-detail">All flats combined</div>
                 </div>
             </div>
 
@@ -456,6 +504,20 @@ if ($current_user['user_type'] !== 'tenant') {
                     <h3 id="activeRequests">--</h3>
                     <p>Active Requests</p>
                     <div class="stat-detail">In progress</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Flats Section (New - before content grid) -->
+        <div id="myFlatsSection" style="display: none; margin-bottom: 2rem;">
+            <div class="card">
+                <div class="card-header">
+                    <h3>My Flats</h3>
+                </div>
+                <div class="card-content">
+                    <div id="flatsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+                        <!-- Flats will be loaded here -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -486,37 +548,17 @@ if ($current_user['user_type'] !== 'tenant') {
                 </div>
             </div>
 
-            <!-- Flat Information Card -->
+            <!-- Flat Information Card - Updated for Multiple Flats -->
             <div class="card flat-info-card">
                 <div class="card-header">
                     <h3>Flat Information</h3>
                 </div>
                 <div class="card-content">
-                    <div class="flat-details">
-                        <div class="detail-row">
-                            <strong>Building:</strong>
-                            <span id="buildingName">Loading...</span>
-                        </div>
-                        <div class="detail-row">
-                            <strong>Flat Number:</strong>
-                            <span id="flatNumber">--</span>
-                        </div>
-                        <div class="detail-row">
-                            <strong>Floor:</strong>
-                            <span id="floorNumber">--</span>
-                        </div>
-                        <div class="detail-row">
-                            <strong>Move-in Date:</strong>
-                            <span id="moveInDate">--</span>
-                        </div>
-                        <div class="detail-row">
-                            <strong>Monthly Rent:</strong>
-                            <span id="monthlyRent">৳--</span>
-                        </div>
-                        <div class="detail-row">
-                            <strong>Security Deposit:</strong>
-                            <span id="securityDeposit">৳--</span>
-                        </div>
+                    <div id="flatInfoTabs" style="display: none; margin-bottom: 1rem;">
+                        <!-- Tabs will be generated dynamically -->
+                    </div>
+                    <div id="flatDetailsContainer">
+                        <!-- Single or multiple flat details will be shown here -->
                     </div>
                 </div>
             </div>
@@ -579,6 +621,31 @@ if ($current_user['user_type'] !== 'tenant') {
                     <h4 style="margin: 0 0 1rem 0; color: #333;">📋 Your Current Flats</h4>
                     <div id="existingAssignmentsList">
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Assignment Confirmation Modal -->
+    <div id="pendingAssignmentModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>⏰ Pending Flat Assignment</h3>
+                <button class="modal-close" onclick="closePendingModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="assignmentFlatDetails" style="background: #f5f7fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;"></div>
+                
+                <div class="countdown-timer" id="assignmentCountdown"></div>
+                
+                <div class="warning-box">
+                    <p><strong>⚠️ Complete payment to confirm assignment</strong></p>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn-primary full-width" onclick="startPaymentProcess()">
+                        💳 Pay Advance Now
+                    </button>
                 </div>
             </div>
         </div>
@@ -680,6 +747,199 @@ if ($current_user['user_type'] !== 'tenant') {
         </div>
     </div>
 
+    <!-- Flat Actions Modal (Add after Payment Verification Modal) -->
+    <div id="flatActionsModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 id="flatActionsTitle">Flat Actions</h3>
+                <button class="modal-close" onclick="closeFlatActionsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="flatActionsMenu" style="display: grid; gap: 0.75rem;">
+                    <!-- Actions will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flat Details Modal -->
+    <div id="flatDetailsModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>📊 Flat Details</h3>
+                <button class="modal-close" onclick="closeFlatDetailsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="flatDetailsContent">
+                    <!-- Details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flat Payment History Modal -->
+    <div id="flatPaymentHistoryModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3>💰 Payment History</h3>
+                <button class="modal-close" onclick="closeFlatPaymentHistoryModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="flatPaymentHistoryContent">
+                    <!-- Payment history will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flat Outstanding Dues Modal -->
+    <div id="flatOutstandingModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>📋 Outstanding Dues</h3>
+                <button class="modal-close" onclick="closeFlatOutstandingModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="flatOutstandingContent">
+                    <!-- Outstanding dues will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Service Request Modal -->
+    <div id="serviceRequestModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>🔧 Create Service Request</h3>
+                <button class="modal-close" onclick="closeServiceRequestModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="serviceRequestForm" onsubmit="submitServiceRequest(event)">
+                    <input type="hidden" id="service_flat_id">
+                    
+                    <div class="form-group">
+                        <label>Request Type <span class="required">*</span></label>
+                        <select id="service_type" required>
+                            <option value="">Select type...</option>
+                            <option value="maintenance">Maintenance</option>
+                            <option value="plumbing">Plumbing</option>
+                            <option value="electrical">Electrical</option>
+                            <option value="cleaning">Cleaning</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Priority <span class="required">*</span></label>
+                        <select id="service_priority" required>
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Description <span class="required">*</span></label>
+                        <textarea id="service_description" rows="4" required placeholder="Describe the issue..."></textarea>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="closeServiceRequestModal()">Cancel</button>
+                        <button type="submit" class="btn-primary">Submit Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Service Requests Modal -->
+    <div id="viewServiceRequestsModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3>📝 Service Requests</h3>
+                <button class="modal-close" onclick="closeViewServiceRequestsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="serviceRequestsContent">
+                    <!-- Service requests will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flat Expenses Modal -->
+    <div id="flatExpensesModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3>📊 Monthly Expenses</h3>
+                <button class="modal-close" onclick="closeFlatExpensesModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="flatExpensesContent">
+                    <!-- Expenses will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Move Out Request Modal -->
+    <div id="moveOutModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>🚪 Request Move Out</h3>
+                <button class="modal-close" onclick="closeMoveOutModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="warning-box">
+                    <p><strong>⚠️ Important:</strong></p>
+                    <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
+                        <li>Move-out date must be the 1st day of a month</li>
+                        <li>You can cancel up to the last day of the previous month</li>
+                        <li>Your advance will be adjusted with final dues</li>
+                    </ul>
+                </div>
+                
+                <form id="moveOutForm" onsubmit="submitMoveOut(event)">
+                    <input type="hidden" id="moveout_flat_id">
+                    <input type="hidden" id="moveout_assignment_id">
+                    
+                    <div class="form-group">
+                        <label>Move Out Date <span class="required">*</span></label>
+                        <input type="date" id="moveout_date" required>
+                        <small>Select the 1st day of the month you want to move out</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Reason</label>
+                        <textarea id="moveout_reason" rows="3" placeholder="Optional - Why are you moving out?"></textarea>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="closeMoveOutModal()">Cancel</button>
+                        <button type="submit" class="btn-danger">Submit Move Out Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Meter Readings Modal -->
+    <div id="meterReadingsModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>⚡ Meter Readings</h3>
+                <button class="modal-close" onclick="closeMeterReadingsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="meterReadingsContent">
+                    <!-- Meter readings will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="loadingOverlay" class="loading-overlay" style="display: none;">
         <div class="loading-spinner"></div>
         <p>Loading...</p>
@@ -687,11 +947,13 @@ if ($current_user['user_type'] !== 'tenant') {
 
     <div id="messageContainer" class="message-container"></div>
 
+</main>
+
     <!-- Scripts -->
     <script src="../view/js/dashboard.js"></script>
-    <script src="../view/js/dashboard_tenant.js"></script>
     <script src="../view/js/session-manager.js"></script>
     <script src="../view/js/global-session.js"></script>
+    <script src="../view/js/dashboard_tenant.js"></script>
     <script>
         // Initialize tenant dashboard
         document.addEventListener('DOMContentLoaded', function() {

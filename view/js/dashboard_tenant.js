@@ -22,8 +22,6 @@ function initTenantDashboard() {
     // Setup form handlers
     setupTenantFormHandlers();
     
-    // Setup navigation
-    setupTenantNavigation();
 }
 
 // ============================================
@@ -92,6 +90,7 @@ function updateTenantDashboardUI(data) {
     // SHOW/HIDE NO ASSIGNMENT SECTION
     // ============================================
     var noAssignmentSection = document.getElementById('noAssignmentSection');
+    var myFlatsSection = document.getElementById('myFlatsSection');
     
     if (noAssignmentSection) {
         if (!data.has_assignment) {
@@ -105,22 +104,19 @@ function updateTenantDashboardUI(data) {
     // NO ASSIGNMENT STATE
     // ============================================
     if (!data.has_assignment) {
+        // Hide flats section
+        if (myFlatsSection) myFlatsSection.style.display = 'none';
+        
         // Update header info
         updateElementText('flatInfo', 'No flat assigned yet');
         
         // Update stats cards
-        updateElementText('flatDetails', 'Not assigned');
-        updateElementText('floorInfo', 'N/A');
-        
-        // Gray out flat card
-        var flatInfoCard = document.querySelector('.stat-card.flat-card');
-        if (flatInfoCard) {
-            flatInfoCard.style.background = 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)';
-        }
+        updateElementText('flatCount', '0 Flats');
+        updateElementText('flatsList', 'No flats assigned');
         
         // Financial stats - all zeros
-        updateElementText('outstandingDues', '৳0.00');
-        updateElementText('advanceBalance', '৳0.00');
+        updateElementText('totalOutstanding', '৳0.00');
+        updateElementText('totalAdvance', '৳0.00');
         updateElementText('dueStatus', 'No active assignment');
         
         // Service requests
@@ -132,13 +128,13 @@ function updateTenantDashboardUI(data) {
         updateElementText('nextDueDate', 'N/A');
         updateElementText('nextDueAmount', '৳0.00');
         
-        // Flat information card
-        updateElementText('buildingName', 'N/A');
-        updateElementText('flatNumber', 'N/A');
-        updateElementText('floorNumber', 'N/A');
-        updateElementText('moveInDate', 'N/A');
-        updateElementText('monthlyRent', '৳0.00');
-        updateElementText('securityDeposit', '৳0.00');
+        // Flat information card - hide tabs and clear details
+        var tabsContainer = document.getElementById('flatInfoTabs');
+        var detailsContainer = document.getElementById('flatDetailsContainer');
+        if (tabsContainer) tabsContainer.style.display = 'none';
+        if (detailsContainer) {
+            detailsContainer.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No flat assigned</p>';
+        }
         
         // Payment history table - show empty state
         updatePaymentHistoryTable([]);
@@ -150,23 +146,33 @@ function updateTenantDashboardUI(data) {
     // HAS ASSIGNMENT - POPULATE WITH REAL DATA
     // ============================================
     
+    // Show flats section
+    if (myFlatsSection) myFlatsSection.style.display = 'block';
+    
     // --- HEADER SECTION ---
-    updateElementText('flatInfo', data.flat_info.building_name + ' - Flat ' + data.flat_info.flat_number);
-    
-    // --- STATS CARDS ---
-    // Flat Card
-    updateElementText('flatDetails', 'Flat ' + data.flat_info.flat_number);
-    updateElementText('floorInfo', 'Floor ' + data.flat_info.floor_number + ' • ' + data.flat_info.building_name);
-    
-    // Restore flat card color (in case it was grayed out)
-    var flatInfoCard = document.querySelector('.stat-card.flat-card');
-    if (flatInfoCard) {
-        flatInfoCard.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    if (data.total_flats > 1) {
+        updateElementText('flatInfo', data.total_flats + ' Flats Assigned');
+    } else {
+        updateElementText('flatInfo', data.flat_info.building_name + ' - Flat ' + data.flat_info.flat_number);
     }
     
-    // Outstanding Dues Card
-    updateElementText('outstandingDues', '৳' + formatNumber(data.outstanding_dues));
+    // --- STATS CARDS - SHOW TOTALS ---
+    updateElementText('flatCount', data.total_flats + ' Flat' + (data.total_flats > 1 ? 's' : ''));
+    updateElementText('totalOutstanding', '৳' + formatNumber(data.outstanding_dues));
+    updateElementText('totalAdvance', '৳' + formatNumber(data.total_security_deposit));
     
+    // Show compact flat list in stat card
+    if (data.all_flats && data.all_flats.length > 0) {
+        var flatNames = data.all_flats.slice(0, 2).map(function(f) {
+            return f.building_name.substring(0, 15) + ' - ' + f.flat_number;
+        }).join(', ');
+        if (data.all_flats.length > 2) {
+            flatNames += ' +' + (data.all_flats.length - 2);
+        }
+        updateElementText('flatsList', flatNames);
+    }
+    
+    // Due status
     var dueStatus = document.getElementById('dueStatus');
     if (dueStatus) {
         if (data.outstanding_dues > 0) {
@@ -178,11 +184,11 @@ function updateTenantDashboardUI(data) {
         }
     }
     
-    // Advance Balance Card
-    updateElementText('advanceBalance', '৳' + formatNumber(data.advance_balance));
-    
     // Active Requests Card
     updateElementText('activeRequests', data.active_service_requests || 0);
+    
+    // Render flats grid
+    renderFlatsGrid(data.all_flats);
     
     // --- PAYMENT SUMMARY SECTION ---
     if (data.last_payment_amount && data.last_payment_amount > 0) {
@@ -193,7 +199,7 @@ function updateTenantDashboardUI(data) {
         updateElementText('lastPaymentDate', 'No payments yet');
     }
     
-    // Next due information
+    // Next due information (for primary flat)
     if (data.current_month) {
         updateElementText('nextDueDate', formatDate(data.current_month.due_date));
         updateElementText('nextDueAmount', '৳' + formatNumber(data.current_month.remaining));
@@ -203,16 +209,243 @@ function updateTenantDashboardUI(data) {
     }
     
     // --- FLAT INFORMATION CARD ---
-    updateElementText('buildingName', data.flat_info.building_name);
-    updateElementText('flatNumber', data.flat_info.flat_number);
-    updateElementText('floorNumber', data.flat_info.floor_number);
-    updateElementText('moveInDate', formatDate(data.flat_info.confirmed_at));
-    updateElementText('monthlyRent', '৳' + formatNumber(data.flat_info.base_rent));
-    updateElementText('securityDeposit', '৳' + formatNumber(data.advance_balance));
+    if (data.total_flats > 1) {
+        // Multiple flats - show tabs
+        renderFlatInfoTabs(data.all_flats);
+    } else {
+        // Single flat - show simple view
+        renderSingleFlatInfo(data.flat_info);
+    }
     
     // --- PAYMENT HISTORY TABLE ---
     updatePaymentHistoryTable(data.recent_payments);
 }
+
+// Render flats grid
+function renderFlatsGrid(flats) {
+    var grid = document.getElementById('flatsGrid');
+    if (!grid || !flats || flats.length === 0) return;
+    
+    var html = '';
+    for (var i = 0; i < flats.length; i++) {
+        var flat = flats[i];
+        html += '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">' +
+            '<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">' +
+                '<div>' +
+                    '<h4 style="margin: 0; font-size: 18px;">' + escapeHtml(flat.building_name) + '</h4>' +
+                    '<p style="margin: 0.25rem 0; opacity: 0.9;">Flat ' + escapeHtml(flat.flat_number) + ' • Floor ' + flat.floor_number + '</p>' +
+                '</div>' +
+                '<span style="background: rgba(255,255,255,0.2); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 12px;">Active</span>' +
+            '</div>' +
+            '<div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 1rem; margin-top: 1rem;">' +
+                '<div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">' +
+                    '<span style="opacity: 0.8;">Monthly Rent:</span>' +
+                    '<strong>৳' + formatNumber(flat.base_rent) + '</strong>' +
+                '</div>' +
+                '<div style="display: flex; justify-content: space-between;">' +
+                    '<span style="opacity: 0.8;">Security Deposit:</span>' +
+                    '<strong>৳' + formatNumber(flat.advance_amount) + '</strong>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    }
+    grid.innerHTML = html;
+}
+
+// Render flat info tabs for multiple flats
+function renderFlatInfoTabs(flats) {
+    var tabsContainer = document.getElementById('flatInfoTabs');
+    var detailsContainer = document.getElementById('flatDetailsContainer');
+    
+    if (!tabsContainer || !detailsContainer || !flats || flats.length === 0) return;
+    
+    tabsContainer.style.display = 'flex';
+    tabsContainer.style.gap = '0.5rem';
+    tabsContainer.style.borderBottom = '2px solid #e0e0e0';
+    tabsContainer.style.paddingBottom = '0.5rem';
+    
+    // Create tabs
+    var tabsHtml = '';
+    for (var i = 0; i < flats.length; i++) {
+        var flat = flats[i];
+        var isActive = i === 0 ? 'active' : '';
+        tabsHtml += '<button class="flat-tab ' + isActive + '" onclick="showFlatDetails(' + i + ')" ' +
+            'style="padding: 0.5rem 1rem; border: none; background: ' + (i === 0 ? '#667eea' : '#f5f7fa') + '; ' +
+            'color: ' + (i === 0 ? 'white' : '#333') + '; border-radius: 8px; cursor: pointer; ' +
+            'font-weight: 600; transition: all 0.3s;">' +
+            flat.building_name.substring(0, 15) + ' - ' + flat.flat_number +
+            '</button>';
+    }
+    tabsContainer.innerHTML = tabsHtml;
+    
+    // Store flats data globally for tab switching
+    window.currentFlatsData = flats;
+    
+    // Show first flat details
+    showFlatDetails(0);
+}
+
+// Show details for a specific flat
+function showFlatDetails(index) {
+    if (!window.currentFlatsData || !window.currentFlatsData[index]) return;
+    
+    var flat = window.currentFlatsData[index];
+    var detailsContainer = document.getElementById('flatDetailsContainer');
+    
+    if (!detailsContainer) return;
+    
+    // Update tab styles
+    var tabs = document.querySelectorAll('.flat-tab');
+    tabs.forEach(function(tab, i) {
+        if (i === index) {
+            tab.style.background = '#667eea';
+            tab.style.color = 'white';
+            tab.classList.add('active');
+        } else {
+            tab.style.background = '#f5f7fa';
+            tab.style.color = '#333';
+            tab.classList.remove('active');
+        }
+    });
+    
+    // Render flat details
+    detailsContainer.innerHTML = 
+        '<div class="flat-details">' +
+            '<div class="detail-row">' +
+                '<strong>Building:</strong>' +
+                '<span>' + escapeHtml(flat.building_name) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Flat Number:</strong>' +
+                '<span>' + escapeHtml(flat.flat_number) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Floor:</strong>' +
+                '<span>' + flat.floor_number + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Address:</strong>' +
+                '<span>' + escapeHtml(flat.address) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Move-in Date:</strong>' +
+                '<span>' + formatDate(flat.confirmed_at) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Monthly Rent:</strong>' +
+                '<span>৳' + formatNumber(flat.base_rent) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Security Deposit:</strong>' +
+                '<span>৳' + formatNumber(flat.advance_amount) + '</span>' +
+            '</div>' +
+        '</div>';
+}
+
+// Render single flat info (for one flat only)
+function renderSingleFlatInfo(flat) {
+    var tabsContainer = document.getElementById('flatInfoTabs');
+    var detailsContainer = document.getElementById('flatDetailsContainer');
+    
+    if (tabsContainer) tabsContainer.style.display = 'none';
+    
+    if (!detailsContainer || !flat) return;
+    
+    detailsContainer.innerHTML = 
+        '<div class="flat-details">' +
+            '<div class="detail-row">' +
+                '<strong>Building:</strong>' +
+                '<span>' + escapeHtml(flat.building_name) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Flat Number:</strong>' +
+                '<span>' + escapeHtml(flat.flat_number) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Floor:</strong>' +
+                '<span>' + flat.floor_number + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Address:</strong>' +
+                '<span>' + escapeHtml(flat.address) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Move-in Date:</strong>' +
+                '<span>' + formatDate(flat.confirmed_at) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Monthly Rent:</strong>' +
+                '<span>৳' + formatNumber(flat.base_rent) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Security Deposit:</strong>' +
+                '<span>৳' + formatNumber(flat.advance_amount) + '</span>' +
+            '</div>' +
+        '</div>';
+}
+
+// Render flats grid (NEW)
+function renderFlatsGrid(flats) {
+    var grid = document.getElementById('flatsGrid');
+    if (!grid || !flats || flats.length === 0) return;
+    
+    var html = '';
+    for (var i = 0; i < flats.length; i++) {
+        var flat = flats[i];
+        html += '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">' +
+            '<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">' +
+                '<div>' +
+                    '<h4 style="margin: 0; font-size: 18px;">' + escapeHtml(flat.building_name) + '</h4>' +
+                    '<p style="margin: 0.25rem 0; opacity: 0.9;">Flat ' + escapeHtml(flat.flat_number) + ' • Floor ' + flat.floor_number + '</p>' +
+                '</div>' +
+                '<span style="background: rgba(255,255,255,0.2); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 12px;">Active</span>' +
+            '</div>' +
+            '<div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 1rem; margin-top: 1rem;">' +
+                '<div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">' +
+                    '<span style="opacity: 0.8;">Monthly Rent:</span>' +
+                    '<strong>৳' + formatNumber(flat.base_rent) + '</strong>' +
+                '</div>' +
+                '<div style="display: flex; justify-content: space-between;">' +
+                    '<span style="opacity: 0.8;">Security Deposit:</span>' +
+                    '<strong>৳' + formatNumber(flat.advance_amount) + '</strong>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    }
+    grid.innerHTML = html;
+}
+
+
+function renderFlatsGrid(flats) {
+    var grid = document.getElementById('flatsGrid');
+    if (!grid || !flats || flats.length === 0) return;
+    
+    var html = '';
+    for (var i = 0; i < flats.length; i++) {
+        var flat = flats[i];
+        html += '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">' +
+            '<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">' +
+                '<div>' +
+                    '<h4 style="margin: 0; font-size: 18px;">' + escapeHtml(flat.building_name) + '</h4>' +
+                    '<p style="margin: 0.25rem 0; opacity: 0.9;">Flat ' + escapeHtml(flat.flat_number) + ' • Floor ' + flat.floor_number + '</p>' +
+                '</div>' +
+                '<span style="background: rgba(255,255,255,0.2); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 12px;">Active</span>' +
+            '</div>' +
+            '<div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 1rem; margin-top: 1rem;">' +
+                '<div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">' +
+                    '<span style="opacity: 0.8;">Monthly Rent:</span>' +
+                    '<strong>৳' + formatNumber(flat.base_rent) + '</strong>' +
+                '</div>' +
+                '<div style="display: flex; justify-content: space-between;">' +
+                    '<span style="opacity: 0.8;">Security Deposit:</span>' +
+                    '<strong>৳' + formatNumber(flat.advance_amount) + '</strong>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    }
+    grid.innerHTML = html;
+}
+
 
 // Update payment history table
 function updatePaymentHistoryTable(payments) {
@@ -892,58 +1125,6 @@ function setupTenantFormHandlers() {
     }
 }
 
-// ============================================
-// NAVIGATION
-// ============================================
-
-// Setup tenant navigation
-function setupTenantNavigation() {
-    console.log('Setting up navigation...');
-    
-    // Notification button
-    var notificationBtn = document.getElementById('notificationBtn');
-    if (notificationBtn) {
-        notificationBtn.onclick = function(e) {
-            e.stopPropagation();
-            var panel = document.getElementById('notificationsPanel');
-            var userMenu = document.getElementById('userMenu');
-            
-            if (userMenu) userMenu.style.display = 'none';
-            if (panel) {
-                panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-            }
-        };
-    }
-    
-    // User button
-    var userBtn = document.getElementById('userBtn');
-    if (userBtn) {
-        userBtn.onclick = function(e) {
-            e.stopPropagation();
-            var menu = document.getElementById('userMenu');
-            var panel = document.getElementById('notificationsPanel');
-            
-            if (panel) panel.style.display = 'none';
-            if (menu) {
-                menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-            }
-        };
-    }
-    
-    // Close dropdowns when clicking outside
-    document.onclick = function(e) {
-        if (!e.target.closest('.notifications-dropdown')) {
-            var panel = document.getElementById('notificationsPanel');
-            if (panel) panel.style.display = 'none';
-        }
-        if (!e.target.closest('.user-dropdown')) {
-            var menu = document.getElementById('userMenu');
-            if (menu) menu.style.display = 'none';
-        }
-    };
-    
-    console.log('✅ Navigation setup complete');
-}
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -1005,6 +1186,967 @@ function updateElementText(id, text) {
     }
 }
 
+// Render flat info tabs for multiple flats
+function renderFlatInfoTabs(flats) {
+    var tabsContainer = document.getElementById('flatInfoTabs');
+    var detailsContainer = document.getElementById('flatDetailsContainer');
+    
+    if (!tabsContainer || !detailsContainer || !flats || flats.length === 0) return;
+    
+    tabsContainer.style.display = 'flex';
+    tabsContainer.style.gap = '0.5rem';
+    tabsContainer.style.borderBottom = '2px solid #e0e0e0';
+    tabsContainer.style.paddingBottom = '0.5rem';
+    
+    // Create tabs
+    var tabsHtml = '';
+    for (var i = 0; i < flats.length; i++) {
+        var flat = flats[i];
+        var isActive = i === 0 ? 'active' : '';
+        tabsHtml += '<button class="flat-tab ' + isActive + '" onclick="showFlatDetails(' + i + ')" ' +
+            'style="padding: 0.5rem 1rem; border: none; background: ' + (i === 0 ? '#667eea' : '#f5f7fa') + '; ' +
+            'color: ' + (i === 0 ? 'white' : '#333') + '; border-radius: 8px; cursor: pointer; ' +
+            'font-weight: 600; transition: all 0.3s;">' +
+            flat.building_name.substring(0, 15) + ' - ' + flat.flat_number +
+            '</button>';
+    }
+    tabsContainer.innerHTML = tabsHtml;
+    
+    // Store flats data globally for tab switching
+    window.currentFlatsData = flats;
+    
+    // Show first flat details
+    showFlatDetails(0);
+}
+
+// Show details for a specific flat
+function showFlatDetails(index) {
+    if (!window.currentFlatsData || !window.currentFlatsData[index]) return;
+    
+    var flat = window.currentFlatsData[index];
+    var detailsContainer = document.getElementById('flatDetailsContainer');
+    
+    if (!detailsContainer) return;
+    
+    // Update tab styles
+    var tabs = document.querySelectorAll('.flat-tab');
+    tabs.forEach(function(tab, i) {
+        if (i === index) {
+            tab.style.background = '#667eea';
+            tab.style.color = 'white';
+            tab.classList.add('active');
+        } else {
+            tab.style.background = '#f5f7fa';
+            tab.style.color = '#333';
+            tab.classList.remove('active');
+        }
+    });
+    
+    // Render flat details
+    detailsContainer.innerHTML = 
+        '<div class="flat-details">' +
+            '<div class="detail-row">' +
+                '<strong>Building:</strong>' +
+                '<span>' + escapeHtml(flat.building_name) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Flat Number:</strong>' +
+                '<span>' + escapeHtml(flat.flat_number) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Floor:</strong>' +
+                '<span>' + flat.floor_number + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Address:</strong>' +
+                '<span>' + escapeHtml(flat.address) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Move-in Date:</strong>' +
+                '<span>' + formatDate(flat.confirmed_at) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Monthly Rent:</strong>' +
+                '<span>৳' + formatNumber(flat.base_rent) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Security Deposit:</strong>' +
+                '<span>৳' + formatNumber(flat.advance_amount) + '</span>' +
+            '</div>' +
+        '</div>';
+}
+
+// Render single flat info (for one flat only)
+function renderSingleFlatInfo(flat) {
+    var tabsContainer = document.getElementById('flatInfoTabs');
+    var detailsContainer = document.getElementById('flatDetailsContainer');
+    
+    if (tabsContainer) tabsContainer.style.display = 'none';
+    
+    if (!detailsContainer || !flat) return;
+    
+    detailsContainer.innerHTML = 
+        '<div class="flat-details">' +
+            '<div class="detail-row">' +
+                '<strong>Building:</strong>' +
+                '<span>' + escapeHtml(flat.building_name) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Flat Number:</strong>' +
+                '<span>' + escapeHtml(flat.flat_number) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Floor:</strong>' +
+                '<span>' + flat.floor_number + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Address:</strong>' +
+                '<span>' + escapeHtml(flat.address) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Move-in Date:</strong>' +
+                '<span>' + formatDate(flat.confirmed_at) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Monthly Rent:</strong>' +
+                '<span>৳' + formatNumber(flat.base_rent) + '</span>' +
+            '</div>' +
+            '<div class="detail-row">' +
+                '<strong>Security Deposit:</strong>' +
+                '<span>৳' + formatNumber(flat.advance_amount) + '</span>' +
+            '</div>' +
+        '</div>';
+}
+
+// Update renderFlatsGrid to add onclick
+function renderFlatsGrid(flats) {
+    var grid = document.getElementById('flatsGrid');
+    if (!grid || !flats || flats.length === 0) return;
+    
+    var html = '';
+    for (var i = 0; i < flats.length; i++) {
+        var flat = flats[i];
+        html += '<div onclick="showFlatActionsModal(' + i + ')" style="cursor: pointer; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.2s;" onmouseover="this.style.transform=\'translateY(-4px)\'" onmouseout="this.style.transform=\'translateY(0)\'">' +
+            '<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">' +
+                '<div>' +
+                    '<h4 style="margin: 0; font-size: 18px;">' + escapeHtml(flat.building_name) + '</h4>' +
+                    '<p style="margin: 0.25rem 0; opacity: 0.9;">Flat ' + escapeHtml(flat.flat_number) + ' • Floor ' + flat.floor_number + '</p>' +
+                '</div>' +
+                '<span style="background: rgba(255,255,255,0.2); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 12px;">Active</span>' +
+            '</div>' +
+            '<div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 1rem; margin-top: 1rem;">' +
+                '<div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">' +
+                    '<span style="opacity: 0.8;">Monthly Rent:</span>' +
+                    '<strong>৳' + formatNumber(flat.base_rent) + '</strong>' +
+                '</div>' +
+                '<div style="display: flex; justify-content: space-between;">' +
+                    '<span style="opacity: 0.8;">Security Deposit:</span>' +
+                    '<strong>৳' + formatNumber(flat.advance_amount) + '</strong>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    }
+    grid.innerHTML = html;
+}
+
+// Show flat actions modal
+function showFlatActionsModal(index) {
+    if (!window.currentFlatsData || !window.currentFlatsData[index]) return;
+    
+    var flat = window.currentFlatsData[index];
+    window.selectedFlatForActions = flat;
+    
+    var modal = document.getElementById('flatActionsModal');
+    var title = document.getElementById('flatActionsTitle');
+    var menu = document.getElementById('flatActionsMenu');
+    
+    title.textContent = flat.building_name + ' - Flat ' + flat.flat_number;
+    
+    // Check if move-out is already requested
+    var hasMoveOutRequest = flat.move_out_date && !flat.actual_ended_at;
+    var canCancelMoveOut = false;
+    
+    if (hasMoveOutRequest) {
+        var moveOutDate = new Date(flat.move_out_date);
+        var previousMonthFirst = new Date(moveOutDate.getFullYear(), moveOutDate.getMonth() - 1, 1);
+        canCancelMoveOut = new Date() < previousMonthFirst;
+    }
+    
+    var actionsHtml = 
+        '<button onclick="viewFlatDetails()" class="action-btn" style="padding: 1rem; background: #f5f7fa; border: 2px solid #e0e0e0; border-radius: 8px; text-align: left; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 1rem;">' +
+            '<span style="font-size: 24px;">📊</span>' +
+            '<div><strong>View Full Details</strong><br><small style="color: #666;">See complete flat information</small></div>' +
+        '</button>' +
+        
+        '<button onclick="viewFlatPaymentHistory()" class="action-btn" style="padding: 1rem; background: #f5f7fa; border: 2px solid #e0e0e0; border-radius: 8px; text-align: left; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 1rem;">' +
+            '<span style="font-size: 24px;">💰</span>' +
+            '<div><strong>Payment History</strong><br><small style="color: #666;">View all payments for this flat</small></div>' +
+        '</button>' +
+        
+        '<button onclick="viewFlatOutstanding()" class="action-btn" style="padding: 1rem; background: #f5f7fa; border: 2px solid #e0e0e0; border-radius: 8px; text-align: left; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 1rem;">' +
+            '<span style="font-size: 24px;">📋</span>' +
+            '<div><strong>Outstanding Dues</strong><br><small style="color: #666;">See pending payments</small></div>' +
+        '</button>' +
+        
+        '<button onclick="createServiceRequest()" class="action-btn" style="padding: 1rem; background: #f5f7fa; border: 2px solid #e0e0e0; border-radius: 8px; text-align: left; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 1rem;">' +
+            '<span style="font-size: 24px;">🔧</span>' +
+            '<div><strong>Create Service Request</strong><br><small style="color: #666;">Report maintenance issues</small></div>' +
+        '</button>' +
+        
+        '<button onclick="viewServiceRequests()" class="action-btn" style="padding: 1rem; background: #f5f7fa; border: 2px solid #e0e0e0; border-radius: 8px; text-align: left; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 1rem;">' +
+            '<span style="font-size: 24px;">📝</span>' +
+            '<div><strong>View Service Requests</strong><br><small style="color: #666;">Check request status</small></div>' +
+        '</button>' +
+        
+        '<button onclick="viewFlatExpenses()" class="action-btn" style="padding: 1rem; background: #f5f7fa; border: 2px solid #e0e0e0; border-radius: 8px; text-align: left; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 1rem;">' +
+            '<span style="font-size: 24px;">💵</span>' +
+            '<div><strong>View Expenses</strong><br><small style="color: #666;">Monthly expense breakdown</small></div>' +
+        '</button>' +
+        
+        '<button onclick="downloadFlatSlip()" class="action-btn" style="padding: 1rem; background: #f5f7fa; border: 2px solid #e0e0e0; border-radius: 8px; text-align: left; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 1rem;">' +
+            '<span style="font-size: 24px;">📄</span>' +
+            '<div><strong>Download Rent Slip</strong><br><small style="color: #666;">Get latest rent receipt</small></div>' +
+        '</button>' +
+        
+        '<button onclick="viewMeterReadings()" class="action-btn" style="padding: 1rem; background: #f5f7fa; border: 2px solid #e0e0e0; border-radius: 8px; text-align: left; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 1rem;">' +
+            '<span style="font-size: 24px;">⚡</span>' +
+            '<div><strong>Meter Readings</strong><br><small style="color: #666;">View utility meters</small></div>' +
+        '</button>';
+    
+    // Move out actions
+    if (hasMoveOutRequest && canCancelMoveOut) {
+        actionsHtml += 
+            '<button onclick="cancelMoveOut()" class="action-btn" style="padding: 1rem; background: #fff3cd; border: 2px solid #f57c00; border-radius: 8px; text-align: left; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 1rem;">' +
+                '<span style="font-size: 24px;">🔙</span>' +
+                '<div><strong>Cancel Move Out</strong><br><small style="color: #856404;">Cancel your move-out request</small></div>' +
+            '</button>';
+    } else if (!hasMoveOutRequest) {
+        actionsHtml += 
+            '<button onclick="requestMoveOut()" class="action-btn" style="padding: 1rem; background: #ffebee; border: 2px solid #f44336; border-radius: 8px; text-align: left; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 1rem;">' +
+                '<span style="font-size: 24px;">🚪</span>' +
+                '<div><strong>Request Move Out</strong><br><small style="color: #c62828;">Submit move-out notice</small></div>' +
+            '</button>';
+    }
+    
+    menu.innerHTML = actionsHtml;
+    
+    // Add hover effects
+    setTimeout(function() {
+        var buttons = document.querySelectorAll('.action-btn');
+        buttons.forEach(function(btn) {
+            btn.addEventListener('mouseover', function() {
+                this.style.background = '#667eea';
+                this.style.color = 'white';
+                this.style.borderColor = '#667eea';
+                this.style.transform = 'translateX(5px)';
+            });
+            btn.addEventListener('mouseout', function() {
+                this.style.background = '#f5f7fa';
+                this.style.color = '#333';
+                this.style.borderColor = '#e0e0e0';
+                this.style.transform = 'translateX(0)';
+            });
+        });
+    }, 100);
+    
+    modal.style.display = 'flex';
+}
+
+function closeFlatActionsModal() {
+    document.getElementById('flatActionsModal').style.display = 'none';
+}
+
+// 1. View Full Details
+function viewFlatDetails() {
+    closeFlatActionsModal();
+    var flat = window.selectedFlatForActions;
+    
+    showLoadingOverlay();
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/tenant_dashboard_controller.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            hideLoadingOverlay();
+            
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        displayFlatDetails(response.details);
+                    } else {
+                        showMessage(response.message, 'error');
+                    }
+                } catch (e) {
+                    showMessage('Error loading details', 'error');
+                }
+            }
+        }
+    };
+    
+    xhr.send('action=get_flat_full_details&flat_id=' + flat.flat_id);
+}
+
+function displayFlatDetails(details) {
+    var content = document.getElementById('flatDetailsContent');
+    
+    var html = '<div style="display: grid; gap: 1rem;">';
+    
+    // Basic Info
+    html += '<div style="background: #f5f7fa; padding: 1rem; border-radius: 8px;">' +
+        '<h4 style="margin: 0 0 0.5rem 0;">Basic Information</h4>' +
+        '<div class="detail-row"><strong>Building:</strong><span>' + escapeHtml(details.building_name) + '</span></div>' +
+        '<div class="detail-row"><strong>Address:</strong><span>' + escapeHtml(details.address) + '</span></div>' +
+        '<div class="detail-row"><strong>Flat:</strong><span>' + escapeHtml(details.flat_number) + '</span></div>' +
+        '<div class="detail-row"><strong>Floor:</strong><span>' + details.floor_number + '</span></div>' +
+        '<div class="detail-row"><strong>Bedrooms:</strong><span>' + (details.bedrooms || 'N/A') + '</span></div>' +
+        '<div class="detail-row"><strong>Bathrooms:</strong><span>' + (details.bathrooms || 'N/A') + '</span></div>' +
+        '</div>';
+    
+    // Financial Info
+    html += '<div style="background: #e3f2fd; padding: 1rem; border-radius: 8px;">' +
+        '<h4 style="margin: 0 0 0.5rem 0;">Financial Details</h4>' +
+        '<div class="detail-row"><strong>Monthly Rent:</strong><span>৳' + formatNumber(details.base_rent) + '</span></div>' +
+        '<div class="detail-row"><strong>Security Deposit:</strong><span>৳' + formatNumber(details.advance_amount) + '</span></div>' +
+        '<div class="detail-row"><strong>Move-in Date:</strong><span>' + formatDate(details.confirmed_at) + '</span></div>' +
+        '</div>';
+    
+    html += '</div>';
+    
+    content.innerHTML = html;
+    document.getElementById('flatDetailsModal').style.display = 'flex';
+}
+
+function closeFlatDetailsModal() {
+    document.getElementById('flatDetailsModal').style.display = 'none';
+}
+
+// 2. View Payment History
+function viewFlatPaymentHistory() {
+    closeFlatActionsModal();
+    var flat = window.selectedFlatForActions;
+    
+    showLoadingOverlay();
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/tenant_dashboard_controller.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            hideLoadingOverlay();
+            
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        displayFlatPaymentHistory(response.payments);
+                    } else {
+                        showMessage(response.message, 'error');
+                    }
+                } catch (e) {
+                    showMessage('Error loading payment history', 'error');
+                }
+            }
+        }
+    };
+    
+    xhr.send('action=get_flat_payment_history&flat_id=' + flat.flat_id);
+}
+
+function displayFlatPaymentHistory(payments) {
+    var content = document.getElementById('flatPaymentHistoryContent');
+    
+    if (!payments || payments.length === 0) {
+        content.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No payments yet</p>';
+    } else {
+        var html = '<table style="width: 100%; border-collapse: collapse;">' +
+            '<thead><tr style="background: #f5f7fa;">' +
+            '<th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e0e0e0;">Date</th>' +
+            '<th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e0e0e0;">Type</th>' +
+            '<th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e0e0e0;">Amount</th>' +
+            '<th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #e0e0e0;">Status</th>' +
+            '</tr></thead><tbody>';
+        
+        for (var i = 0; i < payments.length; i++) {
+            var payment = payments[i];
+            var statusColor = payment.is_verified ? '#28a745' : '#ffc107';
+            var statusText = payment.is_verified ? 'Verified' : 'Pending';
+            
+            html += '<tr style="border-bottom: 1px solid #f0f0f0;">' +
+                '<td style="padding: 0.75rem;">' + formatDate(payment.payment_date) + '</td>' +
+                '<td style="padding: 0.75rem;">' + escapeHtml(payment.payment_type) + '</td>' +
+                '<td style="padding: 0.75rem; text-align: right;">৳' + formatNumber(payment.amount) + '</td>' +
+                '<td style="padding: 0.75rem; text-align: center;"><span style="background: ' + statusColor + '; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 12px;">' + statusText + '</span></td>' +
+                '</tr>';
+        }
+        
+        html += '</tbody></table>';
+        content.innerHTML = html;
+    }
+    
+    document.getElementById('flatPaymentHistoryModal').style.display = 'flex';
+}
+
+function closeFlatPaymentHistoryModal() {
+    document.getElementById('flatPaymentHistoryModal').style.display = 'none';
+}
+
+// 3. View Outstanding Dues
+function viewFlatOutstanding() {
+    closeFlatActionsModal();
+    var flat = window.selectedFlatForActions;
+    
+    showLoadingOverlay();
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/tenant_dashboard_controller.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            hideLoadingOverlay();
+            
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        displayFlatOutstanding(response.dues);
+                    } else {
+                        showMessage(response.message, 'error');
+                    }
+                } catch (e) {
+                    showMessage('Error loading dues', 'error');
+                }
+            }
+        }
+    };
+    
+    xhr.send('action=get_flat_outstanding&flat_id=' + flat.flat_id);
+}
+
+function displayFlatOutstanding(dues) {
+    var content = document.getElementById('flatOutstandingContent');
+    
+    if (!dues || dues.length === 0) {
+        content.innerHTML = '<div style="text-align: center; padding: 2rem; color: #28a745;">' +
+            '<div style="font-size: 48px;">✅</div>' +
+            '<h3 style="margin: 0.5rem 0;">All Paid!</h3>' +
+            '<p style="color: #666;">You have no outstanding dues for this flat</p>' +
+            '</div>';
+    } else {
+        var totalOutstanding = 0;
+        var html = '<table style="width: 100%; border-collapse: collapse;">' +
+            '<thead><tr style="background: #f5f7fa;">' +
+            '<th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e0e0e0;">Month</th>' +
+            '<th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e0e0e0;">Total</th>' +
+            '<th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e0e0e0;">Paid</th>' +
+            '<th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #e0e0e0;">Remaining</th>' +
+            '</tr></thead><tbody>';
+        
+        for (var i = 0; i < dues.length; i++) {
+            var due = dues[i];
+            totalOutstanding += parseFloat(due.remaining_amount);
+            
+            html += '<tr style="border-bottom: 1px solid #f0f0f0;">' +
+                '<td style="padding: 0.75rem;">' + formatDate(due.billing_month) + '</td>' +
+                '<td style="padding: 0.75rem; text-align: right;">৳' + formatNumber(due.total_due) + '</td>' +
+                '<td style="padding: 0.75rem; text-align: right;">৳' + formatNumber(due.paid_amount) + '</td>' +
+                '<td style="padding: 0.75rem; text-align: right; color: #f44336; font-weight: bold;">৳' + formatNumber(due.remaining_amount) + '</td>' +
+                '</tr>';
+        }
+        
+        html += '<tr style="background: #fff3cd; font-weight: bold;">' +
+            '<td colspan="3" style="padding: 0.75rem; text-align: right;">Total Outstanding:</td>' +
+            '<td style="padding: 0.75rem; text-align: right; color: #f44336;">৳' + formatNumber(totalOutstanding) + '</td>' +
+            '</tr>';
+        
+        html += '</tbody></table>';
+        content.innerHTML = html;
+    }
+    
+    document.getElementById('flatOutstandingModal').style.display = 'flex';
+}
+
+function closeFlatOutstandingModal() {
+    document.getElementById('flatOutstandingModal').style.display = 'none';
+}
+
+// 4. Create Service Request
+function createServiceRequest() {
+    closeFlatActionsModal();
+    var flat = window.selectedFlatForActions;
+    
+    document.getElementById('service_flat_id').value = flat.flat_id;
+    document.getElementById('serviceRequestForm').reset();
+    document.getElementById('service_flat_id').value = flat.flat_id;
+    
+    document.getElementById('serviceRequestModal').style.display = 'flex';
+}
+
+function closeServiceRequestModal() {
+    document.getElementById('serviceRequestModal').style.display = 'none';
+}
+
+function submitServiceRequest(event) {
+    event.preventDefault();
+    
+    var flatId = document.getElementById('service_flat_id').value;
+    var type = document.getElementById('service_type').value;
+    var priority = document.getElementById('service_priority').value;
+    var description = document.getElementById('service_description').value;
+    
+    showLoadingOverlay();
+    
+    var formData = new FormData();
+    formData.append('action', 'create_service_request');
+    formData.append('flat_id', flatId);
+    formData.append('request_type', type);
+    formData.append('priority', priority);
+    formData.append('description', description);
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/tenant_dashboard_controller.php', true);
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            hideLoadingOverlay();
+            
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        showMessage(response.message, 'success');
+                        closeServiceRequestModal();
+                    } else {
+                        showMessage(response.message, 'error');
+                    }
+                } catch (e) {
+                    showMessage('Error submitting request', 'error');
+                }
+            }
+        }
+    };
+    
+    xhr.send(formData);
+}
+
+// 5. View Service Requests
+function viewServiceRequests() {
+    closeFlatActionsModal();
+    var flat = window.selectedFlatForActions;
+    
+    showLoadingOverlay();
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/tenant_dashboard_controller.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            hideLoadingOverlay();
+            
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        displayServiceRequests(response.requests);
+                    } else {
+                        showMessage(response.message, 'error');
+                    }
+                } catch (e) {
+                    showMessage('Error loading requests', 'error');
+                }
+            }
+        }
+    };
+    
+    xhr.send('action=get_flat_service_requests&flat_id=' + flat.flat_id);
+}
+
+function displayServiceRequests(requests) {
+    var content = document.getElementById('serviceRequestsContent');
+    
+    if (!requests || requests.length === 0) {
+        content.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No service requests yet</p>';
+    } else {
+        var html = '<div style="display: grid; gap: 1rem;">';
+        
+        for (var i = 0; i < requests.length; i++) {
+            var request = requests[i];
+            var statusColors = {
+                'pending': '#ffc107',
+                'assigned': '#2196f3',
+                'in_progress': '#ff9800',
+                'completed': '#28a745',
+                'cancelled': '#dc3545'
+            };
+            var statusColor = statusColors[request.status] || '#999';
+            
+            var priorityColors = {
+                'low': '#999',
+                'medium': '#2196f3',
+                'high': '#ff9800',
+                'urgent': '#dc3545'
+            };
+            var priorityColor = priorityColors[request.priority] || '#999';
+            
+            html += '<div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid ' + statusColor + ';">' +
+                '<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">' +
+                    '<div>' +
+                        '<strong style="font-size: 16px;">' + escapeHtml(request.request_type).toUpperCase() + '</strong>' +
+                        '<span style="background: ' + priorityColor + '; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 11px; margin-left: 0.5rem;">' + request.priority + '</span>' +
+                    '</div>' +
+                    '<span style="background: ' + statusColor + '; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 12px;">' + request.status + '</span>' +
+                '</div>' +
+                '<p style="margin: 0.5rem 0; color: #666;">' + escapeHtml(request.description) + '</p>' +
+                '<small style="color: #999;">Created: ' + formatDate(request.created_at) + '</small>';
+            
+            if (request.resolution_notes) {
+                html += '<div style="margin-top: 0.5rem; padding: 0.5rem; background: #e8f5e9; border-radius: 4px;">' +
+                    '<strong style="color: #2e7d32;">Resolution:</strong> ' + escapeHtml(request.resolution_notes) +
+                    '</div>';
+            }
+            
+            html += '</div>';
+        }
+        
+        html += '</div>';
+        content.innerHTML = html;
+    }
+    
+    document.getElementById('viewServiceRequestsModal').style.display = 'flex';
+}
+
+function closeViewServiceRequestsModal() {
+    document.getElementById('viewServiceRequestsModal').style.display = 'none';
+}
+
+// 6. View Flat Expenses
+function viewFlatExpenses() {
+    closeFlatActionsModal();
+    var flat = window.selectedFlatForActions;
+    
+    showLoadingOverlay();
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/tenant_dashboard_controller.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            hideLoadingOverlay();
+            
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        displayFlatExpenses(response.expenses);
+                    } else {
+                        showMessage(response.message, 'error');
+                    }
+                } catch (e) {
+                    showMessage('Error loading expenses', 'error');
+                }
+            }
+        }
+    };
+    
+    xhr.send('action=get_flat_expenses&flat_id=' + flat.flat_id);
+}
+
+function displayFlatExpenses(expenses) {
+    var content = document.getElementById('flatExpensesContent');
+    
+    if (!expenses || expenses.length === 0) {
+        content.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No expense records yet</p>';
+    } else {
+        var html = '<div style="display: grid; gap: 1rem;">';
+        
+        for (var i = 0; i < expenses.length; i++) {
+            var expense = expenses[i];
+            
+            html += '<div style="background: #f5f7fa; padding: 1rem; border-radius: 8px;">' +
+                '<h4 style="margin: 0 0 1rem 0; color: #667eea;">' + formatDate(expense.billing_month) + '</h4>' +
+                '<table style="width: 100%;">' +
+                '<tr><td style="padding: 0.25rem 0;">Rent:</td><td style="text-align: right;">৳' + formatNumber(expense.rent) + '</td></tr>' +
+                '<tr><td style="padding: 0.25rem 0;">Electric:</td><td style="text-align: right;">৳' + formatNumber(expense.electric_bill) + '</td></tr>' +
+                '<tr><td style="padding: 0.25rem 0;">Gas:</td><td style="text-align: right;">৳' + formatNumber(expense.gas_bill) + '</td></tr>' +
+                '<tr><td style="padding: 0.25rem 0;">Water:</td><td style="text-align: right;">৳' + formatNumber(expense.water_bill) + '</td></tr>' +
+                '<tr><td style="padding: 0.25rem 0;">Service Charge:</td><td style="text-align: right;">৳' + formatNumber(expense.service_charge) + '</td></tr>' +
+                '<tr><td style="padding: 0.25rem 0;">Cleaning:</td><td style="text-align: right;">৳' + formatNumber(expense.cleaning_charge) + '</td></tr>' +
+                '<tr><td style="padding: 0.25rem 0;">Miscellaneous:</td><td style="text-align: right;">৳' + formatNumber(expense.miscellaneous) + '</td></tr>' +
+                '<tr style="border-top: 2px solid #667eea; font-weight: bold;"><td style="padding: 0.5rem 0;">Total:</td><td style="text-align: right; color: #667eea;">৳' + formatNumber(expense.total_amount) + '</td></tr>' +
+                '</table>' +
+                '</div>';
+        }
+        
+        html += '</div>';
+        content.innerHTML = html;
+    }
+    
+    document.getElementById('flatExpensesModal').style.display = 'flex';
+}
+
+function closeFlatExpensesModal() {
+    document.getElementById('flatExpensesModal').style.display = 'none';
+}
+
+// 7. Download Rent Slip
+function downloadFlatSlip() {
+    closeFlatActionsModal();
+    var flat = window.selectedFlatForActions;
+    
+    window.open('../controller/tenant_dashboard_controller.php?action=download_flat_slip&flat_id=' + flat.flat_id, '_blank');
+    showMessage('Downloading slip...', 'info');
+}
+
+// 8. View Meter Readings
+function viewMeterReadings() {
+    closeFlatActionsModal();
+    var flat = window.selectedFlatForActions;
+    
+    showLoadingOverlay();
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/tenant_dashboard_controller.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            hideLoadingOverlay();
+            
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        displayMeterReadings(response.meters);
+                    } else {
+                        showMessage(response.message, 'error');
+                    }
+                } catch (e) {
+                    showMessage('Error loading meters', 'error');
+                }
+            }
+        }
+    };
+    
+    xhr.send('action=get_meter_readings&flat_id=' + flat.flat_id);
+}
+
+function displayMeterReadings(meters) {
+    var content = document.getElementById('meterReadingsContent');
+    
+    if (!meters || meters.length === 0) {
+        content.innerHTML = '<p style="text-align: center; color: #999; padding: 2rem;">No meter data available</p>';
+    } else {
+        var html = '<div style="display: grid; gap: 1rem;">';
+        
+        var meterIcons = {
+            'electric_prepaid': '⚡',
+            'electric_postpaid': '💡',
+            'gas': '🔥',
+            'water': '💧'
+        };
+        
+        for (var i = 0; i < meters.length; i++) {
+            var meter = meters[i];
+            var icon = meterIcons[meter.meter_type] || '📊';
+            var consumption = meter.current_reading - meter.previous_reading;
+            var cost = consumption * meter.per_unit_cost;
+            
+            html += '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 12px;">' +
+                '<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">' +
+                    '<div>' +
+                        '<span style="font-size: 32px;">' + icon + '</span>' +
+                        '<h4 style="margin: 0.5rem 0 0 0;">' + escapeHtml(meter.meter_type).replace(/_/g, ' ').toUpperCase() + '</h4>' +
+                    '</div>' +
+                    '<div style="text-align: right;">' +
+                        '<div style="font-size: 24px; font-weight: bold;">৳' + formatNumber(cost) + '</div>' +
+                        '<small style="opacity: 0.8;">Current bill</small>' +
+                    '</div>' +
+                '</div>' +
+                '<div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">' +
+                    '<div>' +
+                        '<small style="opacity: 0.8;">Meter Number</small>' +
+                        '<div style="font-weight: bold;">' + escapeHtml(meter.meter_number || 'N/A') + '</div>' +
+                    '</div>' +
+                    '<div>' +
+                        '<small style="opacity: 0.8;">Last Reading</small>' +
+                        '<div style="font-weight: bold;">' + formatDate(meter.last_reading_date) + '</div>' +
+                    '</div>' +
+                    '<div>' +
+                        '<small style="opacity: 0.8;">Previous</small>' +
+                        '<div style="font-weight: bold;">' + formatNumber(meter.previous_reading) + ' units</div>' +
+                    '</div>' +
+                    '<div>' +
+                        '<small style="opacity: 0.8;">Current</small>' +
+                        '<div style="font-weight: bold;">' + formatNumber(meter.current_reading) + ' units</div>' +
+                    '</div>' +
+                    '<div>' +
+                        '<small style="opacity: 0.8;">Consumption</small>' +
+                        '<div style="font-weight: bold;">' + formatNumber(consumption) + ' units</div>' +
+                    '</div>' +
+                    '<div>' +
+                        '<small style="opacity: 0.8;">Rate</small>' +
+                        '<div style="font-weight: bold;">৳' + formatNumber(meter.per_unit_cost) + '/unit</div>' +
+                    '</div>' +
+                '</div>' +
+                '</div>';
+        }
+        
+        html += '</div>';
+        content.innerHTML = html;
+    }
+    
+    document.getElementById('meterReadingsModal').style.display = 'flex';
+}
+
+function closeMeterReadingsModal() {
+    document.getElementById('meterReadingsModal').style.display = 'none';
+}
+
+// 9. Request Move Out
+function requestMoveOut() {
+    closeFlatActionsModal();
+    var flat = window.selectedFlatForActions;
+    
+    document.getElementById('moveout_flat_id').value = flat.flat_id;
+    document.getElementById('moveout_assignment_id').value = flat.assignment_id;
+    
+    // Set min date to next month's 1st
+    var today = new Date();
+    var nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    var minDate = nextMonth.toISOString().split('T')[0];
+    document.getElementById('moveout_date').setAttribute('min', minDate);
+    
+    // Validate only 1st of month
+    document.getElementById('moveout_date').addEventListener('change', function() {
+        var selectedDate = new Date(this.value);
+        if (selectedDate.getDate() !== 1) {
+            showMessage('Move-out date must be the 1st day of a month', 'error');
+            this.value = '';
+        }
+    });
+    
+    document.getElementById('moveOutModal').style.display = 'flex';
+}
+
+function closeMoveOutModal() {
+    document.getElementById('moveOutModal').style.display = 'none';
+}
+
+function submitMoveOut(event) {
+    event.preventDefault();
+    
+    var flatId = document.getElementById('moveout_flat_id').value;
+    var assignmentId = document.getElementById('moveout_assignment_id').value;
+    var moveOutDate = document.getElementById('moveout_date').value;
+    var reason = document.getElementById('moveout_reason').value;
+    
+    // Validate date is 1st of month
+    var date = new Date(moveOutDate);
+    if (date.getDate() !== 1) {
+        showMessage('Move-out date must be the 1st day of a month', 'error');
+        return;
+    }
+    
+    // Confirm
+    if (!confirm('Are you sure you want to request move-out on ' + formatDate(moveOutDate) + '?')) {
+        return;
+    }
+    
+    showLoadingOverlay();
+    
+    var formData = new FormData();
+    formData.append('action', 'request_move_out');
+    formData.append('flat_id', flatId);
+    formData.append('assignment_id', assignmentId);
+    formData.append('move_out_date', moveOutDate);
+    formData.append('reason', reason);
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/tenant_dashboard_controller.php', true);
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            hideLoadingOverlay();
+            
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        showMessage(response.message, 'success');
+                        closeMoveOutModal();
+                        setTimeout(function() {
+                            loadTenantDashboardData();
+                        }, 1500);
+                    } else {
+                        showMessage(response.message, 'error');
+                    }
+                } catch (e) {
+                    showMessage('Error submitting request', 'error');
+                }
+            }
+        }
+    };
+    
+    xhr.send(formData);
+}
+
+// 10. Cancel Move Out
+function cancelMoveOut() {
+    closeFlatActionsModal();
+    var flat = window.selectedFlatForActions;
+    
+    // Check if cancellation is still allowed
+    var moveOutDate = new Date(flat.move_out_date);
+    var previousMonthFirst = new Date(moveOutDate.getFullYear(), moveOutDate.getMonth() - 1, 1);
+    
+    if (new Date() >= previousMonthFirst) {
+        showMessage('Cannot cancel move-out request. Deadline has passed.', 'error');
+        return;
+    }
+    
+    if (!confirm('Are you sure you want to cancel your move-out request?')) {
+        return;
+    }
+    
+    showLoadingOverlay();
+    
+    var formData = new FormData();
+    formData.append('action', 'cancel_move_out');
+    formData.append('assignment_id', flat.assignment_id);
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/tenant_dashboard_controller.php', true);
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            hideLoadingOverlay();
+            
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        showMessage(response.message, 'success');
+                        setTimeout(function() {
+                            loadTenantDashboardData();
+                        }, 1500);
+                    } else {
+                        showMessage(response.message, 'error');
+                    }
+                } catch (e) {
+                    showMessage('Error cancelling request', 'error');
+                }
+            }
+        }
+    };
+    
+    xhr.send(formData);
+}
 // ============================================
 // PLACEHOLDER FUNCTIONS (Coming Soon)
 // ============================================
@@ -1043,6 +2185,10 @@ function updateProfile() {
 
 function viewDocuments() {
     showMessage('Documents feature coming soon', 'info');
+}
+
+function closePendingModal() {
+    document.getElementById('pendingAssignmentModal').style.display = 'none';
 }
 
 // ============================================

@@ -44,21 +44,44 @@ if (!isset($current_user)) {
                 </div>
                 <nav class="main-nav">
                     <a href="../controller/dashboard_controller.php" class="nav-link">Dashboard</a>
-                    <a href="../controller/profile_controller.php" class="nav-link active">Profile</a>
                     <?php if ($current_user['user_type'] === 'owner'): ?>
-                        <a href="#buildings" class="nav-link">Buildings</a>
+                        <a href="../view/buildings.php" class="nav-link">Buildings</a>
+                        <a href="../view/tenants.php" class="nav-link">Tenants</a>
+                        <a href="#payments" class="nav-link">Payments</a>
                         <a href="#reports" class="nav-link">Reports</a>
                     <?php elseif ($current_user['user_type'] === 'manager'): ?>
-                        <a href="#tenants" class="nav-link">Tenants</a>
+                        <a href="../view/buildings.php" class="nav-link">Buildings</a>
+                        <a href="../view/tenants.php" class="nav-link">Tenants</a>
                         <a href="#maintenance" class="nav-link">Maintenance</a>
+                        <a href="#reports" class="nav-link">Reports</a>
                     <?php else: ?>
                         <a href="#payments" class="nav-link">Payments</a>
-                        <a href="#services" class="nav-link">Services</a>
+                        <a href="#services" class="nav-link">Service Requests</a>
+                        <a href="#documents" class="nav-link">Documents</a>
+                        <a href="#messages" class="nav-link">Messages</a>
                     <?php endif; ?>
                 </nav>
             </div>
             
             <div class="nav-right">
+                <!-- Notifications -->
+                <div class="notifications-dropdown">
+                    <button class="notification-btn" id="notificationBtn">
+                        <span class="notification-icon">🔔</span>
+                        <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                    </button>
+                    <div class="notifications-panel" id="notificationsPanel" style="display: none;">
+                        <div class="notifications-header">
+                            <h4>Notifications</h4>
+                            <button class="mark-all-read" onclick="markAllNotificationsRead()">Mark All Read</button>
+                        </div>
+                        <div class="notifications-list" id="notificationsList">
+                            <!-- Notifications will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Menu -->
                 <div class="user-dropdown">
                     <button class="user-btn" id="userBtn">
                         <div class="user-avatar">
@@ -73,7 +96,12 @@ if (!isset($current_user)) {
                     </button>
                     <div class="user-menu" id="userMenu" style="display: none;">
                         <a href="../controller/profile_controller.php">Profile Settings</a>
-                        <a href="../controller/working_login.php?action=logout">Logout</a>
+                        <?php if ($current_user['user_type'] === 'owner'): ?>
+                            <a href="#backup">Backup Data</a>
+                            <a href="#logs">Activity Logs</a>
+                        <?php endif; ?>
+                        <a href="#preferences">Preferences</a>
+                        <a href="../controller/working_login.php?action=logout" style="color: #dc3545;">Logout</a>
                     </div>
                 </div>
             </div>
@@ -84,8 +112,6 @@ if (!isset($current_user)) {
     <main class="dashboard-main">
         <div class="profile-container">
             <!-- Profile Header -->
-            <!-- Profile Header -->
-        <!-- Profile Header -->
         <div class="profile-header">
             <div class="profile-avatar-section">
                 <div class="profile-avatar-large" onclick="triggerFileUpload()">
@@ -274,13 +300,13 @@ if (!isset($current_user)) {
 
                 <?php if ($current_user['user_type'] === 'tenant'): ?>
                 <!-- Tenancy Section -->
-                <div class="profile-section">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Current Tenancy</h3>
-                        </div>
-                        <div class="card-content">
-                            <p>Tenancy information will be displayed here.</p>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Current Tenancy</h3>
+                    </div>
+                    <div class="card-content">
+                        <div id="tenancyInfoContainer">
+                            <p style="text-align: center; color: #999;">Loading...</p>
                         </div>
                     </div>
                 </div>

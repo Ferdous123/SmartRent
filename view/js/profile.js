@@ -28,6 +28,7 @@ function initProfilePage() {
     load2FAStatus();
     initializePasswordStrength();
     addCSSAnimations();
+    loadTenancyInfo();
 }
 
 function setupEventListeners() {
@@ -566,6 +567,7 @@ function disable2FA() {
 }
 
 
+
 function showMessage(message, type) {
     clearMessages();
     
@@ -591,6 +593,75 @@ function showMessage(message, type) {
     }, 3000);
 }
 
+// Load tenant's ALL flats info
+function loadTenancyInfo() {
+    if (!document.getElementById('tenancyInfoContainer')) return;
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '../controller/tenant_dashboard_controller.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            try {
+                var response = JSON.parse(xhr.responseText);
+                if (response.success && response.flats) {
+                    displayTenancyInfo(response.flats);
+                } else {
+                    document.getElementById('tenancyInfoContainer').innerHTML = 
+                        '<p style="text-align: center; color: #999;">No active tenancy</p>';
+                }
+            } catch (e) {
+                console.error('Error loading tenancy:', e);
+                document.getElementById('tenancyInfoContainer').innerHTML = 
+                    '<p style="text-align: center; color: #e74c3c;">Error loading tenancy information</p>';
+            }
+        }
+    };
+    
+    xhr.send('action=get_all_my_flats');
+}
+
+function displayTenancyInfo(flats) {
+    var container = document.getElementById('tenancyInfoContainer');
+    if (!container) return;
+    
+    if (!flats || flats.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #999;">No active tenancy</p>';
+        return;
+    }
+    
+    var html = '';
+    
+    for (var i = 0; i < flats.length; i++) {
+        var flat = flats[i];
+        html += '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">' +
+            '<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">' +
+                '<div>' +
+                    '<h4 style="margin: 0; font-size: 18px;">' + escapeHtml(flat.building_name) + '</h4>' +
+                    '<p style="margin: 0.25rem 0; opacity: 0.9;">Flat ' + escapeHtml(flat.flat_number) + ' • Floor ' + flat.floor_number + '</p>' +
+                '</div>' +
+                '<span style="background: rgba(255,255,255,0.2); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 12px;">Active</span>' +
+            '</div>' +
+            '<div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 1rem;">' +
+                '<div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">' +
+                    '<span style="opacity: 0.8;">Move-in Date:</span>' +
+                    '<strong>' + formatDate(flat.confirmed_at) + '</strong>' +
+                '</div>' +
+                '<div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">' +
+                    '<span style="opacity: 0.8;">Monthly Rent:</span>' +
+                    '<strong>৳' + formatNumber(flat.base_rent) + '</strong>' +
+                '</div>' +
+                '<div style="display: flex; justify-content: space-between;">' +
+                    '<span style="opacity: 0.8;">Security Deposit:</span>' +
+                    '<strong>৳' + formatNumber(flat.advance_amount) + '</strong>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    }
+    
+    container.innerHTML = html;
+}
 
 // Add CSS animation for slide out
 function addCSSAnimations() {
@@ -598,4 +669,29 @@ function addCSSAnimations() {
     if (head) {
         head.innerHTML += '<style type="text/css">@keyframes slideOutRight { to { opacity: 0; transform: translateX(100px); } }</style>';
     }
+}
+
+// Utility functions (add at the end of profile.js)
+function escapeHtml(text) {
+    if (!text) return '';
+    var map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    var date = new Date(dateString);
+    var options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+}
+
+function formatNumber(num) {
+    if (!num) return '0.00';
+    return parseFloat(num).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }

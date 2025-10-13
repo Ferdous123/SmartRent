@@ -13,8 +13,9 @@ function initSessionManagement() {
     // Start session checking
     setupSessionCheck();
     
-    // Setup user dropdown if exists
+    // Setup dropdowns
     setupUserDropdown();
+    setupNotificationDropdown();
 }
 
 // Setup periodic session check
@@ -59,6 +60,12 @@ function setupUserDropdown() {
     if (userBtn && userMenu) {
         userBtn.addEventListener('click', function(e) {
             e.stopPropagation();
+            
+            // Close notification panel if open
+            var notifPanel = document.getElementById('notificationsPanel');
+            if (notifPanel) notifPanel.style.display = 'none';
+            
+            // Toggle user menu
             userMenu.style.display = userMenu.style.display === 'none' ? 'block' : 'none';
         });
         
@@ -66,6 +73,32 @@ function setupUserDropdown() {
         document.addEventListener('click', function(e) {
             if (!userBtn.contains(e.target) && !userMenu.contains(e.target)) {
                 userMenu.style.display = 'none';
+            }
+        });
+    }
+}
+
+// Setup notification dropdown (common across all pages)
+function setupNotificationDropdown() {
+    var notifBtn = document.getElementById('notificationBtn');
+    var notifPanel = document.getElementById('notificationsPanel');
+    
+    if (notifBtn && notifPanel) {
+        notifBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            // Close user menu if open
+            var userMenu = document.getElementById('userMenu');
+            if (userMenu) userMenu.style.display = 'none';
+            
+            // Toggle notification panel
+            notifPanel.style.display = notifPanel.style.display === 'none' ? 'block' : 'none';
+        });
+        
+        // Close panel when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!notifBtn.contains(e.target) && !notifPanel.contains(e.target)) {
+                notifPanel.style.display = 'none';
             }
         });
     }

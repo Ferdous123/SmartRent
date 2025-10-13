@@ -8,40 +8,54 @@ require_once 'database.php';
 function get_tenant_dashboard_data($user_id) {
     $data = array();
     
-    // Get flat information
-    $flat_query = "SELECT fa.assignment_id, fa.flat_id, fa.advance_balance, fa.confirmed_at,
-                   f.flat_number, f.floor_number, f.base_rent,
-                   b.building_id, b.building_name, b.address
-                   FROM flat_assignments fa
-                   JOIN flats f ON fa.flat_id = f.flat_id
-                   JOIN buildings b ON f.building_id = b.building_id
-                   WHERE fa.tenant_id = ? 
-                   AND fa.status = 'confirmed' 
-                   AND fa.actual_ended_at IS NULL
-                   LIMIT 1";
-    
-    $flat_result = execute_prepared_query($flat_query, array($user_id), 'i');
-    
-    if ($flat_result && mysqli_num_rows($flat_result) > 0) {
-        $data['flat_info'] = fetch_single_row($flat_result);
+    // Get ALL flat assignments (not just LIMIT 1)
+    $flats_query = "SELECT fa.assignment_id, fa.flat_id, fa.advance_amount, fa.advance_balance, fa.confirmed_at,
+                f.flat_number, f.floor_number, f.base_rent,
+                b.building_id, b.building_name, b.address
+                FROM flat_assignments fa
+                JOIN flats f ON fa.flat_id = f.flat_id
+                JOIN buildings b ON f.building_id = b.building_id
+                WHERE fa.tenant_id = ? 
+                AND fa.status = 'confirmed' 
+                AND fa.actual_ended_at IS NULL
+                ORDER BY fa.confirmed_at DESC";
+
+    $flats_result = execute_prepared_query($flats_query, array($user_id), 'i');
+
+    if ($flats_result && mysqli_num_rows($flats_result) > 0) {
+        $data['all_flats'] = fetch_all_rows($flats_result);
         $data['has_assignment'] = true;
+        $data['total_flats'] = count($data['all_flats']);
         
+        // Calculate totals across all flats
+        $total_advance = 0;
+        $total_outstanding = 0;
+        $total_overdue_count = 0;
+        
+        foreach ($data['all_flats'] as $flat) {
+            $total_advance += floatval($flat['advance_amount']);
+            
+            // Get outstanding for this flat
+            $dues_query = "SELECT COALESCE(SUM(remaining_amount), 0) as outstanding,
+                          COUNT(*) as overdue_count
+                          FROM tenant_dues 
+                          WHERE tenant_id = ? AND flat_id = ? AND remaining_amount > 0";
+            $dues_result = execute_prepared_query($dues_query, array($user_id, $flat['flat_id']), 'ii');
+            $dues = fetch_single_row($dues_result);
+            $total_outstanding += floatval($dues['outstanding']);
+            $total_overdue_count += intval($dues['overdue_count']);
+        }
+        
+        $data['total_advance_balance'] = $total_advance;
+        $data['total_security_deposit'] = $total_advance; // Same value, different label
+        $data['outstanding_dues'] = $total_outstanding;
+        $data['overdue_count'] = $total_overdue_count;
+        
+        // Keep first flat as primary for backward compatibility
+        $data['flat_info'] = $data['all_flats'][0];
         $flat_id = $data['flat_info']['flat_id'];
         
-        // Get outstanding dues
-        $dues_query = "SELECT COALESCE(SUM(remaining_amount), 0) as total_outstanding,
-                       COUNT(*) as overdue_count
-                       FROM tenant_dues
-                       WHERE tenant_id = ? AND flat_id = ? AND remaining_amount > 0";
-        
-        $dues_result = execute_prepared_query($dues_query, array($user_id, $flat_id), 'ii');
-        $dues = fetch_single_row($dues_result);
-        
-        $data['outstanding_dues'] = $dues['total_outstanding'];
-        $data['overdue_count'] = $dues['overdue_count'];
-        $data['advance_balance'] = $data['flat_info']['advance_balance'];
-        
-        // Get current month expense
+        // Get current month expense for primary flat
         $current_month = date('Y-m-01');
         $current_query = "SELECT * FROM flat_expenses 
                           WHERE flat_id = ? AND billing_month = ?";
@@ -70,13 +84,13 @@ function get_tenant_dashboard_data($user_id) {
             $data['current_month'] = null;
         }
         
-        // Get last payment
+        // Get last payment across all flats
         $last_payment_query = "SELECT amount, payment_date 
                                FROM payments
-                               WHERE tenant_id = ? AND flat_id = ?
+                               WHERE tenant_id = ?
                                ORDER BY payment_date DESC
                                LIMIT 1";
-        $last_payment_result = execute_prepared_query($last_payment_query, array($user_id, $flat_id), 'ii');
+        $last_payment_result = execute_prepared_query($last_payment_query, array($user_id), 'i');
         
         if ($last_payment_result && mysqli_num_rows($last_payment_result) > 0) {
             $last_payment = fetch_single_row($last_payment_result);
@@ -87,29 +101,38 @@ function get_tenant_dashboard_data($user_id) {
             $data['last_payment_date'] = null;
         }
         
-        // Get recent payments
-        $recent_payments_query = "SELECT * FROM payments
-                                  WHERE tenant_id = ? AND flat_id = ?
-                                  ORDER BY payment_date DESC
+        // Get recent payments across all flats
+        $recent_payments_query = "SELECT p.*, f.flat_number, b.building_name
+                                  FROM payments p
+                                  LEFT JOIN flats f ON p.flat_id = f.flat_id
+                                  LEFT JOIN buildings b ON f.building_id = b.building_id
+                                  WHERE p.tenant_id = ?
+                                  ORDER BY p.payment_date DESC
                                   LIMIT 5";
-        $recent_payments_result = execute_prepared_query($recent_payments_query, array($user_id, $flat_id), 'ii');
+        $recent_payments_result = execute_prepared_query($recent_payments_query, array($user_id), 'i');
         $data['recent_payments'] = fetch_all_rows($recent_payments_result);
         
-        // Get outstanding payments
-        $outstanding_query = "SELECT td.*, fe.billing_month, fe.total_amount as total_due
+        // Get outstanding payments across all flats
+        $outstanding_query = "SELECT td.*, fe.billing_month, fe.total_amount as total_due,
+                              f.flat_number, b.building_name
                               FROM tenant_dues td
                               JOIN flat_expenses fe ON td.expense_id = fe.expense_id
-                              WHERE td.tenant_id = ? AND td.flat_id = ? AND td.remaining_amount > 0
+                              JOIN flats f ON td.flat_id = f.flat_id
+                              JOIN buildings b ON f.building_id = b.building_id
+                              WHERE td.tenant_id = ? AND td.remaining_amount > 0
                               ORDER BY fe.billing_month DESC";
-        $outstanding_result = execute_prepared_query($outstanding_query, array($user_id, $flat_id), 'ii');
+        $outstanding_result = execute_prepared_query($outstanding_query, array($user_id), 'i');
         $data['outstanding_payments'] = fetch_all_rows($outstanding_result);
         
-        // Get service requests
-        $service_query = "SELECT * FROM service_requests
-                          WHERE tenant_id = ? AND flat_id = ?
-                          ORDER BY created_at DESC
+        // Get service requests across all flats
+        $service_query = "SELECT sr.*, f.flat_number, b.building_name
+                          FROM service_requests sr
+                          JOIN flats f ON sr.flat_id = f.flat_id
+                          JOIN buildings b ON f.building_id = b.building_id
+                          WHERE sr.tenant_id = ?
+                          ORDER BY sr.created_at DESC
                           LIMIT 5";
-        $service_result = execute_prepared_query($service_query, array($user_id, $flat_id), 'ii');
+        $service_result = execute_prepared_query($service_query, array($user_id), 'i');
         $data['service_requests'] = fetch_all_rows($service_result);
         $data['active_service_requests'] = count(array_filter($data['service_requests'], function($req) {
             return in_array($req['status'], array('pending', 'assigned', 'in_progress'));
@@ -125,9 +148,12 @@ function get_tenant_dashboard_data($user_id) {
         
     } else {
         $data['has_assignment'] = false;
+        $data['all_flats'] = array();
+        $data['total_flats'] = 0;
         $data['flat_info'] = null;
         $data['outstanding_dues'] = 0;
-        $data['advance_balance'] = 0;
+        $data['total_advance_balance'] = 0;
+        $data['total_security_deposit'] = 0;
         $data['overdue_count'] = 0;
     }
     
@@ -451,6 +477,22 @@ function create_tenant_notification($user_id, $type, $title, $message, $related_
     return execute_prepared_query($query, 
         array($user_id, $type, $title, $message, $related_entity, $related_id),
         'issssi');
+}
+
+// Get all tenant flats for profile
+function get_all_tenant_flats($user_id) {
+    $query = "SELECT fa.*, f.flat_number, f.floor_number, f.base_rent,
+              b.building_name, b.address
+              FROM flat_assignments fa
+              JOIN flats f ON fa.flat_id = f.flat_id
+              JOIN buildings b ON f.building_id = b.building_id
+              WHERE fa.tenant_id = ? 
+              AND fa.status = 'confirmed' 
+              AND fa.actual_ended_at IS NULL
+              ORDER BY fa.confirmed_at DESC";
+    
+    $result = execute_prepared_query($query, array($user_id), 'i');
+    return $result ? fetch_all_rows($result) : array();
 }
 
 ?>
