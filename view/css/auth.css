@@ -1,7 +1,4 @@
-/* Authentication Pages Styles for SmartRent */
-/* Professional, clean design with animations */
 
-/* Base Styles */
 * {
     margin: 0;
     padding: 0;
@@ -9,17 +6,15 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: Arial, sans-serif;
     line-height: 1.6;
     color: #333;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
 }
 
-/* Navigation Styles (inherited from landing) */
 .navbar {
     background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
     padding: 15px 0;
     position: fixed;
     top: 0;
@@ -37,21 +32,14 @@ body {
     align-items: center;
 }
 
-.logo a {
-    text-decoration: none;
-    color: inherit;
-}
-
 .logo h2 {
     color: white;
     font-size: 28px;
     font-weight: bold;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    transition: all 0.3s ease;
 }
 
 .logo h2:hover {
-    transform: scale(1.05);
+    color: #ffd700;
 }
 
 .nav-menu {
@@ -64,28 +52,21 @@ body {
     color: white;
     text-decoration: none;
     font-weight: 500;
-    transition: all 0.3s ease;
     padding: 8px 16px;
     border-radius: 20px;
 }
 
 .nav-menu a:hover {
     background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
 }
 
-/* Auth Container */
 .auth-container {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 40px;
     max-width: 1200px;
     margin: 100px auto 50px;
     padding: 0 20px;
-    min-height: calc(100vh - 150px);
+    min-height: 500px;
 }
 
-/* Login Page Layout */
 .login-wrapper {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -95,16 +76,13 @@ body {
     margin: 0 auto;
 }
 
-/* Form Wrapper */
 .auth-form-wrapper {
     background: white;
-    border-radius: 20px;
+    border-radius: 15px;
     padding: 40px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-    animation: slideInUp 0.6s ease-out;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
-/* Auth Header */
 .auth-header {
     text-align: center;
     margin-bottom: 30px;
@@ -121,7 +99,6 @@ body {
     font-size: 16px;
 }
 
-/* Form Styles */
 .auth-form {
     max-width: 400px;
     margin: 0 auto;
@@ -151,11 +128,10 @@ body {
 .form-group textarea {
     width: 100%;
     padding: 12px 15px;
-    border: 2px solid #e1e5e9;
-    border-radius: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
     font-size: 16px;
-    transition: all 0.3s ease;
-    background: #f8f9fa;
+    background: #f5f5f5;
 }
 
 .form-group input:focus,
@@ -164,11 +140,8 @@ body {
     outline: none;
     border-color: #667eea;
     background: white;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    transform: translateY(-2px);
 }
 
-/* Password Input Wrapper */
 .password-input-wrapper {
     position: relative;
     display: flex;
@@ -190,14 +163,12 @@ body {
     cursor: pointer;
     padding: 5px 10px;
     border-radius: 5px;
-    transition: all 0.3s ease;
 }
 
 .password-toggle:hover {
     background: rgba(102, 126, 234, 0.1);
 }
 
-/* Checkbox Group */
 .checkbox-group {
     display: flex;
     align-items: center;
@@ -207,7 +178,6 @@ body {
 .checkbox-group input[type="checkbox"] {
     width: auto;
     margin: 0;
-    transform: scale(1.2);
 }
 
 .checkbox-group label {
@@ -225,74 +195,58 @@ body {
     text-decoration: underline;
 }
 
-/* Button Styles */
+
 .btn-primary {
     width: 100%;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
     padding: 15px 30px;
-    border-radius: 10px;
+    border-radius: 8px;
     font-size: 16px;
     font-weight: bold;
     cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
 }
 
 .btn-primary:hover {
     background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
-}
-
-.btn-primary:active {
-    transform: translateY(0);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
 }
 
 .btn-primary:disabled {
     opacity: 0.7;
     cursor: not-allowed;
-    transform: none;
 }
 
-.btn-loading {
-    display: none;
-}
 
-/* Error Messages */
 .error-message {
-    color: #e74c3c;
+    color: #f44336;
     font-size: 13px;
     margin-top: 5px;
     display: block;
-    animation: fadeIn 0.3s ease;
 }
 
-/* Password Strength */
+
 .password-strength {
     margin-top: 8px;
     height: 4px;
-    background: #e1e5e9;
+    background: #e0e0e0;
     border-radius: 2px;
-    overflow: hidden;
-    transition: all 0.3s ease;
 }
 
 .password-strength.weak {
-    background: linear-gradient(90deg, #e74c3c 33%, #e1e5e9 33%);
+    background: linear-gradient(90deg, #f44336 33%, #e0e0e0 33%);
 }
 
 .password-strength.medium {
-    background: linear-gradient(90deg, #f39c12 66%, #e1e5e9 66%);
+    background: linear-gradient(90deg, #ff9800 66%, #e0e0e0 66%);
 }
 
 .password-strength.strong {
-    background: #27ae60;
+    background: #4caf50;
 }
 
-/* Form Footer */
+
 .form-footer {
     text-align: center;
     margin-top: 30px;
@@ -315,7 +269,7 @@ body {
 
 .form-footer hr {
     border: none;
-    border-top: 1px solid #e1e5e9;
+    border-top: 1px solid #e0e0e0;
     margin: 20px 0;
 }
 
@@ -333,18 +287,17 @@ body {
     text-decoration: underline;
 }
 
-/* Role Information Cards */
+
 .role-info {
     margin-top: 30px;
     padding: 20px;
-    background: #f8f9fa;
-    border-radius: 10px;
+    background: #f5f5f5;
+    border-radius: 8px;
     border-left: 4px solid #667eea;
 }
 
 .role-card {
     display: none;
-    animation: fadeIn 0.5s ease;
 }
 
 .role-card.active {
@@ -366,22 +319,21 @@ body {
     padding: 5px 0;
     color: #666;
     font-size: 14px;
-    position: relative;
     padding-left: 20px;
+    position: relative;
 }
 
 .role-card ul li::before {
     content: '✓';
     position: absolute;
     left: 0;
-    color: #27ae60;
+    color: #4caf50;
     font-weight: bold;
 }
 
-/* Quick Access */
+
 .quick-access {
     background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
     border-radius: 15px;
     padding: 30px;
     text-align: center;
@@ -408,12 +360,10 @@ body {
     gap: 8px;
     padding: 15px 20px;
     background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(5px);
     border: 2px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
+    border-radius: 10px;
     text-decoration: none;
     color: white;
-    transition: all 0.3s ease;
     font-size: 14px;
     font-weight: 600;
     min-width: 80px;
@@ -422,7 +372,6 @@ body {
 .quick-btn:hover {
     background: rgba(255, 255, 255, 0.2);
     border-color: rgba(255, 255, 255, 0.4);
-    transform: translateY(-3px);
 }
 
 .quick-icon {
@@ -435,10 +384,9 @@ body {
     margin: 0;
 }
 
-/* Login Benefits */
+
 .login-benefits {
     background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
     border-radius: 15px;
     padding: 30px;
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -462,14 +410,11 @@ body {
     gap: 15px;
     padding: 15px;
     background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(5px);
     border-radius: 10px;
-    transition: all 0.3s ease;
 }
 
 .benefit-item:hover {
     background: rgba(255, 255, 255, 0.15);
-    transform: translateX(5px);
 }
 
 .benefit-icon {
@@ -490,7 +435,7 @@ body {
     margin: 0;
 }
 
-/* Message Container */
+
 .message-container {
     position: fixed;
     top: 100px;
@@ -501,96 +446,38 @@ body {
 
 .message {
     padding: 15px 20px;
-    border-radius: 10px;
+    border-radius: 8px;
     margin-bottom: 10px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    animation: slideInRight 0.5s ease;
-    position: relative;
-    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
 .message.success {
-    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    background: #4caf50;
     color: white;
 }
 
 .message.error {
-    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    background: #f44336;
     color: white;
 }
 
 .message.info {
-    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    background: #2196f3;
     color: white;
 }
 
-/* Animations */
-@keyframes slideInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
 
-@keyframes slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(100px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes shake {
-    0%, 100% {
-        transform: translateX(0);
-    }
-    25% {
-        transform: translateX(-5px);
-    }
-    75% {
-        transform: translateX(5px);
-    }
-}
-
-/* Input Error State */
 .form-group input.error,
 .form-group select.error {
-    border-color: #e74c3c;
-    background: #fdf2f2;
-    animation: shake 0.5s ease;
+    border-color: #f44336;
+    background: #ffebee;
 }
 
-.form-group input.error:focus,
-.form-group select.error:focus {
-    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
-}
 
-/* Input Success State */
 .form-group input.success,
 .form-group select.success {
-    border-color: #27ae60;
-    background: #f2fdf7;
-}
-
-.form-group input.success:focus,
-.form-group select.success:focus {
-    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+    border-color: #4caf50;
+    background: #e8f5e9;
 }
 
 /* Loading State */
@@ -600,7 +487,7 @@ body {
     cursor: not-allowed;
 }
 
-/* Responsive Design */
+
 @media (max-width: 768px) {
     .auth-container {
         margin: 80px auto 30px;
@@ -643,21 +530,5 @@ body {
         left: 15px;
         right: 15px;
         max-width: none;
-    }
-}
-
-@media (max-width: 480px) {
-    .auth-header h2 {
-        font-size: 24px;
-    }
-    
-    .auth-form-wrapper {
-        border-radius: 15px;
-        padding: 25px 15px;
-    }
-    
-    .form-group input,
-    .form-group select {
-        font-size: 16px; /* Prevents zoom on iOS */
     }
 }

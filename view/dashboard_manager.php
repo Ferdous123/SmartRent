@@ -520,7 +520,7 @@ if (!isset($user_preferences)) {
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">👥</div>
+                <div class="stat-icon"></div>
                 <div class="stat-content">
                     <h3 id="totalTenants">--</h3>
                     <p>Active Tenants</p>
@@ -528,7 +528,7 @@ if (!isset($user_preferences)) {
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">🔧</div>
+                <div class="stat-icon"></div>
                 <div class="stat-content">
                     <h3 id="pendingRequests">--</h3>
                     <p>Pending Requests</p>

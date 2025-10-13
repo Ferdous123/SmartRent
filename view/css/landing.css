@@ -1,7 +1,4 @@
-/* SmartRent Landing Page Styles */
-/* Industry-grade professional design with animations */
 
-/* Base Styles */
 * {
     margin: 0;
     padding: 0;
@@ -9,7 +6,7 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: Arial, sans-serif;
     line-height: 1.6;
     color: #333;
     background-color: #ffffff;
@@ -21,7 +18,6 @@ body {
     padding: 0 20px;
 }
 
-/* Navigation Styles */
 .navbar {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     padding: 15px 0;
@@ -29,12 +25,11 @@ body {
     top: 0;
     width: 100%;
     z-index: 1000;
-    box-shadow: 0 2px 20px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
 }
 
 .navbar:hover {
-    box-shadow: 0 4px 30px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
 }
 
 .nav-container {
@@ -50,13 +45,10 @@ body {
     color: white;
     font-size: 28px;
     font-weight: bold;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    transition: all 0.3s ease;
 }
 
 .logo h2:hover {
-    transform: scale(1.05);
-    text-shadow: 3px 3px 6px rgba(0,0,0,0.4);
+    color: #ffd700;
 }
 
 .nav-menu {
@@ -69,36 +61,19 @@ body {
     color: white;
     text-decoration: none;
     font-weight: 500;
-    transition: all 0.3s ease;
     padding: 8px 0;
     position: relative;
 }
 
 .nav-menu a:hover {
     color: #ffd700;
-    transform: translateY(-2px);
 }
 
-.nav-menu a::after {
-    content: '';
-    position: absolute;
-    width: 0;
-    height: 2px;
-    bottom: 0;
-    left: 0;
-    background-color: #ffd700;
-    transition: width 0.3s ease;
-}
-
-.nav-menu a:hover::after {
-    width: 100%;
-}
-
-.btn-login, .btn-register {
+.btn-login,
+.btn-register {
     padding: 10px 20px;
     border-radius: 25px;
     font-weight: bold;
-    transition: all 0.3s ease;
 }
 
 .btn-login {
@@ -107,10 +82,7 @@ body {
 }
 
 .btn-login:hover {
-    background-color: #667eea;
-    color: #667eea;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(255,255,255,0.3);
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
 .btn-register {
@@ -121,16 +93,14 @@ body {
 
 .btn-register:hover {
     background: linear-gradient(135deg, #ffed4e 0%, #ffd700 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(255,215,0,0.4);
+    box-shadow: 0 5px 15px rgba(255,215,0,0.4);
 }
 
-/* Hero Section */
 .hero {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     padding: 120px 0 80px;
-    min-height: 90vh;
+    min-height: 600px;
     display: flex;
     align-items: center;
 }
@@ -145,16 +115,11 @@ body {
     align-items: center;
 }
 
-.hero-content {
-    animation: slideInLeft 1s ease-out;
-}
-
 .hero-title {
     font-size: 48px;
     font-weight: bold;
     margin-bottom: 20px;
     line-height: 1.2;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
 }
 
 .hero-subtitle {
@@ -169,13 +134,13 @@ body {
     gap: 20px;
 }
 
-.btn-primary, .btn-secondary {
+.btn-primary,
+.btn-secondary {
     padding: 15px 30px;
     border-radius: 30px;
     font-size: 16px;
     font-weight: bold;
     text-decoration: none;
-    transition: all 0.3s ease;
     display: inline-block;
 }
 
@@ -187,8 +152,7 @@ body {
 
 .btn-primary:hover {
     background: linear-gradient(135deg, #ffed4e 0%, #ffd700 100%);
-    transform: translateY(-3px);
-    box-shadow: 0 10px 30px rgba(255,215,0,0.4);
+    box-shadow: 0 8px 20px rgba(255,215,0,0.4);
 }
 
 .btn-secondary {
@@ -200,12 +164,7 @@ body {
 .btn-secondary:hover {
     background: white;
     color: #667eea;
-    transform: translateY(-3px);
-    box-shadow: 0 10px 30px rgba(255,255,255,0.3);
-}
-
-.hero-image {
-    animation: slideInRight 1s ease-out;
+    box-shadow: 0 8px 20px rgba(255,255,255,0.3);
 }
 
 .hero-placeholder {
@@ -215,16 +174,14 @@ body {
     padding: 80px 40px;
     text-align: center;
     font-size: 18px;
-    transition: all 0.3s ease;
 }
 
 .hero-placeholder:hover {
     background: rgba(255,255,255,0.2);
     border-color: rgba(255,255,255,0.5);
-    transform: scale(1.02);
 }
 
-/* User Types Section */
+
 .user-types {
     padding: 80px 0;
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
@@ -236,7 +193,6 @@ body {
     font-weight: bold;
     margin-bottom: 50px;
     color: #333;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
 }
 
 .user-cards {
@@ -248,11 +204,10 @@ body {
 
 .user-card {
     background: white;
-    border-radius: 20px;
+    border-radius: 15px;
     padding: 40px 30px;
     text-align: center;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     position: relative;
     overflow: hidden;
 }
@@ -268,8 +223,7 @@ body {
 }
 
 .user-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
 }
 
 .owner-card::before {
@@ -281,13 +235,12 @@ body {
 }
 
 .tenant-card::before {
-    background: linear-gradient(135deg, #00c851 0%, #007e33 100%);
+    background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
 }
 
 .card-icon {
     font-size: 48px;
     margin-bottom: 20px;
-    animation: bounce 2s infinite;
 }
 
 .user-card h3 {
@@ -313,7 +266,7 @@ body {
     content: '✓';
     position: absolute;
     left: 0;
-    color: #00c851;
+    color: #4caf50;
     font-weight: bold;
 }
 
@@ -324,17 +277,14 @@ body {
     border-radius: 25px;
     text-decoration: none;
     font-weight: bold;
-    transition: all 0.3s ease;
-    display: inline-block;
 }
 
 .card-btn:hover {
     background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(102,126,234,0.4);
+    box-shadow: 0 5px 15px rgba(102,126,234,0.4);
 }
 
-/* Features Section */
+
 .features {
     padding: 80px 0;
     background: white;
@@ -351,19 +301,16 @@ body {
     text-align: center;
     padding: 30px 20px;
     border-radius: 15px;
-    transition: all 0.3s ease;
 }
 
 .feature-item:hover {
-    background: #f8f9ff;
-    transform: translateY(-5px);
-    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    background: #f5f5f5;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
 
 .feature-icon {
     font-size: 48px;
     margin-bottom: 20px;
-    animation: pulse 3s infinite;
 }
 
 .feature-item h4 {
@@ -377,7 +324,6 @@ body {
     line-height: 1.6;
 }
 
-/* Demo Section */
 .demo {
     padding: 80px 0;
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
@@ -394,12 +340,10 @@ body {
     text-align: center;
     border-radius: 15px;
     font-size: 20px;
-    transition: all 0.3s ease;
 }
 
 .video-placeholder:hover {
     background: #444;
-    transform: scale(1.02);
 }
 
 /* CTA Section */
@@ -413,7 +357,6 @@ body {
 .cta h2 {
     font-size: 36px;
     margin-bottom: 15px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
 }
 
 .cta p {
@@ -428,7 +371,6 @@ body {
     gap: 20px;
 }
 
-/* Footer */
 .footer {
     background: #333;
     color: white;
@@ -458,7 +400,6 @@ body {
 .footer-section ul li a {
     color: #ccc;
     text-decoration: none;
-    transition: color 0.3s ease;
 }
 
 .footer-section ul li a:hover {
@@ -472,54 +413,7 @@ body {
     color: #ccc;
 }
 
-/* Animations */
-@keyframes slideInLeft {
-    from {
-        opacity: 0;
-        transform: translateX(-50px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
 
-@keyframes slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(50px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-@keyframes bounce {
-    0%, 20%, 50%, 80%, 100% {
-        transform: translateY(0);
-    }
-    40% {
-        transform: translateY(-10px);
-    }
-    60% {
-        transform: translateY(-5px);
-    }
-}
-
-@keyframes pulse {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.05);
-    }
-    100% {
-        transform: scale(1);
-    }
-}
-
-/* Responsive Design */
 @media (max-width: 768px) {
     .hero-container,
     .user-cards,

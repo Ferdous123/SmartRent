@@ -24,347 +24,330 @@ if ($current_user['user_type'] !== 'tenant') {
     <link rel="stylesheet" href="../view/css/dashboard.css">
     
     <style>
-        :root {
-            --nav-color: <?php echo $user_preferences['nav_color'] ?? '#667eea'; ?>;
-            --primary-bg: <?php echo $user_preferences['primary_bg_color'] ?? '#ffffff'; ?>;
-            --secondary-bg: <?php echo $user_preferences['secondary_bg_color'] ?? '#f5f7fa'; ?>;
-            --font-size: <?php echo ($user_preferences['font_size'] ?? 'medium') === 'small' ? '14px' : (($user_preferences['font_size'] ?? 'medium') === 'large' ? '18px' : '16px'); ?>;
-        }
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 0; 
-            padding: 0; 
-            background: var(--primary-bg);
-            font-size: var(--font-size);
-        }
-        .tenant-theme .stats-grid .stat-card.flat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .tenant-theme .stats-grid .stat-card.dues-card { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }
-        .tenant-theme .stats-grid .stat-card.advance-card { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
-        .tenant-theme .stats-grid .stat-card.requests-card { background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%); }
+    :root {
+        --nav-color: <?php echo $user_preferences['nav_color'] ?? '#667eea'; ?>;
+        --primary-bg: <?php echo $user_preferences['primary_bg_color'] ?? '#ffffff'; ?>;
+        --secondary-bg: <?php echo $user_preferences['secondary_bg_color'] ?? '#f5f5f5'; ?>;
+        --font-size: <?php echo ($user_preferences['font_size'] ?? 'medium') === 'small' ? '14px' : (($user_preferences['font_size'] ?? 'medium') === 'large' ? '18px' : '16px'); ?>;
+    }
+    
+    body { 
+        font-family: Arial, sans-serif; 
+        margin: 0; 
+        padding: 0; 
+        background: var(--primary-bg);
+        font-size: var(--font-size);
+    }
+    
+    .tenant-theme .stats-grid .stat-card.flat-card { 
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+    }
+    
+    .tenant-theme .stats-grid .stat-card.dues-card { 
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); 
+    }
+    
+    .tenant-theme .stats-grid .stat-card.advance-card { 
+        background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); 
+    }
+    
+    .tenant-theme .stats-grid .stat-card.requests-card { 
+        background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%); 
+    }
 
-        .user-dropdown {
-            position: relative;
-        }
+    .user-dropdown {
+        position: relative;
+    }
 
-        .user-btn {
-            cursor: pointer;
-        }
+    .user-btn {
+        cursor: pointer;
+    }
 
-        .user-menu {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            border-radius: 8px;
-            margin-top: 0.5rem;
-            min-width: 200px;
-            z-index: 10001;
-        }
+    .user-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border-radius: 8px;
+        margin-top: 8px;
+        min-width: 200px;
+        z-index: 10001;
+    }
 
-        .user-menu a {
-            display: block;
-            padding: 0.75rem 1rem;
-            color: #333;
-            text-decoration: none;
-        }
+    .user-menu a {
+        display: block;
+        padding: 12px 16px;
+        color: #333;
+        text-decoration: none;
+    }
 
-        .user-menu a:hover {
-            background: #f5f7fa;
-        }
+    .user-menu a:hover {
+        background: #f5f5f5;
+    }
 
-        .notifications-panel {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            border-radius: 8px;
-            margin-top: 0.5rem;
-            width: 350px;
-            max-height: 400px;
-            overflow-y: auto;
-            z-index: 10001;
-        }
+    .notifications-panel {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border-radius: 8px;
+        margin-top: 8px;
+        width: 350px;
+        max-height: 400px;
+        overflow-y: auto;
+        z-index: 10001;
+    }
 
-        /* Modal Styles */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            backdrop-filter: blur(5px);
-        }
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+    }
 
-        .modal-content {
-            background: white;
-            border-radius: 15px;
-            max-width: 600px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
-            animation: modalSlideIn 0.3s ease;
-        }
+    .modal-content {
+        background: white;
+        border-radius: 15px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 600px;
+        overflow-y: auto;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    }
 
-        @keyframes modalSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+    .modal-header {
+        padding: 20px 25px 15px;
+        border-bottom: 2px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+    }
 
-        .modal-header {
-            padding: 20px 25px 15px;
-            border-bottom: 2px solid #e0e0e0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 15px 15px 0 0;
-        }
+    .modal-header h3 {
+        margin: 0;
+        font-size: 20px;
+    }
 
-        .modal-header h3 {
-            margin: 0;
-            font-size: 20px;
-        }
+    .modal-close {
+        background: rgba(255,255,255,0.2);
+        border: none;
+        font-size: 28px;
+        cursor: pointer;
+        color: white;
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-        .modal-close {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            font-size: 28px;
-            cursor: pointer;
-            color: white;
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
+    .modal-close:hover {
+        background: rgba(255,255,255,0.3);
+    }
 
-        .modal-close:hover {
-            background: rgba(255,255,255,0.3);
-            transform: rotate(90deg);
-        }
+    .modal-body {
+        padding: 25px;
+    }
 
-        .modal-body {
-            padding: 25px;
-        }
+    .modal-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: flex-end;
+        margin-top: 30px;
+        padding-top: 25px;
+        border-top: 1px solid #e0e0e0;
+    }
 
-        .modal-actions {
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-            margin-top: 2rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid #e0e0e0;
-        }
+    .form-group {
+        margin-bottom: 25px;
+    }
 
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #333;
+    }
 
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: #333;
-        }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
 
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-            box-sizing: border-box;
-        }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+    }
 
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #667eea;
-        }
+    .form-error {
+        display: block;
+        color: #f44336;
+        font-size: 12px;
+        margin-top: 4px;
+    }
 
-        .form-error {
-            display: block;
-            color: #f44336;
-            font-size: 12px;
-            margin-top: 0.25rem;
-        }
+    .required {
+        color: #f44336;
+    }
 
-        .required {
-            color: #f44336;
-        }
+    .btn-primary {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+    }
 
-        .btn-primary {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
+    .btn-primary:hover {
+        background: #5568d3;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
 
-        .btn-primary:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
+    .btn-secondary {
+        background: #f5f5f5;
+        color: #333;
+        border: 2px solid #e0e0e0;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+    }
 
-        .btn-secondary {
-            background: #f5f7fa;
-            color: #333;
-            border: 2px solid #e0e0e0;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
+    .btn-secondary:hover {
+        background: #e0e0e0;
+        border-color: #ccc;
+    }
 
-        .btn-secondary:hover {
-            background: #e0e0e0;
-            border-color: #ccc;
-        }
+    .btn-danger {
+        background: #f44336;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+    }
 
-        .btn-danger {
-            background: #f44336;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-        }
+    .btn-danger:hover {
+        background: #d32f2f;
+    }
 
-        .btn-danger:hover {
-            background: #d32f2f;
-        }
+    .full-width {
+        width: 100%;
+    }
 
-        .full-width {
-            width: 100%;
-        }
+    .countdown-timer {
+        font-size: 24px;
+        font-weight: bold;
+        text-align: center;
+        padding: 15px;
+        background: #e3f2fd;
+        border-radius: 8px;
+        color: #1976d2;
+        margin: 15px 0;
+    }
 
-        .countdown-timer {
-            font-size: 24px;
-            font-weight: bold;
-            text-align: center;
-            padding: 1rem;
-            background: #e3f2fd;
-            border-radius: 8px;
-            color: #1976d2;
-            margin: 1rem 0;
-        }
+    .countdown-timer.warning {
+        background: #fff3e0;
+        color: #f57c00;
+    }
 
-        .countdown-timer.warning {
-            background: #fff3e0;
-            color: #f57c00;
-        }
+    .countdown-timer.critical {
+        background: #ffebee;
+        color: #d32f2f;
+    }
 
-        .countdown-timer.critical {
-            background: #ffebee;
-            color: #d32f2f;
-            animation: pulse 1s infinite;
-        }
+    .warning-box, 
+    .info-box {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+    }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
+    .warning-box {
+        background: #fff3e0;
+        border-left: 4px solid #f57c00;
+    }
 
-        .warning-box, .info-box {
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-        }
+    .warning-box p {
+        margin: 8px 0;
+        color: #f57c00;
+        font-size: 14px;
+    }
 
-        .warning-box {
-            background: #fff3e0;
-            border-left: 4px solid #f57c00;
-        }
+    .info-box {
+        background: #e3f2fd;
+        border-left: 4px solid #2196f3;
+    }
 
-        .warning-box p {
-            margin: 0.5rem 0;
-            color: #f57c00;
-            font-size: 14px;
-        }
+    .info-box p {
+        margin: 8px 0;
+        color: #1976d2;
+        font-size: 14px;
+    }
 
-        .info-box {
-            background: #e3f2fd;
-            border-left: 4px solid #2196f3;
-        }
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 10001;
+    }
 
-        .info-box p {
-            margin: 0.5rem 0;
-            color: #1976d2;
-            font-size: 14px;
-        }
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid rgba(255,255,255,0.3);
+        border-top-color: white;
+        border-radius: 50%;
+    }
 
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 10001;
-        }
+    .loading-overlay p {
+        color: white;
+        margin-top: 15px;
+        font-size: 18px;
+    }
 
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid rgba(255,255,255,0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .loading-overlay p {
-            color: white;
-            margin-top: 1rem;
-            font-size: 18px;
-        }
-
-        .notification-badge {
-            background: #f44336;
-            color: white;
-            border-radius: 50%;
-            padding: 0.25rem 0.5rem;
-            font-size: 12px;
-            font-weight: bold;
-            position: absolute;
-            top: -5px;
-            right: -5px;
-        }
-    </style>
+    .notification-badge {
+        background: #f44336;
+        color: white;
+        border-radius: 50%;
+        padding: 4px 8px;
+        font-size: 12px;
+        font-weight: bold;
+        position: absolute;
+        top: -5px;
+        right: -5px;
+    }
+</style>
 </head>
 
 <body class="<?php echo $user_preferences['theme_mode'] ?? 'light'; ?>-theme tenant-theme">
@@ -481,7 +464,7 @@ if ($current_user['user_type'] !== 'tenant') {
             </div>
 
             <div class="stat-card dues-card">
-                <div class="stat-icon">💰</div>
+                <div class="stat-icon"></div>
                 <div class="stat-content">
                     <h3 id="totalOutstanding">৳--</h3>
                     <p>Total Outstanding</p>
@@ -490,7 +473,7 @@ if ($current_user['user_type'] !== 'tenant') {
             </div>
 
             <div class="stat-card advance-card">
-                <div class="stat-icon">💎</div>
+                <div class="stat-icon"></div>
                 <div class="stat-content">
                     <h3 id="totalAdvance">৳--</h3>
                     <p>Total Security Deposit</p>
@@ -499,7 +482,7 @@ if ($current_user['user_type'] !== 'tenant') {
             </div>
 
             <div class="stat-card requests-card">
-                <div class="stat-icon">🔧</div>
+                <div class="stat-icon"></div>
                 <div class="stat-content">
                     <h3 id="activeRequests">--</h3>
                     <p>Active Requests</p>
@@ -811,7 +794,7 @@ if ($current_user['user_type'] !== 'tenant') {
     <div id="serviceRequestModal" class="modal" style="display: none;">
         <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
-                <h3>🔧 Create Service Request</h3>
+                <h3> Create Service Request</h3>
                 <button class="modal-close" onclick="closeServiceRequestModal()">&times;</button>
             </div>
             <div class="modal-body">

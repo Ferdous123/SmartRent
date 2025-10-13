@@ -1,9 +1,7 @@
-/* Tenants Management Page Styles */
-
 .tenants-main {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 20px;
     padding-top: 100px;
 }
 
@@ -11,13 +9,13 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
     border-bottom: 2px solid #e0e0e0;
 }
 
 .header-content h1 {
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 8px 0;
     color: #333;
     font-size: 28px;
 }
@@ -29,26 +27,25 @@
 
 .header-actions {
     display: flex;
-    gap: 1rem;
+    gap: 10px;
 }
 
 /* Tabs */
 .tenants-tabs {
     display: flex;
-    background: #f5f7fa;
+    background: #f5f5f5;
     border-bottom: 2px solid #e0e0e0;
-    margin-bottom: 1.5rem;
+    margin-bottom: 25px;
 }
 
 .tab-btn {
     flex: 1;
-    padding: 1rem;
+    padding: 15px;
     border: none;
     background: none;
     cursor: pointer;
     font-weight: 500;
     color: #666;
-    transition: all 0.3s;
     border-bottom: 3px solid transparent;
 }
 
@@ -62,27 +59,27 @@
     background: rgba(102, 126, 234, 0.1);
 }
 
-/* Enhanced Search and Filter Bar */
+/* Search and Filter Bar */
 .search-filter-bar {
-    margin-bottom: 1.5rem;
+    margin-bottom: 25px;
 }
 
 .filter-row {
     display: grid;
     grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
-    gap: 0.75rem;
+    gap: 12px;
     align-items: center;
 }
 
 .search-input {
-    padding: 0.75rem;
+    padding: 12px;
     border: 2px solid #e0e0e0;
     border-radius: 8px;
     font-size: 14px;
 }
 
 .filter-select {
-    padding: 0.75rem;
+    padding: 12px;
     border: 2px solid #e0e0e0;
     border-radius: 8px;
     font-size: 14px;
@@ -97,8 +94,8 @@
 }
 
 .btn-reset {
-    padding: 0.75rem 1.25rem;
-    background: #f5f7fa;
+    padding: 12px 20px;
+    background: #f5f5f5;
     border: 2px solid #e0e0e0;
     border-radius: 8px;
     cursor: pointer;
@@ -111,23 +108,10 @@
     background: #e0e0e0;
 }
 
-/* Responsive filters */
-@media (max-width: 1200px) {
-    .filter-row {
-        grid-template-columns: 1fr 1fr;
-    }
-}
-
-@media (max-width: 768px) {
-    .filter-row {
-        grid-template-columns: 1fr;
-    }
-}
-
 /* Tab Content */
 .tab-content {
     background: white;
-    border-radius: 12px;
+    border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     overflow: hidden;
 }
@@ -147,11 +131,11 @@
 }
 
 .tenants-table thead {
-    background: #f5f7fa;
+    background: #f5f5f5;
 }
 
 .tenants-table th {
-    padding: 1rem;
+    padding: 15px;
     text-align: left;
     font-weight: 600;
     color: #333;
@@ -160,7 +144,7 @@
 }
 
 .tenants-table td {
-    padding: 1rem;
+    padding: 15px;
     border-bottom: 1px solid #e0e0e0;
     font-size: 14px;
 }
@@ -170,7 +154,7 @@
 }
 
 .tenants-table tbody tr:hover {
-    background: #f9fafb;
+    background: #f9f9f9;
 }
 
 /* Tenant Photo */
@@ -196,7 +180,7 @@
 
 /* Status Badges */
 .status-badge {
-    padding: 0.4rem 0.8rem;
+    padding: 6px 12px;
     border-radius: 12px;
     font-size: 12px;
     font-weight: 600;
@@ -205,43 +189,42 @@
 
 .status-badge.paid {
     background: #e8f5e9;
-    color: #388e3c;
+    color: #4caf50;
 }
 
 .status-badge.due {
     background: #fff3e0;
-    color: #f57c00;
+    color: #ff9800;
 }
 
 .status-badge.overdue {
     background: #ffebee;
-    color: #d32f2f;
+    color: #f44336;
 }
 
 .status-badge.pending {
     background: #e3f2fd;
-    color: #1976d2;
+    color: #2196f3;
 }
 
 .status-badge.confirmed {
     background: #e8f5e9;
-    color: #388e3c;
+    color: #4caf50;
 }
 
 /* Action Buttons */
 .action-buttons {
     display: flex;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
 .btn-small {
-    padding: 0.4rem 0.8rem;
+    padding: 6px 12px;
     font-size: 12px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-weight: 500;
-    transition: all 0.2s;
 }
 
 .btn-small.btn-view {
@@ -292,17 +275,17 @@
 /* Empty State */
 .empty-state {
     text-align: center;
-    padding: 3rem;
+    padding: 50px 15px;
     color: #999;
 }
 
 .empty-state-icon {
     font-size: 48px;
-    margin-bottom: 1rem;
+    margin-bottom: 15px;
 }
 
 .empty-state h4 {
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 8px 0;
     color: #666;
 }
 
@@ -314,10 +297,10 @@
 .countdown-timer {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.25rem 0.75rem;
+    gap: 8px;
+    padding: 4px 12px;
     background: #fff3e0;
-    color: #f57c00;
+    color: #ff9800;
     border-radius: 12px;
     font-size: 12px;
     font-weight: 600;
@@ -325,56 +308,51 @@
 
 .countdown-timer.warning {
     background: #ffebee;
-    color: #d32f2f;
+    color: #f44336;
 }
 
 .countdown-timer.critical {
-    background: #d32f2f;
+    background: #f44336;
     color: white;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
 }
 
 /* Flat Details in Table */
 .flat-details {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 4px;
 }
 
 .flat-badge {
     display: inline-block;
-    padding: 0.2rem 0.5rem;
+    padding: 3px 8px;
     background: #e3f2fd;
-    color: #1976d2;
+    color: #2196f3;
     border-radius: 4px;
     font-size: 11px;
     font-weight: 600;
 }
 
 /* Responsive */
+@media (max-width: 1200px) {
+    .filter-row {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
 @media (max-width: 768px) {
     .tenants-main {
-        padding: 1rem;
+        padding: 15px;
     }
     
     .page-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 1rem;
+        gap: 15px;
     }
     
-    .search-filter-bar {
-        flex-direction: column;
-    }
-    
-    .search-filter-bar input,
-    .search-filter-bar select {
-        width: 100%;
+    .filter-row {
+        grid-template-columns: 1fr;
     }
     
     .tenants-table {
@@ -383,7 +361,7 @@
     
     .tenants-table th,
     .tenants-table td {
-        padding: 0.5rem;
+        padding: 8px;
     }
     
     .action-buttons {
