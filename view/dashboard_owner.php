@@ -241,46 +241,6 @@ if ($current_user['user_type'] !== 'owner') {
                     </div>
                 </div>
             </div>
-
-            <!-- Outstanding Payments -->
-            <div class="card outstanding-payments-card">
-                <div class="card-header">
-                    <h3>Outstanding Payments</h3>
-                    <button class="view-all-btn">View All</button>
-                </div>
-                <div class="card-content">
-                    <div class="outstanding-list" id="outstandingList">
-                        <div class="outstanding-item overdue">
-                            <div class="tenant-info">
-                                <strong>Mohammad Ali</strong>
-                                <span>Building A - Flat 2A</span>
-                            </div>
-                            <div class="amount-info">
-                                <span class="amount">৳28,000</span>
-                                <span class="days-overdue">15 days overdue</span>
-                            </div>
-                            <div class="actions">
-                                <button class="btn-small btn-warning" onclick="sendReminder()">Remind</button>
-                                <button class="btn-small btn-primary" onclick="recordPayment()">Record Payment</button>
-                            </div>
-                        </div>
-                        <div class="outstanding-item due-soon">
-                            <div class="tenant-info">
-                                <strong>Fatima Khan</strong>
-                                <span>Building B - Flat 1B</span>
-                            </div>
-                            <div class="amount-info">
-                                <span class="amount">৳22,000</span>
-                                <span class="due-date">Due in 3 days</span>
-                            </div>
-                            <div class="actions">
-                                <button class="btn-small btn-secondary" onclick="sendReminder()">Remind</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Buildings Overview -->
             <div class="card buildings-overview-card">
                 <div class="card-header">
