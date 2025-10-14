@@ -1,5 +1,3 @@
-// Tenants Management Page JavaScript
-// Global variables
 var currentTab = 'all';
 var allTenants = [];
 var pendingAssignments = [];
@@ -8,12 +6,11 @@ var availableFlats = [];
 var currentTenantId = null;
 var currentAssignmentId = null;
 
-// Initialize page
+
 document.addEventListener('DOMContentLoaded', function() {
     loadAllData();
     setupEventListeners();
     
-    // Check URL parameters - open add modal if requested
     var urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('action') === 'add') {
         setTimeout(function() {
@@ -30,9 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Setup event listeners
 function setupEventListeners() {
-    // Add Tenant Form - OTP
     var otpForm = document.getElementById('otpForm');
     if (otpForm) {
         otpForm.addEventListener('submit', function(e) {
@@ -41,7 +36,6 @@ function setupEventListeners() {
         });
     }
     
-    // Add Tenant Form - Direct
     var directForm = document.getElementById('directForm');
     if (directForm) {
         directForm.addEventListener('submit', function(e) {
@@ -50,7 +44,6 @@ function setupEventListeners() {
         });
     }
     
-    // Add Tenant Form - Generate
     var generateForm = document.getElementById('generateForm');
     if (generateForm) {
         generateForm.addEventListener('submit', function(e) {
@@ -59,7 +52,6 @@ function setupEventListeners() {
         });
     }
     
-    // Move Tenant Form
     var moveForm = document.getElementById('moveTenantForm');
     if (moveForm) {
         moveForm.addEventListener('submit', function(e) {
@@ -68,7 +60,6 @@ function setupEventListeners() {
         });
     }
     
-    // End Tenancy Form
     var endForm = document.getElementById('endTenancyForm');
     if (endForm) {
         endForm.addEventListener('submit', function(e) {
@@ -77,7 +68,6 @@ function setupEventListeners() {
         });
     }
     
-    // Calculate advance balance when inputs change
     var transferInput = document.getElementById('transfer_advance');
     var additionalInput = document.getElementById('additional_advance');
     if (transferInput && additionalInput) {
@@ -86,16 +76,15 @@ function setupEventListeners() {
     }
 }
 
-// Load all data
 function loadAllData() {
     loadTenants();
     loadPendingAssignments();
     loadOutstandingTenants();
     loadAvailableFlats();
-    loadBuildings(); // Add this line
+    loadBuildings(); 
 }
 
-// Load tenants
+
 function loadTenants() {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '../controller/tenant_controller.php', true);
@@ -108,7 +97,7 @@ function loadTenants() {
                 if (response.success) {
                     allTenants = response.tenants;
                     displayTenants(response.tenants);
-                    populateBuildingFilter(response.tenants); // Add this line
+                    populateBuildingFilter(response.tenants);
                 } else {
                     showError('Failed to load tenants');
                 }
@@ -122,7 +111,6 @@ function loadTenants() {
     xhr.send('action=get_tenants');
 }
 
-// Load buildings for filter dropdown
 function loadBuildings() {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '../controller/tenant_controller.php', true);
@@ -144,7 +132,7 @@ function loadBuildings() {
     xhr.send('action=get_buildings');
 }
 
-// Populate building filter dropdown
+
 function populateBuildingFilter(buildings) {
     var buildingSelect = document.getElementById('buildingFilter');
     if (!buildingSelect) return;
@@ -159,7 +147,7 @@ function populateBuildingFilter(buildings) {
     }
 }
 
-// Display tenants
+
 function displayTenants(tenants) {
     var tbody = document.getElementById('tenantsTableBody');
     
@@ -232,7 +220,7 @@ function loadPendingAssignments() {
     xhr.send('action=get_pending_assignments');
 }
 
-// Display pending assignments
+
 function displayPendingAssignments(assignments) {
     var tbody = document.getElementById('pendingTableBody');
     
@@ -275,7 +263,7 @@ function displayPendingAssignments(assignments) {
     tbody.innerHTML = html;
 }
 
-// Load outstanding tenants
+
 function loadOutstandingTenants() {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '../controller/tenant_controller.php', true);
@@ -298,7 +286,7 @@ function loadOutstandingTenants() {
     xhr.send('action=get_outstanding_tenants');
 }
 
-// Display outstanding tenants
+
 function displayOutstandingTenants(tenants) {
     var tbody = document.getElementById('outstandingTableBody');
     
@@ -334,7 +322,6 @@ function displayOutstandingTenants(tenants) {
     tbody.innerHTML = html;
 }
 
-// Load available flats
 function loadAvailableFlats() {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '../controller/tenant_controller.php', true);
@@ -357,7 +344,6 @@ function loadAvailableFlats() {
     xhr.send('action=get_available_flats');
 }
 
-// Populate flat dropdowns
 function populateFlatDropdowns(flats) {
     var dropdowns = ['otp_flat_id', 'direct_flat_id', 'generate_flat_id', 'new_flat_id'];
     
@@ -376,7 +362,6 @@ function populateFlatDropdowns(flats) {
     }
 }
 
-// Switch tabs
 function switchTenantsTab(tab) {
     currentTab = tab;
     
@@ -402,7 +387,6 @@ function switchTenantsTab(tab) {
     }
 }
 
-// Search tenants
 function searchTenants() {
     var input = document.getElementById('searchInput');
     var filter = input.value.toLowerCase();
@@ -427,7 +411,6 @@ function searchTenants() {
     }
 }
 
-// Enhanced filter tenants
 function filterTenants() {
     var buildingFilter = document.getElementById('buildingFilter').value.toLowerCase();
     var statusFilter = document.getElementById('statusFilter').value;
@@ -440,7 +423,6 @@ function filterTenants() {
     for (var i = 1; i < tr.length; i++) {
         var show = true;
         
-        // Building filter
         if (buildingFilter) {
             var flatDetails = tr[i].getElementsByTagName('td')[2].textContent.toLowerCase();
             if (flatDetails.indexOf(buildingFilter) === -1) {
@@ -448,7 +430,6 @@ function filterTenants() {
             }
         }
         
-        // Status filter
         if (statusFilter) {
             var statusBadge = tr[i].querySelector('.status-badge');
             if (statusBadge && !statusBadge.classList.contains(statusFilter)) {
@@ -456,7 +437,6 @@ function filterTenants() {
             }
         }
         
-        // Move-in filter
         if (moveInFilter && show) {
             var tenant = findTenantByRow(i);
             if (tenant) {
@@ -464,7 +444,7 @@ function filterTenants() {
             }
         }
         
-        // Move-out filter
+
         if (moveOutFilter && show) {
             var tenant = findTenantByRow(i);
             if (tenant) {
@@ -476,7 +456,6 @@ function filterTenants() {
     }
 }
 
-// Find tenant by table row index
 function findTenantByRow(rowIndex) {
     var table = document.getElementById('tenantsTable');
     var rows = table.getElementsByTagName('tr');
@@ -490,7 +469,6 @@ function findTenantByRow(rowIndex) {
     return null;
 }
 
-// Check move-in filter
 function checkMoveInFilter(tenant, filter) {
     if (!tenant.assigned_flats || tenant.assigned_flats.length === 0) {
         return false;
@@ -531,7 +509,6 @@ function checkMoveInFilter(tenant, filter) {
     return hasMatch;
 }
 
-// Check move-out filter
 function checkMoveOutFilter(tenant, filter) {
     if (!tenant.assigned_flats || tenant.assigned_flats.length === 0) {
         return false;
@@ -577,7 +554,6 @@ function checkMoveOutFilter(tenant, filter) {
     return hasMatch;
 }
 
-// Calculate months difference
 function getMonthsDifference(date1, date2) {
     var months = (date2.getFullYear() - date1.getFullYear()) * 12;
     months -= date1.getMonth();
@@ -585,7 +561,6 @@ function getMonthsDifference(date1, date2) {
     return months;
 }
 
-// Reset all filters
 function resetFilters() {
     document.getElementById('searchInput').value = '';
     document.getElementById('buildingFilter').value = '';
@@ -601,13 +576,12 @@ function resetFilters() {
     }
 }
 
-// Show add tenant modal
+
 function showAddTenantModal() {
     document.getElementById('addTenantModal').style.display = 'flex';
     switchAddMethod('otp');
 }
 
-// Close add tenant modal
 function closeAddTenantModal() {
     document.getElementById('addTenantModal').style.display = 'none';
     
@@ -619,7 +593,6 @@ function closeAddTenantModal() {
     document.getElementById('credentialsDisplay').style.display = 'none';
 }
 
-// Switch add method
 function switchAddMethod(method) {
     var tabs = document.querySelectorAll('.method-tab');
     for (var i = 0; i < tabs.length; i++) {
@@ -643,7 +616,6 @@ function switchAddMethod(method) {
     }
 }
 
-// Handle generate OTP
 function handleGenerateOTP() {
     var flatId = document.getElementById('otp_flat_id').value;
     var advanceAmount = document.getElementById('otp_advance_amount').value;
@@ -687,19 +659,17 @@ function handleGenerateOTP() {
     xhr.send(formData);
 }
 
-// Copy OTP
 function copyOTP() {
     var otpText = document.getElementById('generatedOTP').textContent;
     copyToClipboard(otpText);
     showMessage('OTP copied to clipboard', 'success');
 }
 
-// Handle direct assignment
 function handleDirectAssignment() {
     var flatId = document.getElementById('direct_flat_id').value;
     var tenantId = document.getElementById('direct_tenant_id').value;
     var advanceAmount = document.getElementById('direct_advance_amount').value;
-    var autoConfirm = document.getElementById('auto_confirm').checked; // NEW
+    var autoConfirm = document.getElementById('auto_confirm').checked; 
     
     if (!flatId || !tenantId || !advanceAmount || advanceAmount <= 0) {
         showMessage('Please fill all required fields', 'error');
@@ -711,7 +681,7 @@ function handleDirectAssignment() {
     formData.append('flat_id', flatId);
     formData.append('tenant_id', tenantId);
     formData.append('advance_amount', advanceAmount);
-    formData.append('auto_confirm', autoConfirm ? 'true' : 'false'); // NEW
+    formData.append('auto_confirm', autoConfirm ? 'true' : 'false'); 
     
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '../controller/tenant_controller.php', true);
@@ -725,7 +695,7 @@ function handleDirectAssignment() {
                     showMessage(response.message, 'success');
                     closeAddTenantModal();
                     loadPendingAssignments();
-                    loadTenants(); // Refresh tenant list
+                    loadTenants(); 
                 } else {
                     showMessage(response.message, 'error');
                 }
@@ -739,7 +709,6 @@ function handleDirectAssignment() {
     xhr.send(formData);
 }
 
-// Search tenants for assignment
 function searchTenantsForAssign() {
     var searchTerm = document.getElementById('tenantSearch').value;
     
@@ -749,7 +718,7 @@ function searchTenantsForAssign() {
     }
     
     var formData = new FormData();
-    formData.append('action', 'search_all_tenants'); // CHANGED from 'search_tenants'
+    formData.append('action', 'search_all_tenants'); 
     formData.append('search_term', searchTerm);
     
     var xhr = new XMLHttpRequest();
@@ -772,7 +741,6 @@ function searchTenantsForAssign() {
     xhr.send(formData);
 }
 
-// Display tenant search results
 function displayTenantSearchResults(tenants) {
     var container = document.getElementById('tenantSearchResults');
     
@@ -796,14 +764,12 @@ function displayTenantSearchResults(tenants) {
     container.style.display = 'block';
 }
 
-// Select tenant
 function selectTenant(userId, fullName) {
     document.getElementById('direct_tenant_id').value = userId;
     document.getElementById('tenantSearch').value = fullName;
     document.getElementById('tenantSearchResults').style.display = 'none';
 }
 
-// Handle generate credentials
 function handleGenerateCredentials() {
     var flatId = document.getElementById('generate_flat_id').value;
     var advanceAmount = document.getElementById('generate_advance_amount').value;
@@ -847,21 +813,18 @@ function handleGenerateCredentials() {
     xhr.send(formData);
 }
 
-// Copy username
 function copyUsername() {
     var username = document.getElementById('generatedUsername').textContent;
     copyToClipboard(username);
     showMessage('Username copied', 'success');
 }
 
-// Copy password
 function copyPassword() {
     var password = document.getElementById('generatedPassword').textContent;
     copyToClipboard(password);
     showMessage('Password copied', 'success');
 }
 
-// View tenant details
 function viewTenantDetails(tenantId) {
     currentTenantId = tenantId;
     
@@ -893,7 +856,6 @@ function viewTenantDetails(tenantId) {
     xhr.send(formData);
 }
 
-// Display tenant details
 function displayTenantDetails(tenant) {
     document.getElementById('tenantFullName').textContent = tenant.full_name;
     document.getElementById('tenantEmail').textContent = tenant.email;
@@ -963,13 +925,11 @@ function displayTenantDetails(tenant) {
     document.getElementById('totalOutstanding').textContent = '৳' + formatNumber(tenant.total_outstanding || 0);
 }
 
-// Close tenant details modal
 function closeTenantDetailsModal() {
     document.getElementById('tenantDetailsModal').style.display = 'none';
     currentTenantId = null;
 }
 
-// Show move tenant modal
 function showMoveTenantModal(assignmentId) {
     currentAssignmentId = assignmentId;
     
@@ -998,14 +958,12 @@ function showMoveTenantModal(assignmentId) {
     document.getElementById('moveTenantModal').style.display = 'flex';
 }
 
-// Close move tenant modal
 function closeMoveTenantModal() {
     document.getElementById('moveTenantModal').style.display = 'none';
     document.getElementById('moveTenantForm').reset();
     currentAssignmentId = null;
 }
 
-// Calculate new advance
 function calculateNewAdvance() {
     var transfer = parseFloat(document.getElementById('transfer_advance').value) || 0;
     var additional = parseFloat(document.getElementById('additional_advance').value) || 0;
@@ -1014,7 +972,6 @@ function calculateNewAdvance() {
     document.getElementById('newAdvanceBalance').textContent = '৳' + formatNumber(newAdvance);
 }
 
-// Handle move tenant
 function handleMoveTenant() {
     var assignmentId = document.getElementById('move_assignment_id').value;
     var newFlatId = document.getElementById('new_flat_id').value;
@@ -1059,7 +1016,6 @@ function handleMoveTenant() {
     xhr.send(formData);
 }
 
-// Show end tenancy modal
 function showEndTenancyModal(assignmentId) {
     currentAssignmentId = assignmentId;
     
@@ -1085,14 +1041,12 @@ function showEndTenancyModal(assignmentId) {
     document.getElementById('endTenancyModal').style.display = 'flex';
 }
 
-// Close end tenancy modal
 function closeEndTenancyModal() {
     document.getElementById('endTenancyModal').style.display = 'none';
     document.getElementById('endTenancyForm').reset();
     currentAssignmentId = null;
 }
 
-// Handle send end notice
 function handleSendEndNotice() {
     var assignmentId = document.getElementById('end_assignment_id').value;
     
@@ -1126,7 +1080,6 @@ function handleSendEndNotice() {
     xhr.send(formData);
 }
 
-// Cancel end notice
 function cancelEndNotice(assignmentId) {
     if (!confirm('Are you sure you want to cancel the end notice?')) {
         return;
@@ -1160,7 +1113,6 @@ function cancelEndNotice(assignmentId) {
     xhr.send(formData);
 }
 
-// Cancel assignment
 function cancelAssignment(assignmentId) {
     if (!confirm('Are you sure you want to cancel this assignment?')) {
         return;
@@ -1169,32 +1121,26 @@ function cancelAssignment(assignmentId) {
     showMessage('Cancel assignment feature coming soon', 'info');
 }
 
-// Send payment reminder
 function sendPaymentReminder(tenantId) {
     showMessage('Payment reminder feature coming soon', 'info');
 }
 
-// Send message
 function sendMessage(tenantId) {
     showMessage('Messaging feature coming soon', 'info');
 }
 
-// Edit tenant profile
 function editTenantProfile() {
     showMessage('Edit profile feature coming soon', 'info');
 }
 
-// Send message to tenant
 function sendMessageToTenant() {
     showMessage('Messaging feature coming soon', 'info');
 }
 
-// Generate tenant slip
 function generateTenantSlip() {
     showMessage('Slip generation feature coming soon', 'info');
 }
 
-// Utility functions
 function findCurrentTenantData() {
     if (!currentTenantId) return null;
     

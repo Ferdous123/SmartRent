@@ -1,4 +1,4 @@
-<!-- Add Flat Modal -->
+
 <div id="addFlatModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">

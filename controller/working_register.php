@@ -3,10 +3,10 @@ session_start();
 require_once '../model/database.php';
 
 
-// Handle POST request
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
-    // Get form data
+
     $username = trim($_POST['username'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $full_name = trim($_POST['full_name'] ?? '');
     $phone_number = trim($_POST['phone_number'] ?? '');
     
-    // Simple validation
+
     $errors = array();
     
     if (empty($username) || strlen($username) < 3) {
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Please select a user type';
     }
     
-    // Check for errors
+
     if (!empty($errors)) {
         header('Content-Type: application/json');
         echo json_encode(array(
@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
     
-    // Check if username or email exists
+
     $check_query = "SELECT user_id FROM users WHERE username = ? OR email = ?";
     $check_result = execute_prepared_query($check_query, array($username, $email), 'ss');
     
@@ -69,14 +69,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
     
-    // Hash password
+
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
     
-    // Begin transaction
+
 begin_transaction();
 
 try {
-    // Insert user (without full_name)
+
     $insert_query = "INSERT INTO users (username, email, password_hash, user_type, is_active, created_at) 
                      VALUES (?, ?, ?, ?, 1, NOW())";
     $insert_params = array($username, $email, $password_hash, $user_type);
@@ -90,7 +90,7 @@ try {
     
     $user_id = get_last_insert_id();
     
-    // Insert user profile
+
     $profile_query = "INSERT INTO user_profiles (user_id, full_name) VALUES (?, ?)";
     $profile_result = execute_prepared_query($profile_query, array($user_id, $full_name), 'is');
     
@@ -98,7 +98,7 @@ try {
         throw new Exception('Failed to create user profile');
     }
     
-    // Insert contact if provided
+
     if (!empty($phone_number)) {
         $contact_query = "INSERT INTO user_contacts (user_id, contact_number, contact_type) VALUES (?, ?, 'primary')";
         execute_prepared_query($contact_query, array($user_id, $phone_number), 'is');
@@ -126,7 +126,7 @@ try {
 }
     
 } else {
-    // Not POST request
+
     header('Content-Type: application/json');
     echo json_encode(array(
         'success' => false,

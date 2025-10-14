@@ -1,16 +1,16 @@
 <?php
-// Enhanced Password Reset with 2FA Support
+
 session_start();
 
 require_once '../model/database.php';
 require_once '../model/user_model.php';
 require_once '../model/twofa_model.php';
 
-// Get reset token from URL
+
 $reset_token = isset($_GET['token']) ? sanitize_input($_GET['token']) : '';
 $step = isset($_GET['step']) ? sanitize_input($_GET['step']) : 'identify';
 
-// If no token provided, start with user identification
+
 if (empty($reset_token) && $step !== 'identify') {
     header("Location: reset_password.php?step=identify");
     exit();
@@ -19,7 +19,7 @@ if (empty($reset_token) && $step !== 'identify') {
 $user_data = null;
 $token_data = null;
 
-// If token is provided, verify it
+
 if (!empty($reset_token)) {
     $token_result = verify_password_reset_token($reset_token);
     if (!$token_result['success']) {
@@ -42,7 +42,7 @@ if (!empty($reset_token)) {
     <link rel="icon" type="image/x-icon" href="../favicon.ico">
     <link rel="stylesheet" href="css/auth.css">
     <style>
-        /* Additional styles for multi-step password reset */
+
         .step-indicator {
             display: flex;
             justify-content: center;
@@ -179,7 +179,7 @@ if (!empty($reset_token)) {
     </style>
 </head>
 <body>
-    <!-- Navigation Header -->
+
     <header class="navbar">
         <div class="nav-container">
             <div class="logo">
@@ -194,12 +194,12 @@ if (!empty($reset_token)) {
         </div>
     </header>
 
-    <!-- Reset Password Content -->
+
     <div class="auth-container">
         <div class="auth-form-wrapper">
             
             <?php if ($step === 'identify'): ?>
-                <!-- Step 1: User Identification -->
+
                 <div class="step-indicator">
                     <div class="step-item">
                         <div class="step-number active">1</div>
@@ -242,7 +242,7 @@ if (!empty($reset_token)) {
                 </form>
 
             <?php elseif ($step === 'verify'): ?>
-                <!-- Step 2: 2FA/Backup Code Verification -->
+
                 <div class="step-indicator">
                     <div class="step-item">
                         <div class="step-number completed">1</div>
@@ -274,7 +274,7 @@ if (!empty($reset_token)) {
                     </div>
                 </div>
 
-                <!-- 2FA Code Form -->
+
                 <form id="verify2faForm" class="auth-form" style="display: none;">
                     <input type="hidden" name="action" value="verify_2fa_reset">
                     <input type="hidden" name="reset_token" value="<?php echo htmlspecialchars($reset_token); ?>">
@@ -300,7 +300,7 @@ if (!empty($reset_token)) {
                     </div>
                 </form>
 
-                <!-- Backup Code Form -->
+
                 <form id="verifyBackupForm" class="auth-form" style="display: none;">
                     <input type="hidden" name="action" value="verify_backup_reset">
                     <input type="hidden" name="reset_token" value="<?php echo htmlspecialchars($reset_token); ?>">
@@ -332,7 +332,7 @@ if (!empty($reset_token)) {
                 </form>
 
             <?php elseif ($step === 'reset'): ?>
-                <!-- Step 3: Set New Password -->
+
                 <div class="step-indicator">
                     <div class="step-item">
                         <div class="step-number completed">1</div>
@@ -382,7 +382,6 @@ if (!empty($reset_token)) {
                 </form>
 
             <?php elseif ($step === 'success'): ?>
-                <!-- Success Message -->
                 <div class="success-message">
                     <div class="success-icon">✅</div>
                     <h2>Password Reset Successfully!</h2>
@@ -401,7 +400,7 @@ if (!empty($reset_token)) {
                 </div>
 
             <?php elseif ($step === 'error'): ?>
-                <!-- Error Message -->
+
                 <div class="auth-header">
                     <h2>Reset Link Invalid</h2>
                     <p><?php echo htmlspecialchars($error_message ?? 'The password reset link is invalid or has expired.'); ?></p>
@@ -417,12 +416,12 @@ if (!empty($reset_token)) {
         </div>
     </div>
 
-    <!-- Success/Error Messages -->
+
     <div id="message_container" class="message-container"></div>
 
     <script src="js/auth.js"></script>
     <script>
-        // Password reset specific JavaScript
+
         var currentStep = '<?php echo $step; ?>';
         var selectedVerificationMethod = null;
 
@@ -468,7 +467,7 @@ if (!empty($reset_token)) {
                 });
             }
 
-            // Auto-format backup code input
+
             var backupInput = document.getElementById('backup_code');
             if (backupInput) {
                 backupInput.addEventListener('input', function() {
@@ -476,7 +475,7 @@ if (!empty($reset_token)) {
                 });
             }
 
-            // Auto-format 2FA code input
+
             var twofaInput = document.getElementById('twofa_code');
             if (twofaInput) {
                 twofaInput.addEventListener('input', function() {
@@ -513,7 +512,7 @@ if (!empty($reset_token)) {
         function selectVerificationMethod(method) {
             selectedVerificationMethod = method;
             
-            // Update option styling
+
             var options = document.querySelectorAll('.verification-option');
             options.forEach(function(option) {
                 option.classList.remove('selected');
@@ -521,11 +520,11 @@ if (!empty($reset_token)) {
             
             document.getElementById('option_' + method).classList.add('selected');
             
-            // Show appropriate form
+
             document.getElementById('verify2faForm').style.display = method === '2fa' ? 'block' : 'none';
             document.getElementById('verifyBackupForm').style.display = method === 'backup' ? 'block' : 'none';
             
-            // Focus on input
+
             setTimeout(function() {
                 var input = method === '2fa' ? 
                     document.getElementById('twofa_code') : 
@@ -557,7 +556,6 @@ if (!empty($reset_token)) {
 
             setButtonLoading(submitBtn, true);
 
-            // AJAX request to identify user and check 2FA status
             var xhr = new XMLHttpRequest();
             xhr.open('POST', '../controller/password_reset_controller.php', true);
             xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
@@ -655,10 +653,10 @@ if (!empty($reset_token)) {
             var newPassword = document.getElementById('new_password').value;
             var confirmPassword = document.getElementById('confirm_password').value;
 
-            // Clear previous errors
+
             clearFormErrors(form);
 
-            // Validate passwords
+
             if (newPassword.length < 6) {
                 showFieldError(document.getElementById('new_password'), 'Password must be at least 6 characters');
                 return;

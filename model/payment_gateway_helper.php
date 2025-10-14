@@ -1,15 +1,14 @@
 <?php
-// Payment Gateway Simulation Helper
 require_once 'database.php';
 
-// Simulate payment - Generate transaction ID
+
 function simulate_payment($amount, $method = 'bKash') {
     $prefix = array('bKash' => 'BKA', 'Nagad' => 'NAG', 'Rocket' => 'RKT');
     $pre = isset($prefix[$method]) ? $prefix[$method] : 'TXN';
     
     $transaction_id = $pre . date('YmdHis') . strtoupper(substr(md5(uniqid()), 0, 6));
     
-    // Store in gateway simulation table
+
     $query = "INSERT INTO payment_gateway_sim (transaction_id, amount, payment_method) 
               VALUES (?, ?, ?)";
     
@@ -27,7 +26,7 @@ function simulate_payment($amount, $method = 'bKash') {
     return array('success' => false);
 }
 
-// Verify transaction exists in gateway
+
 function verify_transaction($transaction_id) {
     $query = "SELECT * FROM payment_gateway_sim WHERE transaction_id = ?";
     $result = execute_prepared_query($query, array($transaction_id), 's');
@@ -38,7 +37,7 @@ function verify_transaction($transaction_id) {
     return null;
 }
 
-// Check if transaction already used
+
 function is_transaction_used($transaction_id) {
     $query = "SELECT is_used FROM payment_gateway_sim WHERE transaction_id = ?";
     $result = execute_prepared_query($query, array($transaction_id), 's');
@@ -50,13 +49,13 @@ function is_transaction_used($transaction_id) {
     return false;
 }
 
-// Mark transaction as used
+
 function mark_transaction_used($transaction_id) {
     $query = "UPDATE payment_gateway_sim SET is_used = 1 WHERE transaction_id = ?";
     return execute_prepared_query($query, array($transaction_id), 's');
 }
 
-// Get total paid for assignment - THIS IS THE KEY FUNCTION
+
 function get_total_paid_for_assignment($assignment_id) {
     $query = "SELECT COALESCE(SUM(amount), 0) as total 
               FROM payments 

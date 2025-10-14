@@ -24,19 +24,12 @@ if ($current_user['user_type'] !== 'tenant') {
     <link rel="stylesheet" href="../view/css/dashboard.css">
     
     <style>
-    :root {
-        --nav-color: <?php echo $user_preferences['nav_color'] ?? '#667eea'; ?>;
-        --primary-bg: <?php echo $user_preferences['primary_bg_color'] ?? '#ffffff'; ?>;
-        --secondary-bg: <?php echo $user_preferences['secondary_bg_color'] ?? '#f5f5f5'; ?>;
-        --font-size: <?php echo ($user_preferences['font_size'] ?? 'medium') === 'small' ? '14px' : (($user_preferences['font_size'] ?? 'medium') === 'large' ? '18px' : '16px'); ?>;
-    }
-    
     body { 
         font-family: Arial, sans-serif; 
         margin: 0; 
         padding: 0; 
-        background: var(--primary-bg);
-        font-size: var(--font-size);
+        background: <?php echo $user_preferences['primary_bg_color'] ?? '#ffffff'; ?>;
+        font-size: <?php echo ($user_preferences['font_size'] ?? 'medium') === 'small' ? '14px' : (($user_preferences['font_size'] ?? 'medium') === 'large' ? '18px' : '16px'); ?>;
     }
     
     .tenant-theme .stats-grid .stat-card.flat-card { 
@@ -348,6 +341,7 @@ if ($current_user['user_type'] !== 'tenant') {
         right: -5px;
     }
 </style>
+
 </head>
 
 <body class="<?php echo $user_preferences['theme_mode'] ?? 'light'; ?>-theme tenant-theme">

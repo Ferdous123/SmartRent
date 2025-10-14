@@ -1,9 +1,7 @@
 <?php
-// Notification Model for SmartRent
-// All notification-related database operations
 require_once 'database.php';
 
-// Create new notification
+
 function create_notification($user_id, $type, $title, $message, $related_entity = null, $related_id = null) {
     $query = "INSERT INTO notifications (user_id, type, title, message, related_entity, related_id) 
               VALUES (?, ?, ?, ?, ?, ?)";
@@ -19,7 +17,7 @@ function create_notification($user_id, $type, $title, $message, $related_entity 
     }
 }
 
-// Create bulk notifications for multiple users
+
 function create_bulk_notifications($user_ids, $type, $title, $message, $related_entity = null, $related_id = null) {
     if (empty($user_ids) || !is_array($user_ids)) {
         return array('success' => false, 'message' => 'No user IDs provided');
@@ -74,7 +72,7 @@ function get_user_notifications($user_id, $limit = 10, $unread_only = false) {
     return $result ? fetch_all_rows($result) : array();
 }
 
-// Get unread notification count
+
 function get_unread_notification_count($user_id) {
     $query = "SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0";
     $result = execute_prepared_query($query, array($user_id), 'i');
@@ -92,7 +90,7 @@ function mark_notification_read($notification_id, $user_id = null) {
     $params = array($notification_id);
     $types = 'i';
     
-    // Add user verification if provided
+
     if ($user_id !== null) {
         $query .= " AND user_id = ?";
         $params[] = $user_id;
@@ -108,7 +106,7 @@ function mark_notification_read($notification_id, $user_id = null) {
     }
 }
 
-// Mark all notifications as read for user
+
 function mark_all_notifications_read($user_id) {
     $query = "UPDATE notifications SET is_read = 1, read_at = NOW() 
               WHERE user_id = ? AND is_read = 0";
@@ -132,7 +130,7 @@ function delete_notification($notification_id, $user_id = null) {
     $params = array($notification_id);
     $types = 'i';
     
-    // Add user verification if provided
+
     if ($user_id !== null) {
         $query .= " AND user_id = ?";
         $params[] = $user_id;
@@ -148,7 +146,7 @@ function delete_notification($notification_id, $user_id = null) {
     }
 }
 
-// Delete old notifications (cleanup)
+
 function cleanup_old_notifications($days_old = 30) {
     $query = "DELETE FROM notifications WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)";
     $result = execute_prepared_query($query, array($days_old), 'i');
@@ -165,9 +163,9 @@ function cleanup_old_notifications($days_old = 30) {
     }
 }
 
-// Notification helper functions for specific events
 
-// Payment notification
+
+
 function notify_payment_received($tenant_id, $amount, $transaction_number, $payment_type = 'rent') {
     $title = 'Payment Received';
     $message = "Your payment of ৳" . number_format($amount, 2) . " has been received successfully. Transaction: $transaction_number";
@@ -175,7 +173,7 @@ function notify_payment_received($tenant_id, $amount, $transaction_number, $paym
     return create_notification($tenant_id, 'payment', $title, $message, 'payment', null);
 }
 
-// Flat assignment notification
+
 function notify_flat_assignment($tenant_id, $flat_info, $advance_amount, $expires_at) {
     $title = 'Flat Assignment';
     $expires_readable = date('M d, Y H:i', strtotime($expires_at));
@@ -184,7 +182,7 @@ function notify_flat_assignment($tenant_id, $flat_info, $advance_amount, $expire
     return create_notification($tenant_id, 'assignment', $title, $message, 'assignment', null);
 }
 
-// OTP notification
+
 function notify_otp_generated($tenant_id, $otp_code, $flat_info, $expires_at) {
     $title = 'Flat Assignment OTP';
     $expires_readable = date('M d, Y H:i', strtotime($expires_at));
@@ -193,7 +191,7 @@ function notify_otp_generated($tenant_id, $otp_code, $flat_info, $expires_at) {
     return create_notification($tenant_id, 'info', $title, $message, 'otp', null);
 }
 
-// Service request notification
+
 function notify_service_request_update($tenant_id, $request_type, $status, $assigned_to = null) {
     $title = 'Service Request Update';
     $message = "Your $request_type request has been " . str_replace('_', ' ', $status);

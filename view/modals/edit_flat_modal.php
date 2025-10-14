@@ -1,4 +1,4 @@
-<!-- Edit Flat Modal - Extended -->
+
 <div id="editFlatModal" class="modal" style="display: none;">
     <div class="modal-content" style="max-width: 800px;">
         <div class="modal-header">
@@ -9,7 +9,7 @@
             <form id="editFlatForm">
                 <input type="hidden" id="edit_flat_id" name="flat_id">
                 
-                <!-- Basic Information -->
+
                 <h4 style="color: #667eea; margin-bottom: 1rem;">Basic Information</h4>
 
                 <div class="form-row">
@@ -36,7 +36,7 @@
                     </div>
                 </div>
                 
-                <!-- Electric Meter Only -->
+
                 <h4 style="color: #667eea; margin-bottom: 1rem;">Electric Meter</h4>
                 
                 <div class="form-row">
@@ -74,7 +74,7 @@
                 
                 <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid #e0e0e0;">
                 
-                <!-- Fixed Monthly Charges -->
+
                 <h4 style="color: #667eea; margin-bottom: 1rem;">Monthly Charges</h4>
 
                 <div class="form-row">

@@ -1,8 +1,8 @@
 <?php
-// Buildings Management Page
+
 require_once '../controller/auth_header.php';
 
-// Only owners and managers can access
+
 if (!in_array($current_user['user_type'], ['owner', 'manager'])) {
     header("Location: ../controller/dashboard_controller.php?error=access_denied");
     exit();
@@ -32,7 +32,6 @@ if (!in_array($current_user['user_type'], ['owner', 'manager'])) {
     </style>
 </head>
 <body>
-    <!-- Navigation Header -->
     <header class="dashboard-navbar">
         <div class="nav-container">
             <div class="nav-left">
@@ -71,9 +70,7 @@ if (!in_array($current_user['user_type'], ['owner', 'manager'])) {
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="buildings-main">
-        <!-- Page Header -->
         <div class="page-header">
             <div class="header-content">
                 <h1>Buildings Management</h1>
@@ -89,7 +86,6 @@ if (!in_array($current_user['user_type'], ['owner', 'manager'])) {
             </div>
         </div>
 
-        <!-- Buildings List -->
         <div class="buildings-container" id="buildingsContainer">
             <div class="loading-state">
                 <div class="spinner"></div>
@@ -98,14 +94,12 @@ if (!in_array($current_user['user_type'], ['owner', 'manager'])) {
         </div>
     </main>
 
-    <!-- Modals -->
     <?php include 'modals/add_building_modal.php'; ?>
     <?php include 'modals/edit_building_modal.php'; ?>
     <?php include 'modals/add_flat_modal.php'; ?>
     <?php include 'modals/edit_flat_modal.php'; ?>
     <?php include 'modals/assign_manager_modal.php'; ?>
 
-    <!-- Confirmation Dialog -->
     <div id="confirmDialog" class="modal" style="display: none;">
         <div class="modal-content" style="max-width: 400px;">
             <div class="modal-header">
@@ -124,7 +118,6 @@ if (!in_array($current_user['user_type'], ['owner', 'manager'])) {
 
     <div id="messageContainer"></div>
 
-    <!-- Scripts -->
     <script src="../view/js/global-session.js"></script>
     <script src="../view/js/building.js"></script>
     <script src="../view/js/buildings-page.js"></script>

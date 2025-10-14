@@ -1,4 +1,3 @@
-// Tenants Page JavaScript
 
 function initTenantsPage() {
     console.log('Initializing tenants page...');
@@ -7,23 +6,21 @@ function initTenantsPage() {
     loadBuildingsForDropdown();
 }
 
-// Tab switching
 function switchTab(tabName) {
-    // Hide all tabs
+
     document.querySelectorAll('.tab-content').forEach(function(tab) {
         tab.classList.remove('active');
     });
     
-    // Remove active from all buttons
+
     document.querySelectorAll('.tab-btn').forEach(function(btn) {
         btn.classList.remove('active');
     });
     
-    // Show selected tab
+
     document.getElementById('tab-' + tabName).classList.add('active');
     event.target.classList.add('active');
     
-    // Load data for tab
     switch(tabName) {
         case 'all':
             loadAllTenants();
@@ -40,28 +37,22 @@ function switchTab(tabName) {
     }
 }
 
-// Load tenants
 function loadAllTenants() {
-    // TODO: Implement tenant loading
     console.log('Loading all tenants...');
 }
 
 function loadActiveTenants() {
-    // TODO: Implement
     console.log('Loading active tenants...');
 }
 
 function loadPendingTenants() {
-    // TODO: Implement
     console.log('Loading pending tenants...');
 }
 
 function loadAvailableTenants() {
-    // TODO: Implement
     console.log('Loading available tenants...');
 }
 
-// Modal functions
 function showAddTenantModal() {
     document.getElementById('addTenantModal').style.display = 'flex';
 }
@@ -89,7 +80,6 @@ function closeGenerateOTPModal() {
     document.getElementById('generateOTPForm').reset();
 }
 
-// Form handlers
 function handleAddTenant(e) {
     e.preventDefault();
     showMessage('Add tenant functionality coming soon', 'info');
@@ -103,7 +93,6 @@ function handleAssignTenant(e) {
 function handleGenerateOTP(e) {
     e.preventDefault();
     
-    // Simulate OTP generation
     var otp = Math.floor(100000 + Math.random() * 900000).toString();
     
     document.getElementById('otpCode').textContent = otp;

@@ -1,5 +1,3 @@
-// Session Manager for SmartRent
-// Handles session timeout and activity tracking
 
 var sessionTimeout = 30 * 60 * 1000; // 30 minutes
 var sessionWarningTime = 5 * 60 * 1000; // Show warning 5 minutes before timeout

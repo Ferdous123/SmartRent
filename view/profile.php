@@ -1,5 +1,5 @@
 <?php
-// Check if accessed directly
+
 if (!isset($current_user)) {
     header("Location: login.php");
     exit();
@@ -19,7 +19,7 @@ if (!isset($current_user)) {
             --secondary-bg: <?php echo $user_preferences['secondary_bg_color'] ?? '#f5f7fa'; ?>;
             --font-size: <?php echo ($user_preferences['font_size'] ?? 'medium') === 'small' ? '14px' : (($user_preferences['font_size'] ?? 'medium') === 'large' ? '18px' : '16px'); ?>;
         }
-        /* Tab display fixes */
+
         .tab-pane {
             display: none;
         }
@@ -28,14 +28,14 @@ if (!isset($current_user)) {
             display: block !important;
         }
 
-        /* Show personal tab by default */
+
         #personal-tab.active {
             display: block !important;
         }
     </style>
 </head>
 <body class="<?php echo $user_preferences['theme_mode'] ?? 'light'; ?>-theme">
-    <!-- Navigation Header -->
+
     <header class="dashboard-navbar">
         <div class="nav-container">
             <div class="nav-left">
@@ -64,7 +64,7 @@ if (!isset($current_user)) {
             </div>
             
             <div class="nav-right">
-                <!-- Notifications -->
+
                 <div class="notifications-dropdown">
                     <button class="notification-btn" id="notificationBtn">
                         <span class="notification-icon">🔔</span>
@@ -76,12 +76,12 @@ if (!isset($current_user)) {
                             <button class="mark-all-read" onclick="markAllNotificationsRead()">Mark All Read</button>
                         </div>
                         <div class="notifications-list" id="notificationsList">
-                            <!-- Notifications will be loaded here -->
+
                         </div>
                     </div>
                 </div>
 
-                <!-- User Menu -->
+
                 <div class="user-dropdown">
                     <button class="user-btn" id="userBtn">
                         <div class="user-avatar">
@@ -108,10 +108,10 @@ if (!isset($current_user)) {
         </div>
     </header>
 
-    <!-- Main Content -->
+
     <main class="dashboard-main">
         <div class="profile-container">
-            <!-- Profile Header -->
+
         <div class="profile-header">
             <div class="profile-avatar-section">
                 <div class="profile-avatar-large" onclick="triggerFileUpload()">
@@ -124,7 +124,7 @@ if (!isset($current_user)) {
                         <span>Change Photo</span>
                     </div>
                 </div>
-                <!-- Separate file input, not part of any form -->
+
                 <input type="file" id="profilePictureUpload" accept="image/*" style="display: none;" onchange="uploadProfilePicture(this)">
             </div>
             
@@ -135,9 +135,9 @@ if (!isset($current_user)) {
                 <p class="member-since">Member since <?php echo isset($user_profile['created_at']) && $user_profile['created_at'] ? date('M Y', strtotime($user_profile['created_at'])) : 'Unknown'; ?></p>
             </div>
         </div>
-        <!-- Profile Sections - No Tabs -->
+
             <div class="profile-sections">
-                <!-- Personal Information Section -->
+
                 <div class="profile-section">
                     <div class="card">
                         <div class="card-header">
@@ -193,9 +193,9 @@ if (!isset($current_user)) {
                     </div>
                 </div>
 
-                <!-- Security Section -->
+
                 <div class="profile-section">
-                    <!-- Change Password -->
+
                     <div class="card">
                         <div class="card-header">
                             <h3>Change Password</h3>
@@ -229,7 +229,7 @@ if (!isset($current_user)) {
                         </div>
                     </div>
 
-                    <!-- Two-Factor Authentication -->
+
                     <div class="card">
                         <div class="card-header">
                             <h3>Two-Factor Authentication (2FA)</h3>
@@ -250,7 +250,6 @@ if (!isset($current_user)) {
                     </div>
                 </div>
 
-                <!-- Preferences Section -->
                 <div class="profile-section">
                     <div class="card">
                         <div class="card-header">
@@ -299,7 +298,7 @@ if (!isset($current_user)) {
                 </div>
 
                 <?php if ($current_user['user_type'] === 'tenant'): ?>
-                <!-- Tenancy Section -->
+
                 <div class="card">
                     <div class="card-header">
                         <h3>Current Tenancy</h3>
@@ -314,7 +313,7 @@ if (!isset($current_user)) {
             </div>
     </main>
 
-    <!-- 2FA Setup Modal -->
+
     <div id="twofa-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
@@ -323,14 +322,14 @@ if (!isset($current_user)) {
             </div>
             <div class="modal-body">
                 <div id="twofa-setup-steps">
-                    <!-- Step 1: Install App -->
+
                     <div class="setup-step" id="step1">
                         <h4>Step 1: Install Google Authenticator</h4>
                         <p>Download and install Google Authenticator on your mobile device</p>
                         <button class="btn-primary" onclick="nextStep(2)">Next</button>
                     </div>
 
-                    <!-- Step 2: Scan QR Code -->
+
                     <div class="setup-step" id="step2" style="display: none;">
                         <h4>Step 2: Scan QR Code</h4>
                         <p>Open Google Authenticator and scan this QR code:</p>
@@ -344,7 +343,7 @@ if (!isset($current_user)) {
                         <button class="btn-primary" onclick="nextStep(3)">Next</button>
                     </div>
 
-                    <!-- Step 3: Verify Setup -->
+
                     <div class="setup-step" id="step3" style="display: none;">
                         <h4>Step 3: Verify Setup</h4>
                         <p>Enter the 6-digit code from your authenticator app:</p>
@@ -364,10 +363,10 @@ if (!isset($current_user)) {
         </div>
     </div>
 
-    <!-- Messages -->
+
     <div id="messageContainer" class="message-container"></div>
 
-    <!-- Scripts -->
+
     <script src="../view/js/profile.js"></script>
     <script src="../view/js/global-session.js"></script>
 </body>

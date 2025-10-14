@@ -1,23 +1,23 @@
 <?php
 session_start();
 
-// Simple redirect check if already logged in
+
 if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
-    // Check if session is still valid
+
     if (isset($_SESSION['session_timeout']) && time() < $_SESSION['session_timeout']) {
         header("Location: ../controller/dashboard_controller.php");
         exit();
     } else {
-        // Session expired, clear it
+
         session_destroy();
         session_start();
     }
 }
 
-// Check for redirect URL after login
+
 $redirect_url = isset($_GET['redirect']) ? $_GET['redirect'] : '';
 
-// Get messages
+
 $error_message = isset($_GET['error']) ? $_GET['error'] : '';
 $success_message = isset($_GET['success']) ? $_GET['success'] : '';
 ?>
@@ -27,7 +27,7 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
     <title>Login - SmartRent</title>
     <link rel="icon" type="image/x-icon" href="../favicon.ico">
     <style>
-        /* Complete CSS for login page */
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
@@ -287,7 +287,7 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
     </style>
 </head>
 <body>
-    <!-- Navigation Header -->
+
     <header class="navbar">
         <div class="nav-container">
             <div class="logo">
@@ -302,7 +302,7 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
         </div>
     </header>
 
-    <!-- Login Form -->
+
     <div class="auth-container">
         <div class="auth-form-wrapper login-wrapper">
             <div class="auth-header">
@@ -326,14 +326,14 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
                 <input type="hidden" name="action" value="login">
                 <input type="hidden" name="redirect_url" value="<?php echo htmlspecialchars($redirect_url); ?>">
                 
-                <!-- Username or Email -->
+
                 <div class="form-group">
                     <label for="username">Username or Email</label>
                     <input type="text" name="username" id="username" required autofocus>
                     <span class="error-message" id="username_error"></span>
                 </div>
 
-                <!-- Password -->
+
                 <div class="form-group">
                     <label for="password">Password</label>
                     <div class="password-input-wrapper">
@@ -345,20 +345,20 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
                     <span class="error-message" id="password_error"></span>
                 </div>
 
-                <!-- Remember Me -->
+
                 <div class="form-group checkbox-group">
                     <input type="checkbox" name="stay_logged_in" id="stay_logged_in">
                     <label for="stay_logged_in">Stay logged in</label>
                 </div>
 
-                <!-- Submit Button -->
+
                 <div class="form-group">
                     <button type="submit" class="btn-primary" id="loginBtn">
                         <span class="btn-text">Sign In</span>
                     </button>
                 </div>
 
-                <!-- Links -->
+
                 <div class="form-footer">
                     <div class="auth-links">
                         <a href="forgot_password.php" class="forgot-link">Forgot Password?</a>
@@ -368,7 +368,7 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
                 </div>
             </form>
 
-            <!-- Quick Access -->
+
             <div class="quick-access">
                 <h4>Quick Access</h4>
                 <div class="quick-buttons">
@@ -391,7 +391,7 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
     </div>
 
     <script>
-        // Toggle password visibility
+
         function togglePassword(fieldId) {
             var field = document.getElementById(fieldId);
             var toggleText = document.getElementById(fieldId + '_toggle_text');
@@ -405,7 +405,7 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
             }
         }
 
-        // Simple form validation
+
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             var username = document.getElementById('username').value.trim();
             var password = document.getElementById('password').value;
@@ -422,7 +422,7 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
                 return false;
             }
             
-            // Show loading state
+
             var btn = document.getElementById('loginBtn');
             btn.disabled = true;
             btn.innerHTML = 'Signing In...';

@@ -1,4 +1,4 @@
-<!-- Add Building Modal -->
+
 <div id="addBuildingModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -7,7 +7,7 @@
         </div>
         <div class="modal-body">
             <div id="buildingSetupSteps">
-                <!-- Step 1: Basic Information -->
+
                 <div class="setup-step" id="buildingStep1">
                     <h4>Step 1: Basic Information</h4>
                     <form id="buildingBasicForm">
@@ -43,7 +43,7 @@
                     </form>
                 </div>
 
-                <!-- Step 2: Naming Scheme -->
+
                 <div class="setup-step" id="buildingStep2" style="display: none;">
                     <h4>Step 2: Flat Naming Scheme</h4>
                     <form id="buildingNamingForm">
@@ -68,7 +68,7 @@
                             </div>
                         </div>
                         
-                        <!-- Floor + Letter Options -->
+
                         <div id="floorLetterOptions" class="naming-options">
                             <div class="form-group">
                                 <label for="letter_start">Starting Letter</label>
@@ -80,7 +80,7 @@
                             </div>
                         </div>
                         
-                        <!-- Custom Naming Options -->
+
                         <div id="customNamingOptions" class="naming-options" style="display: none;">
                             <div class="form-group">
                                 <label for="custom_prefix">Prefix (Optional)</label>
@@ -104,7 +104,7 @@
                     </form>
                 </div>
 
-                <!-- Step 3: Preview & Confirm -->
+
                 <div class="setup-step" id="buildingStep3" style="display: none;">
                     <h4>Step 3: Preview & Confirm</h4>
                     
@@ -133,7 +133,6 @@
                     <div class="preview-flats">
                         <h5>Generated Flats</h5>
                         <div id="flatsPreviewContainer" class="flats-grid">
-                            <!-- Flats will be displayed here -->
                         </div>
                     </div>
                     

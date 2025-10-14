@@ -5,22 +5,21 @@ require_once '../model/database.php';
 require_once '../model/user_model.php';
 require_once '../model/twofa_model.php';
 
-// Set JSON header for AJAX responses
 header('Content-Type: application/json');
 
-// Initialize response array
+
 $response = array('success' => false, 'message' => 'Invalid request');
 
-// Check if this is a POST request
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(array('success' => false, 'message' => 'Invalid request method'));
     exit();
 }
 
-// Get the action from POST data
+
 $action = isset($_POST['action']) ? sanitize_input($_POST['action']) : '';
 
-// Handle different actions
+
 switch ($action) {
     case 'identify_user':
         handle_user_identification();
@@ -42,11 +41,11 @@ switch ($action) {
         $response = array('success' => false, 'message' => 'Unknown action');
 }
 
-// Return JSON response
+
 echo json_encode($response);
 exit();
 
-// Handle user identification step
+
 function handle_user_identification() {
     global $response;
     
@@ -57,7 +56,7 @@ function handle_user_identification() {
         return;
     }
     
-    // Find user by username or email
+
     $query = "SELECT u.user_id, u.username, u.email, u.is_active,
                      ua.is_enabled as has_2fa_enabled
               FROM users u
@@ -67,7 +66,7 @@ function handle_user_identification() {
     $result = execute_prepared_query($query, array($username_email, $username_email), 'ss');
     
     if (!$result || mysqli_num_rows($result) == 0) {
-        // Don't reveal if user exists or not for security
+
         $response = array(
             'success' => false,
             'message' => 'If this account exists, you will receive further instructions.'
@@ -79,7 +78,6 @@ function handle_user_identification() {
     $user_id = $user_data['user_id'];
     $has_2fa = $user_data['has_2fa_enabled'] == 1;
     
-    // Create reset token
     $token_result = create_password_reset_token($user_id, 'email');
     
     if (!$token_result['success']) {
@@ -89,7 +87,6 @@ function handle_user_identification() {
     
     $reset_token = $token_result['token'];
     
-    // Log password reset attempt
     log_user_activity($user_id, 'create', 'password_reset_tokens', null, null,
                      array('action' => 'password_reset_initiated', 'has_2fa' => $has_2fa));
     
@@ -110,7 +107,6 @@ function handle_user_identification() {
     }
 }
 
-// Handle 2FA code verification for password reset
 function handle_2fa_verification() {
     global $response;
     
@@ -122,13 +118,12 @@ function handle_2fa_verification() {
         return;
     }
     
-    // Validate 2FA code format
     if (!preg_match('/^[0-9]{6}$/', $twofa_code)) {
         $response = array('success' => false, 'message' => 'Invalid 2FA code format');
         return;
     }
     
-    // Verify reset token
+
     $token_result = verify_password_reset_token($reset_token);
     if (!$token_result['success']) {
         $response = array('success' => false, 'message' => 'Invalid or expired reset token');
@@ -138,7 +133,6 @@ function handle_2fa_verification() {
     $token_data = $token_result['token_data'];
     $user_id = $token_data['user_id'];
     
-    // Check rate limiting
     if (!check_password_reset_rate_limit($user_id)) {
         $response = array(
             'success' => false,
@@ -147,18 +141,14 @@ function handle_2fa_verification() {
         return;
     }
     
-    // Verify 2FA code
     $verify_result = verify_2fa_code($user_id, $twofa_code);
     
     if ($verify_result['success']) {
-        // Create new token for password reset step
         $new_token_result = create_password_reset_token($user_id, '2fa');
         
         if ($new_token_result['success']) {
-            // Mark original token as used
             mark_reset_token_used($reset_token);
             
-            // Log successful 2FA verification
             log_user_activity($user_id, 'verify_2fa', 'password_reset', null, null,
                              array('action' => '2fa_verified_for_password_reset'));
             
@@ -171,7 +161,6 @@ function handle_2fa_verification() {
             $response = array('success' => false, 'message' => 'Failed to create verification token');
         }
     } else {
-        // Log failed attempt
         log_user_activity($user_id, 'verify_2fa', 'password_reset', null, null,
                          array('action' => '2fa_verification_failed', 'reason' => 'invalid_code'));
         
@@ -179,7 +168,6 @@ function handle_2fa_verification() {
     }
 }
 
-// Handle backup code verification for password reset
 function handle_backup_code_verification() {
     global $response;
     
@@ -191,13 +179,12 @@ function handle_backup_code_verification() {
         return;
     }
     
-    // Validate backup code format
+
     if (!preg_match('/^[A-Z0-9]{8}$/', $backup_code)) {
         $response = array('success' => false, 'message' => 'Invalid backup code format');
         return;
     }
     
-    // Verify reset token
     $token_result = verify_password_reset_token($reset_token);
     if (!$token_result['success']) {
         $response = array('success' => false, 'message' => 'Invalid or expired reset token');
@@ -207,7 +194,6 @@ function handle_backup_code_verification() {
     $token_data = $token_result['token_data'];
     $user_id = $token_data['user_id'];
     
-    // Check rate limiting
     if (!check_password_reset_rate_limit($user_id)) {
         $response = array(
             'success' => false,
@@ -216,18 +202,14 @@ function handle_backup_code_verification() {
         return;
     }
     
-    // Verify backup code
     $verify_result = verify_backup_code($user_id, $backup_code, 'password_reset');
     
     if ($verify_result['success']) {
-        // Create new token for password reset step
         $new_token_result = create_password_reset_token($user_id, 'backup');
         
         if ($new_token_result['success']) {
-            // Mark original token as used
             mark_reset_token_used($reset_token);
             
-            // Log successful backup code verification
             log_user_activity($user_id, 'verify_backup_code', 'password_reset', null, null,
                              array('action' => 'backup_code_verified_for_password_reset', '2fa_disabled' => true));
             
@@ -241,7 +223,6 @@ function handle_backup_code_verification() {
             $response = array('success' => false, 'message' => 'Failed to create verification token');
         }
     } else {
-        // Log failed attempt
         log_user_activity($user_id, 'verify_backup_code', 'password_reset', null, null,
                          array('action' => 'backup_code_verification_failed', 'reason' => 'invalid_code'));
         
@@ -249,7 +230,6 @@ function handle_backup_code_verification() {
     }
 }
 
-// Handle password reset completion
 function handle_password_reset_completion() {
     global $response;
     
@@ -262,7 +242,6 @@ function handle_password_reset_completion() {
         return;
     }
     
-    // Validate password
     if (strlen($new_password) < 6) {
         $response = array('success' => false, 'message' => 'Password must be at least 6 characters');
         return;
@@ -273,7 +252,6 @@ function handle_password_reset_completion() {
         return;
     }
     
-    // Verify reset token
     $token_result = verify_password_reset_token($reset_token);
     if (!$token_result['success']) {
         $response = array('success' => false, 'message' => 'Invalid or expired reset token');
@@ -282,13 +260,11 @@ function handle_password_reset_completion() {
     
     $token_data = $token_result['token_data'];
     
-    // Check if token is from 2FA or backup verification step
     if (!in_array($token_data['token_type'], array('2fa', 'backup'))) {
         $response = array('success' => false, 'message' => 'Invalid verification token');
         return;
     }
     
-    // Complete password reset
     $reset_result = complete_password_reset($reset_token, $new_password);
     
     if ($reset_result['success']) {
@@ -304,13 +280,13 @@ function handle_password_reset_completion() {
     }
 }
 
-// Mark reset token as used
+
 function mark_reset_token_used($reset_token) {
     $query = "UPDATE password_reset_tokens SET is_used = 1, used_at = NOW() WHERE reset_token = ?";
     return execute_prepared_query($query, array($reset_token), 's');
 }
 
-// Rate limiting for password reset attempts
+
 function check_password_reset_rate_limit($user_id, $max_attempts = 5, $time_window = 900) {
     $session_key = 'reset_attempts_' . $user_id;
     $current_time = time();
@@ -319,25 +295,23 @@ function check_password_reset_rate_limit($user_id, $max_attempts = 5, $time_wind
         $_SESSION[$session_key] = array();
     }
     
-    // Clean old attempts
+
     $_SESSION[$session_key] = array_filter($_SESSION[$session_key], function($timestamp) use ($current_time, $time_window) {
         return ($current_time - $timestamp) < $time_window;
     });
     
-    // Check if limit exceeded
+
     if (count($_SESSION[$session_key]) >= $max_attempts) {
         return false;
     }
     
-    // Add current attempt
+
     $_SESSION[$session_key][] = $current_time;
     
     return true;
 }
 
-// Send password reset email (placeholder function)
 function send_password_reset_email($user_email, $user_name, $reset_token) {
-    // In production, this would integrate with your email service
     $reset_link = "https://yoursite.com/view/reset_password.php?token=" . $reset_token;
     
     $subject = "Password Reset - SmartRent";
@@ -354,12 +328,11 @@ function send_password_reset_email($user_email, $user_name, $reset_token) {
     return true;
 }
 
-// Clean up expired tokens (call this periodically)
 function cleanup_expired_tokens() {
     return cleanup_expired_reset_tokens();
 }
 
-// Validate password strength
+
 function validate_password_strength($password) {
     $errors = array();
     

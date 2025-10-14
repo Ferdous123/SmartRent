@@ -19,7 +19,7 @@ try {
 ob_clean();
 header('Content-Type: application/json');
 
-// Check if user is tenant
+
 if (!isset($current_user) || $current_user['user_type'] !== 'tenant') {
     echo json_encode(array('success' => false, 'message' => 'Access denied'));
     exit();
@@ -224,10 +224,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 exit();
 
 
-// Get complete dashboard data
+
 function handle_get_dashboard_data($user_id) {
     try {
-        // Check if function exists
+
         if (!function_exists('get_tenant_dashboard_data')) {
             echo json_encode(array(
                 'success' => false, 
@@ -241,7 +241,7 @@ function handle_get_dashboard_data($user_id) {
         if ($data !== null) {
             echo json_encode(array('success' => true, 'data' => $data));
         } else {
-            // Return empty data structure
+
             echo json_encode(array(
                 'success' => true,
                 'data' => array(
@@ -273,7 +273,7 @@ function handle_get_dashboard_data($user_id) {
     exit();
 }
 
-// Check for pending assignment
+
 function handle_check_pending_assignment($user_id) {
     try {
         if (function_exists('get_pending_assignment_for_tenant')) {
@@ -297,7 +297,7 @@ function handle_check_pending_assignment($user_id) {
     exit();
 }
 
-// Confirm assignment
+
 function handle_confirm_assignment($user_id) {
     try {
         $assignment_id = isset($_POST['assignment_id']) ? intval($_POST['assignment_id']) : 0;
@@ -326,7 +326,7 @@ function handle_confirm_assignment($user_id) {
     exit();
 }
 
-// Record payment
+
 function handle_record_payment($user_id) {
     try {
         $payment_type = isset($_POST['payment_type']) ? trim($_POST['payment_type']) : '';
@@ -354,7 +354,7 @@ function handle_record_payment($user_id) {
     exit();
 }
 
-// Get flat details
+
 function handle_get_flat_details($user_id) {
     try {
         if (function_exists('get_tenant_flat_details')) {
@@ -375,7 +375,7 @@ function handle_get_flat_details($user_id) {
     exit();
 }
 
-// Get payment history
+
 function handle_get_payment_history($user_id) {
     try {
         if (function_exists('get_tenant_payment_history')) {
@@ -392,7 +392,7 @@ function handle_get_payment_history($user_id) {
 }
 
 
-// Get notifications
+
 function handle_get_notifications($user_id) {
     try {
         if (function_exists('get_tenant_notifications')) {
@@ -424,7 +424,7 @@ function handle_get_notifications($user_id) {
     exit();
 }
 
-// Mark notification as read
+
 function handle_mark_notification_read($user_id) {
     try {
         $notification_id = isset($_POST['notification_id']) ? intval($_POST['notification_id']) : 0;
@@ -442,7 +442,7 @@ function handle_mark_notification_read($user_id) {
     exit();
 }
 
-// Mark all notifications as read
+
 function handle_mark_all_notifications_read($user_id) {
     try {
         if (function_exists('mark_all_notifications_as_read')) {
@@ -458,7 +458,7 @@ function handle_mark_all_notifications_read($user_id) {
     exit();
 }
 
-// Simulate payment gateway
+
 function handle_simulate_payment($user_id) {
     try {
         $amount = isset($_POST['amount']) ? floatval($_POST['amount']) : 0;
@@ -482,7 +482,7 @@ function handle_simulate_payment($user_id) {
     exit();
 }
 
-// Verify and pay
+
 
 function handle_verify_and_pay($user_id) {
     try {
@@ -495,20 +495,20 @@ function handle_verify_and_pay($user_id) {
             exit();
         }
         
-        // Verify transaction in gateway
+
         $gateway_txn = verify_transaction($transaction_id);
         if (!$gateway_txn) {
             echo json_encode(array('success' => false, 'message' => 'Transaction not found'));
             exit();
         }
         
-        // Check if already used
+
         if (is_transaction_used($transaction_id)) {
             echo json_encode(array('success' => false, 'message' => 'Transaction already used'));
             exit();
         }
         
-        // Get assignment
+
         $query = "SELECT * FROM flat_assignments WHERE assignment_id = ? AND tenant_id = ? AND status = 'pending'";
         $result = execute_prepared_query($query, array($assignment_id, $user_id), 'ii');
         
@@ -523,10 +523,10 @@ function handle_verify_and_pay($user_id) {
         
         begin_transaction();
         
-        // Mark transaction as used
+
         mark_transaction_used($transaction_id);
         
-        // Create payment record
+
         $payment_query = "INSERT INTO payments 
                          (transaction_number, tenant_id, flat_id, assignment_id, amount, 
                           method, payment_type, payment_date, is_verified)
@@ -539,7 +539,7 @@ function handle_verify_and_pay($user_id) {
         $new_remaining = $assignment['advance_amount'] - $new_total_paid;
         
         if ($new_remaining <= 0) {
-            // Full payment - confirm assignment
+
             $update = "UPDATE flat_assignments 
                       SET status = 'confirmed', 
                           confirmed_at = NOW(), 
@@ -560,7 +560,7 @@ function handle_verify_and_pay($user_id) {
                 'total_paid' => $new_total_paid
             ));
         } else {
-            // Partial payment
+
             commit_transaction();
             
             echo json_encode(array(
@@ -579,7 +579,7 @@ function handle_verify_and_pay($user_id) {
     exit();
 }
 
-// Download latest slip
+
 function handle_download_latest_slip($user_id) {
     try {
         if (function_exists('get_latest_slip_data')) {
@@ -624,7 +624,7 @@ function handle_download_statement($user_id) {
     exit();
 }
 
-// Generate slip HTML
+
 function generate_slip_html($slip_data) {
     $html = '<!DOCTYPE html>
     <html>
@@ -658,7 +658,7 @@ function generate_slip_html($slip_data) {
     return $html;
 }
 
-// Claim flat with OTP
+
 function handle_claim_otp($user_id) {
     try {
         $otp_code = isset($_POST['otp_code']) ? trim($_POST['otp_code']) : '';
@@ -668,7 +668,7 @@ function handle_claim_otp($user_id) {
             exit();
         }
         
-        // Check if user already has a pending assignment
+
         $check_query = "SELECT assignment_id FROM flat_assignments 
                        WHERE tenant_id = ? AND status = 'pending'";
         $check_result = execute_prepared_query($check_query, array($user_id), 'i');
@@ -678,7 +678,7 @@ function handle_claim_otp($user_id) {
             exit();
         }
         
-        // Find OTP assignment
+
         $query = "SELECT fa.*, f.flat_number, f.floor_number, b.building_name, b.address
                   FROM flat_assignments fa
                   JOIN flats f ON fa.flat_id = f.flat_id
@@ -697,7 +697,7 @@ function handle_claim_otp($user_id) {
         
         $assignment = fetch_single_row($result);
         
-        // Claim the assignment
+
         begin_transaction();
         
         $update_query = "UPDATE flat_assignments 
@@ -714,7 +714,7 @@ function handle_claim_otp($user_id) {
             exit();
         }
         
-        // Verify the update
+
         $verify_query = "SELECT tenant_id FROM flat_assignments WHERE assignment_id = ?";
         $verify_result = execute_prepared_query($verify_query, array($assignment['assignment_id']), 'i');
         $verify_data = fetch_single_row($verify_result);
@@ -727,7 +727,7 @@ function handle_claim_otp($user_id) {
         
         commit_transaction();
         
-        // Create notification
+
         if (function_exists('create_tenant_notification')) {
             create_tenant_notification($user_id, 'assignment', 
                 'Flat Claimed Successfully',
@@ -736,7 +736,7 @@ function handle_claim_otp($user_id) {
                 'flat_assignments', $assignment['assignment_id']);
         }
         
-        // Log activity
+
         log_user_activity($user_id, 'assign', 'flat_assignments', $assignment['assignment_id'], null,
             array('action' => 'otp_claimed', 'otp_code' => $otp_code));
         
@@ -760,7 +760,7 @@ function handle_claim_otp($user_id) {
     exit();
 }
 
-// Generate statement HTML
+
 function generate_statement_html($payments, $user_id) {
     $html = '<!DOCTYPE html>
     <html>
@@ -805,10 +805,6 @@ function generate_statement_html($payments, $user_id) {
     return $html;
 }
 
-// ============================================================================
-// FLAT ACTION HANDLERS
-// ============================================================================
-
 function handle_get_flat_full_details($user_id) {
     $flat_id = isset($_POST['flat_id']) ? intval($_POST['flat_id']) : 0;
     $result = get_tenant_flat_full_details($user_id, $flat_id);
@@ -836,12 +832,10 @@ function handle_create_service_request($user_id) {
     $priority = isset($_POST['priority']) ? trim($_POST['priority']) : 'medium';
     $description = isset($_POST['description']) ? trim($_POST['description']) : '';
     
-    // Handle file uploads
     $attachments = array();
     if (isset($_FILES['attachments'])) {
         $files = $_FILES['attachments'];
         
-        // Create temporary placeholder - will be updated after getting request_id
         for ($i = 0; $i < count($files['name']); $i++) {
             if ($files['error'][$i] === UPLOAD_ERR_OK) {
                 $attachments[] = array(
@@ -873,7 +867,6 @@ function handle_create_service_request($user_id) {
             }
         }
         
-        // Update attachments in database
         if (!empty($uploaded_files)) {
             $update_query = "UPDATE service_requests SET attachments = ? WHERE request_id = ?";
             execute_prepared_query($update_query, array(json_encode($uploaded_files), $request_id), 'si');
@@ -941,7 +934,6 @@ function handle_pay_outstanding($user_id) {
     $expense_id = isset($_POST['expense_id']) ? intval($_POST['expense_id']) : 0;
     $amount = isset($_POST['amount']) ? floatval($_POST['amount']) : 0;
     
-    // Get expense details
     $query = "SELECT fe.*, td.remaining_amount 
               FROM flat_expenses fe
               JOIN tenant_dues td ON fe.expense_id = td.expense_id
@@ -964,7 +956,6 @@ function handle_pay_outstanding($user_id) {
     exit();
 }
 
-// Download specific payment receipt
 function handle_download_receipt($user_id) {
     try {
         $payment_id = isset($_GET['payment_id']) ? intval($_GET['payment_id']) : 0;
@@ -974,7 +965,6 @@ function handle_download_receipt($user_id) {
             exit();
         }
         
-        // Get payment details
         $query = "SELECT p.*, f.flat_number, b.building_name, b.address, up.full_name as tenant_name
                   FROM payments p
                   JOIN flats f ON p.flat_id = f.flat_id
@@ -1003,7 +993,6 @@ function handle_download_receipt($user_id) {
     exit();
 }
 
-// Generate receipt HTML
 function generate_receipt_html($payment) {
     $html = '<!DOCTYPE html>
     <html>

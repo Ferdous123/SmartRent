@@ -3,13 +3,13 @@
 session_start();
 require_once '../controller/session_controller.php';
 
-// Redirect if already logged in
+
 redirect_if_authenticated();
 
-// Get user type from URL parameter
+
 $selected_type = isset($_GET['type']) ? $_GET['type'] : '';
 
-// Get messages
+
 $error_message = isset($_GET['error']) ? $_GET['error'] : '';
 $success_message = isset($_GET['success']) ? $_GET['success'] : '';
 ?>
@@ -19,7 +19,7 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
     <title>Register - SmartRent</title>
     <link rel="icon" type="image/x-icon" href="../favicon.ico">
     <style>
-        /* Complete CSS for register page */
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
@@ -290,7 +290,7 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
     </style>
 </head>
 <body>
-    <!-- Navigation Header -->
+
     <header class="navbar">
         <div class="nav-container">
             <div class="logo">
@@ -305,7 +305,7 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
         </div>
     </header>
 
-    <!-- Registration Form -->
+
     <div class="auth-container">
         <div class="auth-form-wrapper">
             <div class="auth-header">
@@ -328,7 +328,7 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
             <form id="registerForm" class="auth-form" method="POST" action="../controller/working_register.php">
                 <input type="hidden" name="action" value="register">
                 
-                <!-- User Type Selection -->
+
                 <div class="form-group">
                     <label for="user_type">I am a:</label>
                     <select name="user_type" id="user_type" required>
@@ -340,7 +340,7 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
                     <span class="error-message" id="user_type_error"></span>
                 </div>
 
-                <!-- Basic Information -->
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="full_name">Full Name</label>
@@ -373,7 +373,7 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
                     </div>
                 </div>
 
-                <!-- Password Fields -->
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="password">Password</label>
@@ -391,27 +391,27 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
                     </div>
                 </div>
 
-                <!-- Terms and Conditions -->
+
                 <div class="form-group checkbox-group">
                     <input type="checkbox" name="agree_terms" id="agree_terms" required>
                     <label for="agree_terms">I agree to the <a href="#" target="_blank">Terms of Service</a> and <a href="#" target="_blank">Privacy Policy</a></label>
                     <span class="error-message" id="agree_terms_error"></span>
                 </div>
 
-                <!-- Submit Button -->
+
                 <div class="form-group">
                     <button type="submit" class="btn-primary" id="registerBtn">
                         <span class="btn-text">Create Account</span>
                     </button>
                 </div>
 
-                <!-- Login Link -->
+
                 <div class="form-footer">
                     <p>Already have an account? <a href="login.php">Login here</a></p>
                 </div>
             </form>
 
-            <!-- Role Information Cards -->
+
             <div class="role-info" id="role_info" style="display: none;">
                 <div class="role-card" id="owner_info">
                     <h4>As a Property Owner, you can:</h4>
@@ -450,10 +450,10 @@ $success_message = isset($_GET['success']) ? $_GET['success'] : '';
     </div>
 
     <script>
-// Simple field validation on blur
+
 document.addEventListener('DOMContentLoaded', function() {
     
-    // Username validation
+
     document.getElementById('username').addEventListener('blur', function() {
         const value = this.value.trim();
         const error = document.getElementById('username_error');
@@ -467,7 +467,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Email validation
+
     document.getElementById('email').addEventListener('blur', function() {
         const value = this.value.trim();
         const error = document.getElementById('email_error');
@@ -481,7 +481,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Password validation
+
     document.getElementById('password').addEventListener('blur', function() {
         const value = this.value;
         const error = document.getElementById('password_error');
@@ -495,7 +495,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Full name validation
+
     document.getElementById('full_name').addEventListener('blur', function() {
         const value = this.value.trim();
         const error = document.getElementById('full_name_error');
@@ -509,16 +509,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Show role information based on selection
+
     document.getElementById('user_type').addEventListener('change', function() {
         const roleInfo = document.getElementById('role_info');
         const allCards = roleInfo.querySelectorAll('.role-card');
         
-        // Hide all cards
+
         allCards.forEach(card => card.style.display = 'none');
         
         if (this.value) {
-            // Show selected role info
+
             const selectedCard = document.getElementById(this.value + '_info');
             if (selectedCard) {
                 selectedCard.style.display = 'block';
@@ -529,7 +529,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Password strength checker
+
     document.getElementById('password').addEventListener('input', function() {
         const password = this.value;
         const strengthBar = document.getElementById('password_strength');
@@ -551,26 +551,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // AJAX form submission
+
     document.getElementById('registerForm').addEventListener('submit', function(e) {
-        e.preventDefault(); // Prevent normal form submission
+        e.preventDefault();
         
         const password = document.getElementById('password').value;
         const confirmPassword = document.getElementById('confirm_password').value;
         const agreeTerms = document.getElementById('agree_terms').checked;
         
-        // Clear previous errors
+
         document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
         
         let isValid = true;
         
-        // Password match validation
+
         if (password !== confirmPassword) {
             document.getElementById('confirm_password_error').textContent = 'Passwords do not match';
             isValid = false;
         }
         
-        // Terms validation
+
         if (!agreeTerms) {
             document.getElementById('agree_terms_error').textContent = 'You must agree to the terms';
             isValid = false;
@@ -580,12 +580,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
         
-        // Show loading state
+
         const btn = document.getElementById('registerBtn');
         btn.disabled = true;
         btn.innerHTML = 'Creating Account...';
         
-        // Submit via AJAX
+
         const formData = new FormData(this);
         
         fetch('../controller/working_register.php', {
@@ -595,12 +595,12 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Success
+
                 window.location.href = '../view/login.php?success=' + encodeURIComponent(data.message);
             } else {
-                // Error
+
                 if (data.field_errors) {
-                    // Show field-specific errors
+
                     Object.keys(data.field_errors).forEach(field => {
                         const errorElement = document.getElementById(field + '_error');
                         if (errorElement) {
@@ -609,7 +609,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     });
                 } else {
-                    // Show general error
+
                     alert('Error: ' + data.message);
                 }
             }
@@ -624,7 +624,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Trigger role info display if type is pre-selected
+
     if (document.getElementById('user_type').value) {
         document.getElementById('user_type').dispatchEvent(new Event('change'));
     }

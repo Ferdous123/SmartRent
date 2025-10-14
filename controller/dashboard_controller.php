@@ -3,7 +3,6 @@ require_once 'auth_header.php';
 require_once '../model/database.php';
 require_once '../model/user_model.php';
 
-// Dashboard access control - redirect if accessing wrong dashboard
 $requested_dashboard = basename($_SERVER['PHP_SELF']);
 $user_dashboard_map = array(
     'owner' => 'dashboard_owner.php',
@@ -11,7 +10,6 @@ $user_dashboard_map = array(
     'tenant' => 'dashboard_tenant.php'
 );
 
-// Check if user is trying to access wrong dashboard directly
 if (isset($user_dashboard_map[$current_user['user_type']])) {
     $correct_dashboard = $user_dashboard_map[$current_user['user_type']];
     if ($requested_dashboard !== 'dashboard_controller.php' && $requested_dashboard !== $correct_dashboard) {
@@ -20,7 +18,6 @@ if (isset($user_dashboard_map[$current_user['user_type']])) {
     }
 }
 
-// Handle AJAX requests for dashboard data
 if (isset($_POST['action'])) {
     header('Content-Type: application/json');
     
@@ -46,19 +43,16 @@ if (isset($_POST['action'])) {
     }
 }
 
-// Get notifications for the user
-$notifications = array(); // Will be loaded via AJAX
+$notifications = array(); 
 
-// Set dashboard access flag for profile security
+
 $_SESSION['dashboard_access_verified'] = true;
 
-// Handle profile redirect
 if (isset($_GET['redirect']) && $_GET['redirect'] === 'profile') {
     header("Location: profile_controller.php");
     exit();
 }
 
-// Get dashboard statistics based on user type
 function get_dashboard_statistics($current_user) {
     $user_id = $current_user['user_id'];
     $user_type = $current_user['user_type'];
@@ -85,20 +79,17 @@ function get_manager_statistics($manager_id) {
 }
 
 function get_owner_statistics($owner_id) {
-    // Get total buildings
     $buildings_query = "SELECT COUNT(*) as total FROM buildings WHERE owner_id = ?";
     $buildings_result = execute_prepared_query($buildings_query, array($owner_id), 'i');
     $total_buildings = $buildings_result ? fetch_single_row($buildings_result)['total'] : 0;
     
-    // Get total flats
     $flats_query = "SELECT COUNT(f.flat_id) as total 
                     FROM flats f 
                     JOIN buildings b ON f.building_id = b.building_id 
                     WHERE b.owner_id = ?";
     $flats_result = execute_prepared_query($flats_query, array($owner_id), 'i');
     $total_flats = $flats_result ? fetch_single_row($flats_result)['total'] : 0;
-    
-    // Get occupied flats
+
     $occupied_query = "SELECT COUNT(DISTINCT fa.flat_id) as total 
                        FROM flat_assignments fa
                        JOIN flats f ON fa.flat_id = f.flat_id
@@ -109,7 +100,6 @@ function get_owner_statistics($owner_id) {
     $occupied_result = execute_prepared_query($occupied_query, array($owner_id), 'i');
     $occupied_flats = $occupied_result ? fetch_single_row($occupied_result)['total'] : 0;
     
-    // Get total tenants
     $tenants_query = "SELECT COUNT(DISTINCT fa.tenant_id) as total 
                       FROM flat_assignments fa
                       JOIN flats f ON fa.flat_id = f.flat_id
@@ -120,7 +110,6 @@ function get_owner_statistics($owner_id) {
     $tenants_result = execute_prepared_query($tenants_query, array($owner_id), 'i');
     $total_tenants = $tenants_result ? fetch_single_row($tenants_result)['total'] : 0;
     
-    // Get monthly revenue (sum of base rents)
     $revenue_query = "SELECT COALESCE(SUM(f.base_rent), 0) as total 
                       FROM flats f
                       JOIN buildings b ON f.building_id = b.building_id
@@ -131,7 +120,6 @@ function get_owner_statistics($owner_id) {
     $revenue_result = execute_prepared_query($revenue_query, array($owner_id), 'i');
     $monthly_revenue = $revenue_result ? fetch_single_row($revenue_result)['total'] : 0;
     
-    // Calculate occupancy rate
     $occupancy_rate = 0;
     if ($total_flats > 0) {
         $occupancy_rate = round(($occupied_flats / $total_flats) * 100, 1);
@@ -158,7 +146,6 @@ function get_tenant_statistics($tenant_id) {
     );
 }
 
-// Get building overview for dashboard
 function get_owner_buildings_overview($owner_id, $limit = 5) {
     $query = "SELECT b.building_id, b.building_name, b.address,
               COUNT(f.flat_id) as total_flats,
@@ -176,7 +163,6 @@ function get_owner_buildings_overview($owner_id, $limit = 5) {
 }
 
 function get_user_notifications($user_id) {
-    // Demo notifications
     return array(
         array(
             'id' => 1,
@@ -197,7 +183,6 @@ function get_user_notifications($user_id) {
     );
 }
 
-// Route to appropriate dashboard based on user type
 switch ($current_user['user_type']) {
     case 'owner':
         include '../view/dashboard_owner.php';

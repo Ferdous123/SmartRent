@@ -1,10 +1,8 @@
-// Authentication JavaScript for SmartRent
-// Beginner-friendly procedural JavaScript
 
-// Global variables
+
 var isFormSubmitting = false;
 
-// Initialize registration form
+
 function initRegistrationForm() {
     var form = document.getElementById('registerForm');
     var userTypeSelect = document.getElementById('user_type');
@@ -13,52 +11,43 @@ function initRegistrationForm() {
     
     if (!form) return;
     
-    // Setup user type change handler
     if (userTypeSelect) {
         userTypeSelect.addEventListener('change', function() {
             showRoleInfo(this.value);
         });
         
-        // Show role info if type is pre-selected
         if (userTypeSelect.value) {
             showRoleInfo(userTypeSelect.value);
         }
     }
     
-    // Setup real-time validation
     setupRealTimeValidation();
     
-    // Setup password strength checker
     if (passwordField) {
         passwordField.addEventListener('input', function() {
             checkPasswordStrength(this.value);
         });
     }
     
-    // Setup password confirmation checker
     if (confirmPasswordField) {
         confirmPasswordField.addEventListener('input', function() {
             checkPasswordMatch();
         });
     }
     
-    // Setup form submission
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         handleRegistration();
     });
 }
 
-// Initialize login form
 function initLoginForm() {
     var form = document.getElementById('loginForm');
     
     if (!form) return;
     
-    // Setup real-time validation
     setupRealTimeValidation();
     
-    // Setup form submission
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         handleLogin();
@@ -76,22 +65,22 @@ function initLoginForm() {
     }
 }
 
-// Setup real-time validation
+
 function setupRealTimeValidation() {
     var inputs = document.querySelectorAll('input[required], select[required]');
     
     for (var i = 0; i < inputs.length; i++) {
-        // Validation on blur
+
         inputs[i].addEventListener('blur', function() {
             validateSingleField(this);
         });
         
-        // Clear error on focus
+
         inputs[i].addEventListener('focus', function() {
             clearFieldError(this);
         });
         
-        // Real-time validation for specific fields
+
         if (this.type === 'email') {
             inputs[i].addEventListener('input', function() {
                 if (this.value.length > 0) {
@@ -110,14 +99,14 @@ function setupRealTimeValidation() {
     }
 }
 
-// Show role information based on selected user type
+
 function showRoleInfo(userType) {
     var roleInfoContainer = document.getElementById('role_info');
     var roleCards = document.querySelectorAll('.role-card');
     
     if (!roleInfoContainer) return;
     
-    // Hide all role cards
+
     for (var i = 0; i < roleCards.length; i++) {
         roleCards[i].classList.remove('active');
     }
@@ -133,7 +122,7 @@ function showRoleInfo(userType) {
     }
 }
 
-// Check password strength
+
 function checkPasswordStrength(password) {
     var strengthElement = document.getElementById('password_strength');
     
@@ -143,7 +132,7 @@ function checkPasswordStrength(password) {
     
     strengthElement.className = 'password-strength ' + strength;
     
-    // Show strength indicator
+
     if (password.length > 0) {
         strengthElement.style.opacity = '1';
     } else {
@@ -151,7 +140,7 @@ function checkPasswordStrength(password) {
     }
 }
 
-// Get password strength level
+
 function getPasswordStrength(password) {
     var score = 0;
     
@@ -166,7 +155,6 @@ function getPasswordStrength(password) {
     return 'strong';
 }
 
-// Check password confirmation match
 function checkPasswordMatch() {
     var passwordField = document.getElementById('password');
     var confirmField = document.getElementById('confirm_password');
@@ -183,21 +171,17 @@ function checkPasswordMatch() {
     }
 }
 
-// Validate single field
 function validateSingleField(field) {
     var fieldName = field.name;
     var fieldValue = field.value.trim();
     
-    // Clear previous error
     clearFieldError(field);
     
-    // Required field validation
     if (field.hasAttribute('required') && fieldValue === '') {
         showFieldError(field, 'This field is required');
         return false;
     }
     
-    // Specific field validations
     switch (fieldName) {
         case 'email':
             return validateEmail(field);
@@ -216,7 +200,6 @@ function validateSingleField(field) {
     }
 }
 
-// Email validation
 function validateEmail(field) {
     var email = field.value.trim();
     var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -230,7 +213,6 @@ function validateEmail(field) {
     return true;
 }
 
-// Username validation
 function validateUsername(field) {
     var username = field.value.trim();
     
@@ -253,7 +235,6 @@ function validateUsername(field) {
     return true;
 }
 
-// Password validation
 function validatePassword(field) {
     var password = field.value;
     
@@ -271,7 +252,6 @@ function validatePassword(field) {
     return true;
 }
 
-// Confirm password validation
 function validateConfirmPassword(field) {
     var password = document.getElementById('password').value;
     var confirmPassword = field.value;
@@ -285,7 +265,6 @@ function validateConfirmPassword(field) {
     return true;
 }
 
-// Full name validation
 function validateFullName(field) {
     var name = field.value.trim();
     
@@ -303,7 +282,6 @@ function validateFullName(field) {
     return true;
 }
 
-// Phone number validation (optional field)
 function validatePhoneNumber(field) {
     var phone = field.value.trim();
     
@@ -323,7 +301,6 @@ function validatePhoneNumber(field) {
     return true;
 }
 
-// Show field error
 function showFieldError(field, message) {
     var errorSpan = document.getElementById(field.name + '_error');
     
@@ -332,12 +309,10 @@ function showFieldError(field, message) {
         errorSpan.style.display = 'block';
     }
     
-    // Add error class to field
     field.classList.add('error');
     field.classList.remove('success');
 }
 
-// Clear field error
 function clearFieldError(field) {
     var errorSpan = document.getElementById(field.name + '_error');
     
@@ -346,14 +321,12 @@ function clearFieldError(field) {
         errorSpan.style.display = 'none';
     }
     
-    // Remove error class, add success if valid
     field.classList.remove('error');
     if (field.value.trim() !== '') {
         field.classList.add('success');
     }
 }
 
-// Validate entire form
 function validateForm(form) {
     var isValid = true;
     var inputs = form.querySelectorAll('input[required], select[required]');
@@ -367,20 +340,17 @@ function validateForm(form) {
     return isValid;
 }
 
-// Handle registration form submission
 function handleRegistration() {
     var form = document.getElementById('registerForm');
     var submitBtn = document.getElementById('registerBtn');
     
     if (isFormSubmitting) return;
     
-    // Validate form
     if (!validateForm(form)) {
         showMessage('Please fix the errors above', 'error');
         return;
     }
     
-    // Check terms agreement
     var agreeTerms = document.getElementById('agree_terms');
     if (!agreeTerms.checked) {
         showFieldError(agreeTerms, 'You must agree to the terms and conditions');
@@ -388,14 +358,11 @@ function handleRegistration() {
         return;
     }
     
-    // Set loading state
     isFormSubmitting = true;
     setButtonLoading(submitBtn, true);
     
-    // Get form data
     var formData = new FormData(form);
     
-    // Submit form via AJAX
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '../controller/auth_controller.php', true);
     
@@ -420,27 +387,22 @@ function handleRegistration() {
     xhr.send(formData);
 }
 
-// Handle login form submission
 function handleLogin() {
     var form = document.getElementById('loginForm');
     var submitBtn = document.getElementById('loginBtn');
     
     if (isFormSubmitting) return;
     
-    // Validate form
     if (!validateForm(form)) {
         showMessage('Please fix the errors above', 'error');
         return;
     }
     
-    // Set loading state
     isFormSubmitting = true;
     setButtonLoading(submitBtn, true);
     
-    // Get form data
     var formData = new FormData(form);
     
-    // Submit form via AJAX
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '../controller/auth_controller.php', true);
     
@@ -465,9 +427,7 @@ function handleLogin() {
     xhr.send(formData);
 }
 
-// Handle authentication response
 function handleAuthResponse(response) {
-    console.log("Raw response:", response); // DEBUG LINE
     
     if (response.success) {
         showMessage(response.message, 'success');
@@ -492,7 +452,6 @@ function handleAuthResponse(response) {
     }
 }
 
-// Show message to user
 function showMessage(message, type) {
     var container = document.getElementById('message_container');
     
@@ -509,7 +468,6 @@ function showMessage(message, type) {
     
     container.appendChild(messageDiv);
     
-    // Auto remove message after 5 seconds
     setTimeout(function() {
         if (messageDiv.parentNode) {
             messageDiv.style.animation = 'slideOutRight 0.5s ease forwards';
@@ -522,7 +480,6 @@ function showMessage(message, type) {
     }, 5000);
 }
 
-// Set button loading state
 function setButtonLoading(button, loading) {
     if (!button) return;
     
@@ -542,7 +499,6 @@ function setButtonLoading(button, loading) {
     }
 }
 
-// Check username availability (debounced)
 var usernameCheckTimeout;
 function checkUsernameAvailability(username) {
     clearTimeout(usernameCheckTimeout);
@@ -565,7 +521,6 @@ function checkUsernameAvailability(username) {
                             showFieldError(usernameField, 'Username is already taken');
                         }
                     } catch (e) {
-                        // Handle silently
                     }
                 }
             };
@@ -575,7 +530,6 @@ function checkUsernameAvailability(username) {
     }, 500);
 }
 
-// Setup username availability check
 function setupUsernameCheck() {
     var usernameField = document.getElementById('username');
     
@@ -589,9 +543,7 @@ function setupUsernameCheck() {
     }
 }
 
-// Initialize based on page
 document.addEventListener('DOMContentLoaded', function() {
-    // Check which page we're on
     if (document.getElementById('registerForm')) {
         initRegistrationForm();
         setupUsernameCheck();
@@ -602,12 +554,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Prevent form resubmission on page refresh
 window.addEventListener('beforeunload', function() {
     isFormSubmitting = false;
 });
 
-// Handle browser back button
 window.addEventListener('popstate', function() {
     isFormSubmitting = false;
 });

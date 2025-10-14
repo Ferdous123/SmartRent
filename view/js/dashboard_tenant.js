@@ -5,9 +5,7 @@ var dashboardData = null;
 var notificationInterval = null;
 var gatewayTransaction = null;
 
-// ============================================
-// INITIALIZATION
-// ============================================
+
 
 function initTenantDashboard() {
     // Load tenant-specific data
@@ -23,10 +21,6 @@ function initTenantDashboard() {
     setupTenantFormHandlers();
     
 }
-
-// ============================================
-// DASHBOARD DATA LOADING
-// ============================================
 
 // Load tenant-specific dashboard data
 function loadTenantDashboardData() {
@@ -139,12 +133,8 @@ function updateTenantDashboardUI(data) {
         // Payment history table - show empty state
         updatePaymentHistoryTable([]);
         
-        return; // Stop here - no assignment to display
+        return; 
     }
-    
-    // ============================================
-    // HAS ASSIGNMENT - POPULATE WITH REAL DATA
-    // ============================================
     
     // Show flats section
     if (myFlatsSection) myFlatsSection.style.display = 'block';
@@ -612,9 +602,6 @@ function updateCountdown(expiresAt) {
     }, 1000);
 }
 
-// ============================================
-// ACTIONS NEEDED BANNER
-// ============================================
 
 function checkAndShowActionsNeeded() {
     var xhr = new XMLHttpRequest();
@@ -659,9 +646,6 @@ function checkAndShowActionsNeeded() {
     xhr.send('action=check_pending_assignment');
 }
 
-// ============================================
-// OTP CLAIM FUNCTIONALITY
-// ============================================
 
 function showClaimFlatModal() {
     var form = document.getElementById('otpClaimForm');
@@ -685,7 +669,7 @@ function closeClaimFlatModal() {
     document.getElementById('claimFlatModal').style.display = 'none';
 }
 
-// Load tenant's existing assignments
+
 function loadExistingAssignments() {
     var container = document.getElementById('existingAssignmentsList');
     if (!container) return;
@@ -842,9 +826,6 @@ function handleOTPClaim(event) {
     xhr.send(formData);
 }
 
-// ============================================
-// PAYMENT GATEWAY
-// ============================================
 
 function showPaymentGatewayModal(assignment) {
     document.getElementById('gateway_assignment_id').value = assignment.assignment_id;
@@ -953,10 +934,6 @@ function closePaymentVerifyModal() {
     document.getElementById('paymentVerifyModal').style.display = 'none';
 }
 
-// ============================================
-// NOTIFICATIONS
-// ============================================
-
 function loadNotifications() {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '../controller/tenant_dashboard_controller.php', true);
@@ -1043,10 +1020,6 @@ function markAllNotificationsRead() {
     xhr.send('action=mark_all_notifications_read');
 }
 
-// ============================================
-// FORM HANDLERS
-// ============================================
-
 function setupTenantFormHandlers() {
     var verifyForm = document.getElementById('verifyPaymentForm');
     if (verifyForm) {
@@ -1126,9 +1099,6 @@ function setupTenantFormHandlers() {
 }
 
 
-// ============================================
-// UTILITY FUNCTIONS
-// ============================================
 
 function showLoadingOverlay() {
     var overlay = document.getElementById('loadingOverlay');

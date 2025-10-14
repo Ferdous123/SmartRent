@@ -1,19 +1,19 @@
 <?php
-// Don't start session - already started by dashboard_controller.php
+
 if (!isset($current_user)) {
     require_once '../controller/session_controller.php';
     
-    // Check if user is logged in
+
     if (!is_user_logged_in()) {
         header("Location: ../view/login.php");
         exit();
     }
     
-    // Get current user
+
     $current_user = get_logged_in_user();
 }
 
-// Check if user has correct role for this dashboard
+
 if ($current_user['user_type'] !== 'owner') {
     header("Location: ../controller/dashboard_controller.php");
     exit();
@@ -29,7 +29,7 @@ if ($current_user['user_type'] !== 'owner') {
     <link rel="stylesheet" href="../view/css/building.css">
     <link rel="stylesheet" href="../view/css/add-building-modal.css">
     <style>
-        /* Inline CSS for immediate loading with user preferences */
+
         :root {
             --nav-color: <?php echo $user_preferences['nav_color'] ?? '#667eea'; ?>;
             --primary-bg: <?php echo $user_preferences['primary_bg_color'] ?? '#ffffff'; ?>;
@@ -46,7 +46,7 @@ if ($current_user['user_type'] !== 'owner') {
     </style>
 </head>
 <body class="<?php echo $user_preferences['theme_mode'] ?? 'light'; ?>-theme">
-    <!-- Navigation Header -->
+
     <header class="dashboard-navbar">
         <div class="nav-container">
             <div class="nav-left">
@@ -63,7 +63,7 @@ if ($current_user['user_type'] !== 'owner') {
             </div>
             
             <div class="nav-right">
-                <!-- Notifications -->
+
                 <div class="notifications-dropdown">
                     <button class="notification-btn" id="notificationBtn">
                         <span class="notification-icon">🔔</span>
@@ -75,12 +75,12 @@ if ($current_user['user_type'] !== 'owner') {
                             <button class="mark-all-read" onclick="markAllNotificationsRead()">Mark All Read</button>
                         </div>
                         <div class="notifications-list" id="notificationsList">
-                            <!-- Notifications will be loaded here -->
+
                         </div>
                     </div>
                 </div>
 
-                <!-- User Menu -->
+
                 <div class="user-dropdown">
                     <button class="user-btn" id="userBtn">
                         <div class="user-avatar">
@@ -104,9 +104,9 @@ if ($current_user['user_type'] !== 'owner') {
         </div>
     </header>
 
-    <!-- Main Content -->
+
     <main class="dashboard-main">
-        <!-- Dashboard Header -->
+
         <div class="dashboard-header">
             <div class="header-content">
                 <h1>Welcome back, <?php echo htmlspecialchars($current_user['full_name']); ?>!</h1>
@@ -124,7 +124,7 @@ if ($current_user['user_type'] !== 'owner') {
             </div>
         </div>
 
-        <!-- Statistics Cards -->
+
         <div class="stats-grid">
             <div class="stat-card buildings-card">
                 <div class="stat-icon">🏢</div>
@@ -184,9 +184,9 @@ if ($current_user['user_type'] !== 'owner') {
             </div>
         </div>
 
-        <!-- Main Content Grid -->
+
         <div class="content-grid">
-            <!-- Quick Actions -->
+
             <div class="card quick-actions-card">
                 <div class="card-header">
                     <h3>Quick Actions</h3>
@@ -229,7 +229,7 @@ if ($current_user['user_type'] !== 'owner') {
                 </div>
             </div>
 
-            <!-- Actions Needed Card -->
+
             <div class="card actions-needed-card">
                 <div class="card-header">
                     <h3>⚠️ Actions Needed</h3>
@@ -241,7 +241,7 @@ if ($current_user['user_type'] !== 'owner') {
                     </div>
                 </div>
             </div>
-            <!-- Buildings Overview -->
+
             <div class="card buildings-overview-card">
                 <div class="card-header">
                     <h3>Buildings Overview</h3>
@@ -259,7 +259,7 @@ if ($current_user['user_type'] !== 'owner') {
         </div>
     </main>
 
-    <!-- 2FA Setup Modal -->
+
     <div id="twoFactorModal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
@@ -297,18 +297,18 @@ if ($current_user['user_type'] !== 'owner') {
         </div>
     </div>
 
-    <!-- Loading Overlay -->
+
     <div id="loadingOverlay" class="loading-overlay" style="display: none;">
         <div class="loading-spinner"></div>
         <p>Loading...</p>
     </div>
 
-    <!-- Success/Error Messages -->
+
     <div id="messageContainer" class="message-container"></div>
 
-    <!-- Include Add Building Modal -->
+
     <?php include '../view/modals/add_building_modal.php'; ?>
-    <!-- Scripts -->
+
     <script src="../view/js/global-session.js"></script>
     <script src="../view/js/dashboard.js"></script>
     <script src="../view/js/building.js"></script>

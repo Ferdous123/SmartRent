@@ -1,35 +1,25 @@
-// Global Session Management - Include on ALL authenticated pages
-// W3Schools style - Simple procedural JavaScript
 
 var sessionCheckInterval = null;
 
-// Initialize session checking when page loads
 document.addEventListener('DOMContentLoaded', function() {
     initSessionManagement();
 });
 
-// Initialize session management
 function initSessionManagement() {
-    // Start session checking
     setupSessionCheck();
     
-    // Setup dropdowns
     setupUserDropdown();
     setupNotificationDropdown();
 }
 
-// Setup periodic session check
 function setupSessionCheck() {
-    // Check immediately
     checkSessionStatus();
     
-    // Then check every 60 seconds
     sessionCheckInterval = setInterval(function() {
         checkSessionStatus();
     }, 60000);
 }
 
-// Check if session is still valid
 function checkSessionStatus() {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '../controller/session_controller.php', true);
@@ -40,7 +30,6 @@ function checkSessionStatus() {
             try {
                 var response = JSON.parse(xhr.responseText);
                 if (!response.logged_in) {
-                    // Session expired - redirect to login
                     window.location.href = '../view/login.php?error=session_expired';
                 }
             } catch (e) {
@@ -52,7 +41,6 @@ function checkSessionStatus() {
     xhr.send('action=check_session');
 }
 
-// Setup user dropdown menu (common across all pages)
 function setupUserDropdown() {
     var userBtn = document.getElementById('userBtn');
     var userMenu = document.getElementById('userMenu');
@@ -61,15 +49,12 @@ function setupUserDropdown() {
         userBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             
-            // Close notification panel if open
             var notifPanel = document.getElementById('notificationsPanel');
             if (notifPanel) notifPanel.style.display = 'none';
             
-            // Toggle user menu
             userMenu.style.display = userMenu.style.display === 'none' ? 'block' : 'none';
         });
         
-        // Close menu when clicking outside
         document.addEventListener('click', function(e) {
             if (!userBtn.contains(e.target) && !userMenu.contains(e.target)) {
                 userMenu.style.display = 'none';
@@ -78,7 +63,6 @@ function setupUserDropdown() {
     }
 }
 
-// Setup notification dropdown (common across all pages)
 function setupNotificationDropdown() {
     var notifBtn = document.getElementById('notificationBtn');
     var notifPanel = document.getElementById('notificationsPanel');
@@ -87,15 +71,12 @@ function setupNotificationDropdown() {
         notifBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             
-            // Close user menu if open
             var userMenu = document.getElementById('userMenu');
             if (userMenu) userMenu.style.display = 'none';
             
-            // Toggle notification panel
             notifPanel.style.display = notifPanel.style.display === 'none' ? 'block' : 'none';
         });
         
-        // Close panel when clicking outside
         document.addEventListener('click', function(e) {
             if (!notifBtn.contains(e.target) && !notifPanel.contains(e.target)) {
                 notifPanel.style.display = 'none';
@@ -104,7 +85,6 @@ function setupNotificationDropdown() {
     }
 }
 
-// Utility function to show messages (reusable across pages)
 function showMessage(message, type, onclick) {
     var container = document.getElementById('messageContainer');
     if (!container) {
@@ -126,7 +106,6 @@ function showMessage(message, type, onclick) {
     messageDiv.style.maxWidth = '400px';
     messageDiv.style.fontWeight = '500';
     
-    // Set color based on type
     if (type === 'success') {
         messageDiv.style.background = '#d4edda';
         messageDiv.style.color = '#155724';
@@ -152,7 +131,6 @@ function showMessage(message, type, onclick) {
     
     container.appendChild(messageDiv);
     
-    // Auto-remove after 5 seconds
     setTimeout(function() {
         if (messageDiv.parentNode) {
             messageDiv.style.opacity = '0';
@@ -166,7 +144,6 @@ function showMessage(message, type, onclick) {
     }, 5000);
 }
 
-// Cleanup on page unload
 window.addEventListener('beforeunload', function() {
     if (sessionCheckInterval) {
         clearInterval(sessionCheckInterval);

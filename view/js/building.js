@@ -1,5 +1,4 @@
-// Building Management JavaScript - W3Schools Style
-// Global variables for building creation
+
 var currentBuildingStep = 1;
 var buildingFormData = {
     building_name: '',
@@ -12,9 +11,9 @@ var buildingFormData = {
     numbering_style: 'sequential'
 };
 var generatedFlats = [];
-var excludedFlats = []; // Track excluded flats
+var excludedFlats = []; 
 
-// Open Add Building Modal
+
 function showAddBuildingModal() {
     var modal = document.getElementById('addBuildingModal');
     if (modal) {
@@ -25,7 +24,7 @@ function showAddBuildingModal() {
     }
 }
 
-// Close Add Building Modal
+
 function closeAddBuildingModal() {
     var modal = document.getElementById('addBuildingModal');
     if (modal) {
@@ -34,7 +33,7 @@ function closeAddBuildingModal() {
     resetBuildingForm();
 }
 
-// Reset building form
+
 function resetBuildingForm() {
     var basicForm = document.getElementById('buildingBasicForm');
     var namingForm = document.getElementById('buildingNamingForm');
@@ -46,13 +45,13 @@ function resetBuildingForm() {
         namingForm.reset();
     }
     
-    // Clear all errors
+
     var errorSpans = document.querySelectorAll('.form-error');
     for (var i = 0; i < errorSpans.length; i++) {
         errorSpans[i].textContent = '';
     }
     
-    // Reset data
+
     buildingFormData = {
         building_name: '',
         address: '',
@@ -67,9 +66,9 @@ function resetBuildingForm() {
     excludedFlats = [];
 }
 
-// Show specific step
+
 function showBuildingStep(step) {
-    // Hide all steps
+
     for (var i = 1; i <= 3; i++) {
         var stepElement = document.getElementById('buildingStep' + i);
         if (stepElement) {
@@ -77,7 +76,7 @@ function showBuildingStep(step) {
         }
     }
     
-    // Show current step
+
     var currentStepElement = document.getElementById('buildingStep' + step);
     if (currentStepElement) {
         currentStepElement.style.display = 'block';
@@ -86,10 +85,10 @@ function showBuildingStep(step) {
     currentBuildingStep = step;
 }
 
-// Navigate to next step
+
 function nextBuildingStep(step) {
     if (step === 2) {
-        // Validate step 1
+
         if (validateBuildingBasicInfo()) {
             saveBuildingBasicInfo();
             showBuildingStep(2);
@@ -97,43 +96,43 @@ function nextBuildingStep(step) {
     }
 }
 
-// Navigate to previous step
+
 function previousBuildingStep(step) {
     showBuildingStep(step);
 }
 
-// Validate basic information
+
 function validateBuildingBasicInfo() {
     var isValid = true;
     
-    // Clear previous errors
+
     document.getElementById('building_name_error').textContent = '';
     document.getElementById('address_error').textContent = '';
     document.getElementById('total_floors_error').textContent = '';
     document.getElementById('flats_per_floor_error').textContent = '';
     
-    // Building name
+
     var buildingName = document.getElementById('building_name').value.trim();
     if (buildingName === '') {
         document.getElementById('building_name_error').textContent = 'Building name is required';
         isValid = false;
     }
     
-    // Address
+
     var address = document.getElementById('building_address').value.trim();
     if (address === '') {
         document.getElementById('address_error').textContent = 'Address is required';
         isValid = false;
     }
     
-    // Total floors
+
     var totalFloors = parseInt(document.getElementById('total_floors').value);
     if (isNaN(totalFloors) || totalFloors < 1 || totalFloors > 50) {
         document.getElementById('total_floors_error').textContent = 'Please enter floors between 1 and 50';
         isValid = false;
     }
     
-    // Flats per floor
+
     var flatsPerFloor = parseInt(document.getElementById('flats_per_floor').value);
     if (isNaN(flatsPerFloor) || flatsPerFloor < 1 || flatsPerFloor > 20) {
         document.getElementById('flats_per_floor_error').textContent = 'Please enter flats between 1 and 20';
@@ -143,7 +142,7 @@ function validateBuildingBasicInfo() {
     return isValid;
 }
 
-// Save basic information
+
 function saveBuildingBasicInfo() {
     buildingFormData.building_name = document.getElementById('building_name').value.trim();
     buildingFormData.address = document.getElementById('building_address').value.trim();
@@ -151,7 +150,7 @@ function saveBuildingBasicInfo() {
     buildingFormData.flats_per_floor = parseInt(document.getElementById('flats_per_floor').value);
 }
 
-// Toggle naming options based on scheme
+
 function toggleNamingOptions() {
     var selectedScheme = document.querySelector('input[name="naming_scheme"]:checked').value;
     
@@ -169,17 +168,17 @@ function toggleNamingOptions() {
     buildingFormData.naming_scheme = selectedScheme;
 }
 
-// Open Edit Building Modal
+
 function openEditBuildingModal(buildingId) {
     var modal = document.getElementById('editBuildingModal');
     if (!modal) return;
     
     modal.style.display = 'flex';
     
-    // Show loading
+
     showMessage('Loading building details...', 'info');
     
-    // Get building details
+
     var formData = new FormData();
     formData.append('action', 'get_building_details');
     formData.append('building_id', buildingId);
@@ -195,7 +194,7 @@ function openEditBuildingModal(buildingId) {
                 if (response.success) {
                     populateEditBuildingForm(response.building);
                     
-                    // Load first flat's charges as defaults
+
                     loadFirstFlatCharges(buildingId);
                 } else {
                     showMessage(response.message || 'Failed to load building', 'error');
@@ -212,7 +211,7 @@ function openEditBuildingModal(buildingId) {
     xhr.send(formData);
 }
 
-// Populate the edit form
+
 function populateEditBuildingForm(building) {
     document.getElementById('edit_building_id').value = building.building_id;
     document.getElementById('edit_building_name').value = building.building_name;
@@ -220,7 +219,7 @@ function populateEditBuildingForm(building) {
     document.getElementById('edit_total_floors').value = building.total_floors;
 }
 
-// Load first flat's charges to pre-fill defaults
+
 function loadFirstFlatCharges(buildingId) {
     var formData = new FormData();
     formData.append('action', 'get_first_flat_charges');
@@ -237,7 +236,6 @@ function loadFirstFlatCharges(buildingId) {
                 if (response.success && response.charges) {
                     var charges = response.charges;
                     
-                    // Pre-fill charge fields
                     document.getElementById('edit_default_rent').value = charges.rent || 0;
                     document.getElementById('edit_default_gas_bill').value = charges.gas_bill || 0;
                     document.getElementById('edit_default_water_bill').value = charges.water_bill || 0;
@@ -246,7 +244,6 @@ function loadFirstFlatCharges(buildingId) {
                     document.getElementById('edit_default_miscellaneous').value = charges.miscellaneous || 0;
                 }
                 
-                // Pre-fill meter settings if available
                 if (response.success && response.meter) {
                     document.getElementById('edit_default_meter_type').value = response.meter.meter_type || '';
                     document.getElementById('edit_default_per_unit_cost').value = response.meter.per_unit_cost || '';
@@ -260,7 +257,6 @@ function loadFirstFlatCharges(buildingId) {
     xhr.send(formData);
 }
 
-// Close Edit Building Modal
 function closeEditBuildingModal() {
     var modal = document.getElementById('editBuildingModal');
     if (modal) {
@@ -268,7 +264,6 @@ function closeEditBuildingModal() {
     }
 }
 
-// Handle Edit Building Form Submit
 document.addEventListener('DOMContentLoaded', function() {
     var editForm = document.getElementById('editBuildingForm');
     if (editForm) {
@@ -295,7 +290,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 showMessage(response.message, 'success');
                                 closeEditBuildingModal();
                                 
-                                // Reload buildings list
                                 setTimeout(function() {
                                     window.location.reload();
                                 }, 1000);
@@ -319,9 +313,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-// Generate flat preview
 function generateFlatPreview() {
-    // Save naming preferences
     buildingFormData.naming_scheme = document.querySelector('input[name="naming_scheme"]:checked').value;
     
     if (buildingFormData.naming_scheme === 'floor_letter') {
@@ -331,7 +323,6 @@ function generateFlatPreview() {
         buildingFormData.numbering_style = document.getElementById('numbering_style').value;
     }
     
-    // Generate flats array
     generatedFlats = [];
     var flatCounter = 1;
     
@@ -340,21 +331,17 @@ function generateFlatPreview() {
             var flatNumber = '';
             
             if (buildingFormData.naming_scheme === 'floor_letter') {
-                // Floor + Letter naming
                 var letterIndex = flatNum - 1;
                 var startCharCode = buildingFormData.letter_start.charCodeAt(0);
                 var letter = String.fromCharCode(startCharCode + letterIndex);
                 flatNumber = floor + letter;
             } else {
-                // Custom naming
                 var prefix = buildingFormData.custom_prefix;
                 
                 if (buildingFormData.numbering_style === 'floor_based') {
-                    // Floor-based: 101, 102, 201, 202
                     var num = (floor * 100) + flatNum;
                     flatNumber = prefix + num;
                 } else {
-                    // Sequential: 101, 102, 103, 104
                     flatNumber = prefix + (100 + flatCounter);
                     flatCounter++;
                 }
@@ -367,24 +354,19 @@ function generateFlatPreview() {
         }
     }
     
-    // Display preview
     displayBuildingPreview();
     showBuildingStep(3);
 }
 
-// Toggle flat exclusion
 function toggleFlatExclusion(flatNumber) {
     var index = excludedFlats.indexOf(flatNumber);
     
     if (index > -1) {
-        // Remove from excluded list
         excludedFlats.splice(index, 1);
     } else {
-        // Add to excluded list
         excludedFlats.push(flatNumber);
     }
     
-    // Update the visual state
     var flatElement = document.querySelector('[data-flat-number="' + flatNumber + '"]');
     if (flatElement) {
         if (excludedFlats.indexOf(flatNumber) > -1) {
@@ -394,11 +376,9 @@ function toggleFlatExclusion(flatNumber) {
         }
     }
     
-    // Update the total count
     updateFlatCount();
 }
 
-// Update flat count display
 function updateFlatCount() {
     var totalFlats = generatedFlats.length;
     var excludedCount = excludedFlats.length;
@@ -407,19 +387,15 @@ function updateFlatCount() {
     document.getElementById('preview_total_flats').textContent = includedCount + ' (excluded: ' + excludedCount + ')';
 }
 
-// Display building preview
 function displayBuildingPreview() {
-    // Update summary
     document.getElementById('preview_building_name').textContent = buildingFormData.building_name;
     document.getElementById('preview_address').textContent = buildingFormData.address;
     document.getElementById('preview_floors').textContent = buildingFormData.total_floors;
     document.getElementById('preview_total_flats').textContent = generatedFlats.length;
     
-    // Display flats grid
     var container = document.getElementById('flatsPreviewContainer');
     container.innerHTML = '';
     
-    // Add instruction text
     var instruction = document.createElement('p');
     instruction.className = 'preview-instruction';
     instruction.textContent = 'Click on any flat to exclude it from creation';
@@ -431,7 +407,6 @@ function displayBuildingPreview() {
     for (var i = 0; i < generatedFlats.length; i++) {
         var flat = generatedFlats[i];
         
-        // Create new floor section if needed
         if (flat.floor_number !== currentFloor) {
             if (floorDiv) {
                 container.appendChild(floorDiv);
@@ -448,18 +423,15 @@ function displayBuildingPreview() {
             floorDiv.className = 'floor-flats';
         }
         
-        // Create flat item
         var flatItem = document.createElement('div');
         flatItem.className = 'flat-item';
         flatItem.textContent = flat.flat_number;
         flatItem.setAttribute('data-flat-number', flat.flat_number);
         
-        // Check if already excluded
         if (excludedFlats.indexOf(flat.flat_number) > -1) {
             flatItem.classList.add('excluded');
         }
         
-        // Add click handler
         flatItem.onclick = (function(flatNum) {
             return function() {
                 toggleFlatExclusion(flatNum);
@@ -469,17 +441,12 @@ function displayBuildingPreview() {
         floorDiv.appendChild(flatItem);
     }
     
-    // Append last floor
     if (floorDiv) {
         container.appendChild(floorDiv);
     }
 }
 
-// Submit building to server
-// Submit building to server
-// Submit building to server
 function submitBuilding() {
-    // Filter out excluded flats
     var flatsToCreate = [];
     for (var i = 0; i < generatedFlats.length; i++) {
         if (excludedFlats.indexOf(generatedFlats[i].flat_number) === -1) {
@@ -487,16 +454,13 @@ function submitBuilding() {
         }
     }
     
-    // Check if at least one flat is selected
     if (flatsToCreate.length === 0) {
         showMessage('Please select at least one flat to create', 'error');
         return;
     }
     
-    // Show loading
     showMessage('Creating building with ' + flatsToCreate.length + ' flats...', 'info');
     
-    // Prepare data for server
     var formData = new FormData();
     formData.append('action', 'create_building');
     formData.append('building_name', buildingFormData.building_name);
@@ -504,7 +468,6 @@ function submitBuilding() {
     formData.append('total_floors', buildingFormData.total_floors);
     formData.append('flats_data', JSON.stringify(flatsToCreate));
     
-    // Send AJAX request
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '../controller/building_controller.php', true);
     
@@ -515,7 +478,6 @@ function submitBuilding() {
             
             if (xhr.status === 200) {
                 try {
-                    // Try to extract JSON from response (in case there are PHP warnings)
                     var jsonStart = xhr.responseText.indexOf('{');
                     var jsonText = xhr.responseText;
                     if (jsonStart > 0) {
@@ -528,7 +490,6 @@ function submitBuilding() {
                     if (response.success) {
                         showMessage(response.message, 'success');
                         
-                        // Change the "Create Building" button to "Close"
                         var createButton = document.querySelector('#buildingStep3 .btn-primary');
                         if (createButton) {
                             createButton.textContent = 'Close';
@@ -538,7 +499,6 @@ function submitBuilding() {
                             };
                         }
                         
-                        // Hide the Back button
                         var backButton = document.querySelector('#buildingStep3 .btn-secondary');
                         if (backButton) {
                             backButton.style.display = 'none';

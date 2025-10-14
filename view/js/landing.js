@@ -1,7 +1,4 @@
-// SmartRent Landing Page JavaScript
-// Beginner-friendly procedural JavaScript with animations
 
-// Wait for page to load
 document.addEventListener('DOMContentLoaded', function() {
     initLandingPage();
 });

@@ -1,14 +1,12 @@
 <?php
-// Tenant Dashboard Model
-// All database operations for tenant dashboard
 
 require_once 'database.php';
 
-// Get complete dashboard data for tenant
+
 function get_tenant_dashboard_data($user_id) {
     $data = array();
     
-    // Get ALL flat assignments (not just LIMIT 1)
+
     $flats_query = "SELECT fa.assignment_id, fa.flat_id, fa.advance_amount, fa.advance_balance, fa.confirmed_at,
                 f.flat_number, f.floor_number, f.base_rent,
                 b.building_id, b.building_name, b.address
@@ -27,7 +25,7 @@ function get_tenant_dashboard_data($user_id) {
         $data['has_assignment'] = true;
         $data['total_flats'] = count($data['all_flats']);
         
-        // Calculate totals across all flats
+
         $total_advance = 0;
         $total_outstanding = 0;
         $total_overdue_count = 0;
@@ -35,7 +33,7 @@ function get_tenant_dashboard_data($user_id) {
         foreach ($data['all_flats'] as $flat) {
             $total_advance += floatval($flat['advance_amount']);
             
-            // Get outstanding for this flat
+
             $dues_query = "SELECT COALESCE(SUM(remaining_amount), 0) as outstanding,
                           COUNT(*) as overdue_count
                           FROM tenant_dues 
@@ -47,15 +45,15 @@ function get_tenant_dashboard_data($user_id) {
         }
         
         $data['total_advance_balance'] = $total_advance;
-        $data['total_security_deposit'] = $total_advance; // Same value, different label
+        $data['total_security_deposit'] = $total_advance; 
         $data['outstanding_dues'] = $total_outstanding;
         $data['overdue_count'] = $total_overdue_count;
         
-        // Keep first flat as primary for backward compatibility
+
         $data['flat_info'] = $data['all_flats'][0];
         $flat_id = $data['flat_info']['flat_id'];
         
-        // Get current month expense for primary flat
+
         $current_month = date('Y-m-01');
         $current_query = "SELECT * FROM flat_expenses 
                           WHERE flat_id = ? AND billing_month = ?";
@@ -64,7 +62,7 @@ function get_tenant_dashboard_data($user_id) {
         if ($current_result && mysqli_num_rows($current_result) > 0) {
             $current_expense = fetch_single_row($current_result);
             
-            // Get paid amount for this month
+
             $paid_query = "SELECT COALESCE(SUM(amount), 0) as paid
                            FROM payments
                            WHERE tenant_id = ? AND expense_id = ?";
@@ -78,13 +76,13 @@ function get_tenant_dashboard_data($user_id) {
                 'total' => $current_expense['total_amount'],
                 'paid_amount' => $paid['paid'],
                 'remaining' => $current_expense['total_amount'] - $paid['paid'],
-                'due_date' => date('Y-m-15') // 15th of current month
+                'due_date' => date('Y-m-15') 
             );
         } else {
             $data['current_month'] = null;
         }
         
-        // Get last payment across all flats
+
         $last_payment_query = "SELECT amount, payment_date 
                                FROM payments
                                WHERE tenant_id = ?
@@ -101,7 +99,7 @@ function get_tenant_dashboard_data($user_id) {
             $data['last_payment_date'] = null;
         }
         
-        // Get recent payments across all flats
+
         $recent_payments_query = "SELECT p.*, f.flat_number, b.building_name
                                   FROM payments p
                                   LEFT JOIN flats f ON p.flat_id = f.flat_id
@@ -112,7 +110,7 @@ function get_tenant_dashboard_data($user_id) {
         $recent_payments_result = execute_prepared_query($recent_payments_query, array($user_id), 'i');
         $data['recent_payments'] = fetch_all_rows($recent_payments_result);
         
-        // Get outstanding payments across all flats
+
         $outstanding_query = "SELECT td.*, fe.billing_month, fe.total_amount as total_due,
                               f.flat_number, b.building_name
                               FROM tenant_dues td
@@ -124,7 +122,7 @@ function get_tenant_dashboard_data($user_id) {
         $outstanding_result = execute_prepared_query($outstanding_query, array($user_id), 'i');
         $data['outstanding_payments'] = fetch_all_rows($outstanding_result);
         
-        // Get service requests across all flats
+
         $service_query = "SELECT sr.*, f.flat_number, b.building_name
                           FROM service_requests sr
                           JOIN flats f ON sr.flat_id = f.flat_id
@@ -138,7 +136,7 @@ function get_tenant_dashboard_data($user_id) {
             return in_array($req['status'], array('pending', 'assigned', 'in_progress'));
         }));
         
-        // Get recent activity
+
         $activity_query = "SELECT * FROM user_logs
                            WHERE user_id = ?
                            ORDER BY created_at DESC
@@ -160,7 +158,7 @@ function get_tenant_dashboard_data($user_id) {
     return $data;
 }
 
-// Get pending assignment for tenant
+
 function get_pending_assignment_for_tenant($user_id) {
     $query = "SELECT fa.*, f.flat_number, f.floor_number, b.building_name,
               TIMESTAMPDIFF(SECOND, NOW(), fa.expires_at) as seconds_remaining
@@ -181,9 +179,9 @@ function get_pending_assignment_for_tenant($user_id) {
     return null;
 }
 
-// Confirm flat assignment with transaction verification
+
 function confirm_flat_assignment($assignment_id, $user_id, $transaction_number) {
-    // Get assignment details
+
     $query = "SELECT fa.*, f.flat_number, b.building_name 
               FROM flat_assignments fa
               JOIN flats f ON fa.flat_id = f.flat_id
@@ -197,12 +195,12 @@ function confirm_flat_assignment($assignment_id, $user_id, $transaction_number) 
     
     $assignment = fetch_single_row($result);
     
-    // Check if expired
+
     if (strtotime($assignment['expires_at']) < time()) {
         return array('success' => false, 'message' => 'Assignment has expired');
     }
     
-    // CRITICAL: Check if transaction number already used
+
     $check_used = "SELECT verification_id FROM transaction_verifications WHERE transaction_number = ?";
     $used_result = execute_prepared_query($check_used, array($transaction_number), 's');
     
@@ -210,18 +208,11 @@ function confirm_flat_assignment($assignment_id, $user_id, $transaction_number) 
         return array('success' => false, 'message' => 'This transaction number has already been used');
     }
     
-    // TODO: Here you would normally verify the transaction with payment gateway/bank
-    // For now, we'll assume the transaction is valid
-    // In real implementation, you'd call payment API to verify:
-    // - Transaction exists
-    // - Amount matches expected amount
-    // - Transaction is successful
-    
     $expected_amount = $assignment['advance_amount'];
-    $verified_amount = $expected_amount; // In real system, get this from payment API
+    $verified_amount = $expected_amount; 
     
-    // Check if amount matches (with small tolerance for fees)
-    $tolerance = 50; // Allow 50 Taka difference for transaction fees
+
+    $tolerance = 50; 
     if (abs($verified_amount - $expected_amount) > $tolerance) {
         return array(
             'success' => false, 
@@ -233,7 +224,7 @@ function confirm_flat_assignment($assignment_id, $user_id, $transaction_number) 
     begin_transaction();
     
     try {
-        // Record transaction verification (BEFORE confirming assignment)
+
         $verify_query = "INSERT INTO transaction_verifications 
                         (transaction_number, assignment_id, tenant_id, expected_amount, verified_amount, 
                          payment_method, verification_status, notes)
@@ -247,7 +238,7 @@ function confirm_flat_assignment($assignment_id, $user_id, $transaction_number) 
             throw new Exception('Failed to record transaction verification');
         }
         
-        // Update assignment to confirmed
+
         $update_query = "UPDATE flat_assignments 
                          SET status = 'confirmed', 
                              confirmed_at = NOW(),
@@ -255,11 +246,11 @@ function confirm_flat_assignment($assignment_id, $user_id, $transaction_number) 
                          WHERE assignment_id = ?";
         execute_prepared_query($update_query, array($transaction_number, $assignment_id), 'si');
         
-        // Update flat status to occupied
+
         $flat_query = "UPDATE flats SET status = 'occupied' WHERE flat_id = ?";
         execute_prepared_query($flat_query, array($assignment['flat_id']), 'i');
         
-        // Create initial payment record in payments table
+
         $payment_query = "INSERT INTO payments 
                          (transaction_number, tenant_id, flat_id, amount, method, payment_type, 
                           payment_date, remarks, is_verified)
@@ -269,14 +260,14 @@ function confirm_flat_assignment($assignment_id, $user_id, $transaction_number) 
             array($transaction_number, $user_id, $assignment['flat_id'], $verified_amount),
             'siid');
         
-        // Create notification
+
         create_tenant_notification($user_id, 'assignment', 
             'Assignment Confirmed',
             'Your flat assignment for ' . $assignment['building_name'] . ' - ' . 
             $assignment['flat_number'] . ' has been confirmed. Welcome to your new home!',
             'flat_assignments', $assignment_id);
         
-        // Log activity
+
         log_user_activity($user_id, 'update', 'flat_assignments', $assignment_id, null,
             array('action' => 'assignment_confirmed', 'transaction' => $transaction_number, 
                   'verified_amount' => $verified_amount));
@@ -292,9 +283,9 @@ function confirm_flat_assignment($assignment_id, $user_id, $transaction_number) 
     }
 }
 
-// Record tenant payment
+
 function record_tenant_payment($user_id, $payment_type, $amount, $method, $transaction_number, $payment_date, $remarks) {
-    // Get tenant's flat
+
     $flat_query = "SELECT flat_id FROM flat_assignments 
                    WHERE tenant_id = ? AND status = 'confirmed' AND actual_ended_at IS NULL
                    LIMIT 1";
@@ -307,7 +298,7 @@ function record_tenant_payment($user_id, $payment_type, $amount, $method, $trans
     $flat = fetch_single_row($flat_result);
     $flat_id = $flat['flat_id'];
     
-    // Insert payment
+
     $payment_query = "INSERT INTO payments 
                       (transaction_number, tenant_id, flat_id, amount, method, payment_type, payment_date, remarks, is_verified)
                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)";
@@ -317,13 +308,13 @@ function record_tenant_payment($user_id, $payment_type, $amount, $method, $trans
         'siidssss');
     
     if ($result) {
-        // Create notification
+
         create_tenant_notification($user_id, 'payment',
             'Payment Submitted',
             'Your payment of ৳' . number_format($amount, 2) . ' has been submitted for verification.',
             'payments', get_last_insert_id());
         
-        // Log activity
+
         log_user_activity($user_id, 'payment', 'payments', get_last_insert_id(), null,
             array('amount' => $amount, 'type' => $payment_type));
         
@@ -333,7 +324,7 @@ function record_tenant_payment($user_id, $payment_type, $amount, $method, $trans
     return array('success' => false, 'message' => 'Failed to record payment');
 }
 
-// Get tenant flat details
+
 function get_tenant_flat_details($user_id) {
     $query = "SELECT fa.*, f.*, b.building_name, b.address
               FROM flat_assignments fa
@@ -351,7 +342,7 @@ function get_tenant_flat_details($user_id) {
     return null;
 }
 
-// Get tenant payment history
+
 function get_tenant_payment_history($user_id) {
     $query = "SELECT * FROM payments
               WHERE tenant_id = ?
@@ -362,9 +353,9 @@ function get_tenant_payment_history($user_id) {
     return fetch_all_rows($result);
 }
 
-// Request move out
+
 function request_tenant_move_out($user_id, $move_out_date, $reason) {
-    // Get active assignment
+
     $query = "SELECT assignment_id, flat_id FROM flat_assignments
               WHERE tenant_id = ? AND status = 'confirmed' AND actual_ended_at IS NULL
               LIMIT 1";
@@ -377,7 +368,7 @@ function request_tenant_move_out($user_id, $move_out_date, $reason) {
     
     $assignment = fetch_single_row($result);
     
-    // Update assignment
+
     $update_query = "UPDATE flat_assignments 
                      SET move_out_date = ?, move_out_requested_at = NOW()
                      WHERE assignment_id = ?";
@@ -385,7 +376,7 @@ function request_tenant_move_out($user_id, $move_out_date, $reason) {
     $update_result = execute_prepared_query($update_query, array($move_out_date, $assignment['assignment_id']), 'si');
     
     if ($update_result) {
-        // Create notification for owner/manager
+
         $notify_query = "SELECT b.owner_id FROM flats f 
                          JOIN buildings b ON f.building_id = b.building_id
                          WHERE f.flat_id = ?";
@@ -397,7 +388,7 @@ function request_tenant_move_out($user_id, $move_out_date, $reason) {
             'Tenant has requested to move out on ' . $move_out_date,
             'flat_assignments', $assignment['assignment_id']);
         
-        // Log activity
+
         log_user_activity($user_id, 'move_out_request', 'flat_assignments', $assignment['assignment_id'], null,
             array('move_out_date' => $move_out_date, 'reason' => $reason));
         
@@ -407,7 +398,7 @@ function request_tenant_move_out($user_id, $move_out_date, $reason) {
     return array('success' => false, 'message' => 'Failed to submit request');
 }
 
-// Get tenant notifications
+
 function get_tenant_notifications($user_id) {
     $query = "SELECT * FROM notifications
               WHERE user_id = ?
@@ -419,7 +410,7 @@ function get_tenant_notifications($user_id) {
     return fetch_all_rows($result);
 }
 
-// Get unread notification count
+
 function get_unread_notification_count($user_id) {
     $query = "SELECT COUNT(*) as count FROM notifications
               WHERE user_id = ? AND is_read = 0";
@@ -430,7 +421,7 @@ function get_unread_notification_count($user_id) {
     return $row['count'];
 }
 
-// Mark notification as read
+
 function mark_notification_as_read($notification_id, $user_id) {
     $query = "UPDATE notifications 
               SET is_read = 1, read_at = NOW()
@@ -439,7 +430,7 @@ function mark_notification_as_read($notification_id, $user_id) {
     return execute_prepared_query($query, array($notification_id, $user_id), 'ii');
 }
 
-// Mark all notifications as read (continued)
+
 function mark_all_notifications_as_read($user_id) {
     $query = "UPDATE notifications 
               SET is_read = 1, read_at = NOW()
@@ -448,7 +439,7 @@ function mark_all_notifications_as_read($user_id) {
     return execute_prepared_query($query, array($user_id), 'i');
 }
 
-// Get latest slip data
+
 function get_latest_slip_data($user_id) {
     $query = "SELECT fe.*, f.flat_number, b.building_name, up.full_name as tenant_name
               FROM flat_expenses fe
@@ -469,7 +460,7 @@ function get_latest_slip_data($user_id) {
     return null;
 }
 
-// Create notification (if not already defined in tenant_model.php)
+
 function create_tenant_notification($user_id, $type, $title, $message, $related_entity = null, $related_id = null) {
     $query = "INSERT INTO notifications (user_id, type, title, message, related_entity, related_id)
               VALUES (?, ?, ?, ?, ?, ?)";
@@ -479,7 +470,7 @@ function create_tenant_notification($user_id, $type, $title, $message, $related_
         'issssi');
 }
 
-// Get all tenant flats for profile
+
 function get_all_tenant_flats($user_id) {
     $query = "SELECT fa.*, f.flat_number, f.floor_number, f.base_rent,
               b.building_name, b.address
@@ -495,13 +486,9 @@ function get_all_tenant_flats($user_id) {
     return $result ? fetch_all_rows($result) : array();
 }
 
-// ============================================================================
-// FLAT ACTION FUNCTIONS
-// ============================================================================
 
-// 1. Get flat full details
 function get_tenant_flat_full_details($user_id, $flat_id) {
-    // Verify tenant owns this flat
+
     $verify_query = "SELECT assignment_id FROM flat_assignments 
                      WHERE tenant_id = ? AND flat_id = ? AND status = 'confirmed' AND actual_ended_at IS NULL";
     $verify = execute_prepared_query($verify_query, array($user_id, $flat_id), 'ii');
@@ -525,7 +512,7 @@ function get_tenant_flat_full_details($user_id, $flat_id) {
     return array('success' => false, 'message' => 'Flat not found');
 }
 
-// 2. Get flat specific payment history
+
 function get_flat_specific_payments($user_id, $flat_id) {
     $query = "SELECT p.*, CONCAT('receipt_', p.payment_id) as receipt_number
               FROM payments p

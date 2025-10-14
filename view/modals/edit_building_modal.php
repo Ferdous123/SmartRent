@@ -1,4 +1,4 @@
-<!-- Edit Building Modal -->
+
 <div id="editBuildingModal" class="modal" style="display: none;">
     <div class="modal-content" style="max-width: 800px;">
         <div class="modal-header">
@@ -9,7 +9,6 @@
             <form id="editBuildingForm">
                 <input type="hidden" id="edit_building_id" name="building_id">
                 
-                <!-- Building Basic Information -->
                 <h4 style="color: #667eea; margin-bottom: 1rem;">Building Information</h4>
                 
                 <div class="form-group">
@@ -29,7 +28,6 @@
                 
                 <hr style="margin: 2rem 0; border: none; border-top: 1px solid #e0e0e0;">
                 
-                <!-- Default Charges Section -->
                 <h4 style="color: #667eea; margin-bottom: 1rem;">Default Charges for All Flats</h4>
                 <p style="color: #666; margin-bottom: 1rem; font-size: 14px;">
                     Set default values that will be applied to all flats in this building.
@@ -74,7 +72,6 @@
 
                 <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid #e0e0e0;">
 
-                <!-- Default Meter Settings -->
                 <h4 style="color: #667eea; margin-bottom: 1rem;">Default Electric Meter Settings</h4>
 
                 <div class="form-row">

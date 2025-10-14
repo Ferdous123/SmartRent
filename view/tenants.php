@@ -1,7 +1,6 @@
 <?php
 require_once '../controller/auth_header.php';
 
-// Only owners and managers can access
 if (!in_array($current_user['user_type'], ['owner', 'manager'])) {
     header("Location: ../controller/dashboard_controller.php?error=access_denied");
     exit();
@@ -29,7 +28,6 @@ if (!in_array($current_user['user_type'], ['owner', 'manager'])) {
     </style>
 </head>
 <body>
-    <!-- Navigation Header -->
     <header class="dashboard-navbar">
         <div class="nav-container">
             <div class="nav-left">
@@ -68,9 +66,7 @@ if (!in_array($current_user['user_type'], ['owner', 'manager'])) {
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="tenants-main">
-        <!-- Page Header -->
         <div class="page-header">
             <div class="header-content">
                 <h1>Tenants Management</h1>
@@ -84,7 +80,6 @@ if (!in_array($current_user['user_type'], ['owner', 'manager'])) {
             </div>
         </div>
 
-        <!-- Tabs -->
         <div class="tenants-tabs">
             <button class="tab-btn active" onclick="switchTenantsTab('all')">All Tenants</button>
             <button class="tab-btn" onclick="switchTenantsTab('pending')">Pending Assignments</button>
@@ -92,7 +87,6 @@ if (!in_array($current_user['user_type'], ['owner', 'manager'])) {
         </div>
 
 
-        <!-- Enhanced Search and Filter -->
         <div class="search-filter-bar">
             <div class="filter-row">
                 <input type="text" id="searchInput" class="search-input" placeholder="Search by name, phone, email, or flat..." onkeyup="searchTenants()">
@@ -128,9 +122,7 @@ if (!in_array($current_user['user_type'], ['owner', 'manager'])) {
             </div>
         </div>
 
-        <!-- Tab Contents -->
         <div class="tab-content">
-            <!-- All Tenants Tab -->
             <div id="allTenantsTab" class="tab-pane active">
                 <table class="tenants-table" id="tenantsTable">
                     <thead>
@@ -155,7 +147,6 @@ if (!in_array($current_user['user_type'], ['owner', 'manager'])) {
                 </table>
             </div>
 
-            <!-- Pending Assignments Tab -->
             <div id="pendingTab" class="tab-pane">
                 <table class="tenants-table">
                     <thead>
@@ -179,7 +170,6 @@ if (!in_array($current_user['user_type'], ['owner', 'manager'])) {
                 </table>
             </div>
 
-            <!-- Outstanding Payments Tab -->
             <div id="outstandingTab" class="tab-pane">
                 <table class="tenants-table">
                     <thead>
@@ -204,7 +194,6 @@ if (!in_array($current_user['user_type'], ['owner', 'manager'])) {
         </div>
     </main>
 
-    <!-- Modals -->
     <?php include 'modals/add_tenant_modal.php'; ?>
     <?php include 'modals/tenant_details_modal.php'; ?>
     <?php include 'modals/move_tenant_modal.php'; ?>
@@ -212,7 +201,6 @@ if (!in_array($current_user['user_type'], ['owner', 'manager'])) {
 
     <div id="messageContainer"></div>
 
-    <!-- Scripts -->
     <script src="../view/js/global-session.js"></script>
     <script src="../view/js/tenants-page.js"></script>
 </body>

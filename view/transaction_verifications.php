@@ -6,7 +6,7 @@ if (!in_array($current_user['user_type'], ['owner', 'manager'])) {
     exit();
 }
 
-// Get all verifications
+
 $query = "SELECT tv.*, up.full_name as tenant_name, f.flat_number, b.building_name
           FROM transaction_verifications tv
           JOIN users u ON tv.tenant_id = u.user_id

@@ -1,4 +1,3 @@
-<!-- Move Tenant Modal -->
 <div id="moveTenantModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -52,27 +51,27 @@
 
 <style>
 .current-flat-info {
-    padding: 1rem;
+    padding: 15px;
     background: #e3f2fd;
     border-radius: 8px;
-    margin-bottom: 1.5rem;
+    margin-bottom: 25px;
 }
 
 .current-flat-info h4 {
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 8px 0;
     color: #1976d2;
 }
 
 .current-flat-info p {
-    margin: 0.25rem 0;
+    margin: 4px 0;
     color: #333;
 }
 
 .advance-summary {
-    padding: 1rem;
+    padding: 15px;
     background: #e8f5e9;
     border-radius: 8px;
-    margin-top: 1rem;
+    margin-top: 15px;
 }
 
 .advance-summary p {

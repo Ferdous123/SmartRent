@@ -1,16 +1,14 @@
 <?php
-// Property Model for SmartRent
-// All property and building-related database operations
 require_once 'database.php';
 
-// Create new building
+
 function create_building($owner_id, $building_name, $address, $total_floors, $total_flats = null) {
-    // Validate inputs
+
     if (empty($building_name) || empty($address) || $total_floors <= 0) {
         return array('success' => false, 'message' => 'Invalid building data');
     }
     
-    // Check if building name already exists for this owner
+
     $check_query = "SELECT building_id FROM buildings WHERE owner_id = ? AND building_name = ?";
     $check_result = execute_prepared_query($check_query, array($owner_id, $building_name), 'is');
     
@@ -18,7 +16,7 @@ function create_building($owner_id, $building_name, $address, $total_floors, $to
         return array('success' => false, 'message' => 'Building name already exists');
     }
     
-    // Insert building
+
     $query = "INSERT INTO buildings (owner_id, building_name, address, total_floors, total_flats) 
               VALUES (?, ?, ?, ?, ?)";
     $params = array($owner_id, $building_name, $address, $total_floors, $total_flats);
@@ -29,7 +27,7 @@ function create_building($owner_id, $building_name, $address, $total_floors, $to
     if ($result) {
         $building_id = get_last_insert_id();
         
-        // Log building creation
+
         log_user_activity($owner_id, 'create', 'buildings', $building_id, null, 
                          array('building_name' => $building_name, 'total_floors' => $total_floors));
         
@@ -39,7 +37,7 @@ function create_building($owner_id, $building_name, $address, $total_floors, $to
     }
 }
 
-// Get buildings by owner
+
 function get_buildings_by_owner($owner_id) {
     $query = "SELECT b.*, COUNT(f.flat_id) as actual_flats,
                      COUNT(CASE WHEN fa.status = 'confirmed' AND fa.actual_ended_at IS NULL THEN 1 END) as occupied_flats
@@ -55,7 +53,7 @@ function get_buildings_by_owner($owner_id) {
     return $result ? fetch_all_rows($result) : array();
 }
 
-// Get buildings managed by manager
+
 function get_buildings_by_manager($manager_id) {
     $query = "SELECT b.*, bm.assigned_date, COUNT(f.flat_id) as actual_flats,
                      COUNT(CASE WHEN fa.status = 'confirmed' AND fa.actual_ended_at IS NULL THEN 1 END) as occupied_flats
@@ -72,7 +70,7 @@ function get_buildings_by_manager($manager_id) {
     return $result ? fetch_all_rows($result) : array();
 }
 
-// Get single building details
+
 function get_building_details($building_id, $user_id = null, $user_type = null) {
     $query = "SELECT b.*, up.full_name as owner_name, u.email as owner_email
               FROM buildings b
@@ -80,7 +78,7 @@ function get_building_details($building_id, $user_id = null, $user_type = null) 
               JOIN user_profiles up ON b.owner_id = up.user_id
               WHERE b.building_id = ?";
     
-    // Add access control based on user type
+
     if ($user_type === 'manager') {
         $query .= " AND EXISTS (SELECT 1 FROM building_managers bm 
                                 WHERE bm.building_id = b.building_id 
@@ -97,7 +95,7 @@ function get_building_details($building_id, $user_id = null, $user_type = null) 
         $params = array($building_id, $user_id);
         $types = 'ii';
     } else {
-        // Owner can see all their buildings
+
         $query .= " AND b.owner_id = ?";
         $params = array($building_id, $user_id);
         $types = 'ii';
@@ -108,9 +106,9 @@ function get_building_details($building_id, $user_id = null, $user_type = null) 
     return $result ? fetch_single_row($result) : null;
 }
 
-// Update building information
+
 function update_building($building_id, $building_name, $address, $total_floors, $user_id) {
-    // Check ownership or management rights
+
     $access_query = "SELECT b.building_id FROM buildings b
                      LEFT JOIN building_managers bm ON b.building_id = bm.building_id
                      WHERE b.building_id = ? 
@@ -122,7 +120,7 @@ function update_building($building_id, $building_name, $address, $total_floors, 
         return array('success' => false, 'message' => 'Access denied');
     }
     
-    // Update building
+
     $query = "UPDATE buildings 
               SET building_name = ?, address = ?, total_floors = ?
               WHERE building_id = ?";
@@ -141,9 +139,9 @@ function update_building($building_id, $building_name, $address, $total_floors, 
     }
 }
 
-// Delete building (with protection checks)
+
 function delete_building($building_id, $user_id) {
-    // Only owner can delete buildings
+
     $ownership_query = "SELECT building_id FROM buildings WHERE building_id = ? AND owner_id = ?";
     $ownership_result = execute_prepared_query($ownership_query, array($building_id, $user_id), 'ii');
     
@@ -151,7 +149,7 @@ function delete_building($building_id, $user_id) {
         return array('success' => false, 'message' => 'Access denied - only building owner can delete');
     }
     
-    // Check if building has active tenants
+
     $tenants_query = "SELECT COUNT(*) as active_tenants
                       FROM flat_assignments fa
                       JOIN flats f ON fa.flat_id = f.flat_id
@@ -173,12 +171,12 @@ function delete_building($building_id, $user_id) {
     begin_transaction();
     
     try {
-        // Get building name for logging
+
         $name_query = "SELECT building_name FROM buildings WHERE building_id = ?";
         $name_result = execute_prepared_query($name_query, array($building_id), 'i');
         $building_name = $name_result ? fetch_single_row($name_result)['building_name'] : 'Unknown';
         
-        // Delete building (CASCADE will handle flats and related data)
+
         $delete_query = "DELETE FROM buildings WHERE building_id = ?";
         $delete_result = execute_prepared_query($delete_query, array($building_id), 'i');
         
@@ -186,7 +184,7 @@ function delete_building($building_id, $user_id) {
             throw new Exception('Failed to delete building');
         }
         
-        // Log deletion
+
         log_user_activity($user_id, 'delete', 'buildings', $building_id, 
                          array('building_name' => $building_name), null);
         
@@ -200,9 +198,9 @@ function delete_building($building_id, $user_id) {
     }
 }
 
-// Create flat in building
+
 function create_flat($building_id, $flat_number, $floor_number, $user_id, $bedrooms = null, $bathrooms = null, $base_rent = 0.00) {
-    // Check building access
+
     $access_query = "SELECT b.building_id FROM buildings b
                      LEFT JOIN building_managers bm ON b.building_id = bm.building_id
                      WHERE b.building_id = ? 
@@ -215,7 +213,7 @@ function create_flat($building_id, $flat_number, $floor_number, $user_id, $bedro
         return array('success' => false, 'message' => 'Access denied');
     }
     
-    // Check if flat number already exists in this building
+
     $check_query = "SELECT flat_id FROM flats WHERE building_id = ? AND flat_number = ?";
     $check_result = execute_prepared_query($check_query, array($building_id, $flat_number), 'is');
     
@@ -228,7 +226,7 @@ function create_flat($building_id, $flat_number, $floor_number, $user_id, $bedro
     $bedrooms_value = ($bedrooms === null) ? 0 : $bedrooms;
     $bathrooms_value = ($bathrooms === null) ? 0 : $bathrooms;
     
-    // Insert flat WITH base_rent
+
     $query = "INSERT INTO flats (building_id, flat_number, floor_number, bedrooms, bathrooms, base_rent) 
               VALUES (?, ?, ?, ?, ?, ?)";
     $params = array($building_id, $flat_number, $floor_number, $bedrooms_value, $bathrooms_value, $base_rent);
@@ -242,7 +240,7 @@ function create_flat($building_id, $flat_number, $floor_number, $user_id, $bedro
         $flat_id = get_last_insert_id();
         error_log("create_flat: SUCCESS - Created flat_id=$flat_id");
         
-        // Update building's total flats count
+
         update_building_flats_count($building_id);
         
         // Log flat creation
@@ -256,7 +254,7 @@ function create_flat($building_id, $flat_number, $floor_number, $user_id, $bedro
     }
 }
 
-// Get flats in building
+
 function get_flats_by_building($building_id, $user_id, $user_type) {
     $query = "SELECT f.*,
               fdc.rent as monthly_rent,
@@ -277,7 +275,7 @@ function get_flats_by_building($building_id, $user_id, $user_type) {
     return $result ? fetch_all_rows($result) : array();
 }
 
-// Get available flats in building
+
 function get_available_flats($building_id = null, $future_date = null) {
     $query = "SELECT f.*, b.building_name, b.address
               FROM flats f
@@ -296,7 +294,7 @@ function get_available_flats($building_id = null, $future_date = null) {
         $types .= 'i';
     }
     
-    // Include flats that will be available in the future
+
     if ($future_date) {
         $query .= " OR (fa.move_out_date IS NOT NULL AND fa.move_out_date <= ?)";
         $params[] = $future_date;
@@ -312,9 +310,9 @@ function get_available_flats($building_id = null, $future_date = null) {
     return $result ? fetch_all_rows($result) : array();
 }
 
-// Update flat information
+
 function update_flat($flat_id, $flat_number, $floor_number, $bedrooms, $bathrooms, $status, $user_id) {
-    // Check access rights
+
     $access_query = "SELECT f.flat_id FROM flats f
                      JOIN buildings b ON f.building_id = b.building_id
                      LEFT JOIN building_managers bm ON b.building_id = bm.building_id
@@ -327,7 +325,7 @@ function update_flat($flat_id, $flat_number, $floor_number, $bedrooms, $bathroom
         return array('success' => false, 'message' => 'Access denied');
     }
     
-    // Update flat (removed base_rent from here)
+
     $query = "UPDATE flats 
               SET flat_number = ?, floor_number = ?, bedrooms = ?, bathrooms = ?, status = ?
               WHERE flat_id = ?";
@@ -346,9 +344,9 @@ function update_flat($flat_id, $flat_number, $floor_number, $bedrooms, $bathroom
     }
 }
 
-// Add function to update flat default charges
+
 function update_flat_default_charges($flat_id, $charges, $user_id) {
-    // Check access rights
+
     $access_query = "SELECT f.flat_id FROM flats f
                      JOIN buildings b ON f.building_id = b.building_id
                      LEFT JOIN building_managers bm ON b.building_id = bm.building_id
@@ -361,7 +359,7 @@ function update_flat_default_charges($flat_id, $charges, $user_id) {
         return array('success' => false, 'message' => 'Access denied');
     }
     
-    // If rent is being updated, use the stored procedure
+
     if (isset($charges['rent'])) {
         $query = "CALL update_flat_rent(?, ?)";
         $result = execute_prepared_query($query, array($flat_id, $charges['rent']), 'id');
@@ -370,17 +368,17 @@ function update_flat_default_charges($flat_id, $charges, $user_id) {
             return array('success' => false, 'message' => 'Failed to update rent');
         }
         
-        unset($charges['rent']); // Remove from array since already updated
+        unset($charges['rent']); 
     }
     
-    // Update other charges
+
     if (!empty($charges)) {
-        // First check if record exists
+
         $check_query = "SELECT flat_id FROM flat_default_charges WHERE flat_id = ?";
         $check_result = execute_prepared_query($check_query, array($flat_id), 'i');
         
         if (!$check_result || mysqli_num_rows($check_result) == 0) {
-            // Insert new record
+
             $query = "INSERT INTO flat_default_charges (flat_id, gas_bill, water_bill, service_charge, cleaning_charge, miscellaneous) 
                       VALUES (?, ?, ?, ?, ?, ?)";
             $params = array(
@@ -393,7 +391,7 @@ function update_flat_default_charges($flat_id, $charges, $user_id) {
             );
             $types = 'iddddd';
         } else {
-            // Update existing record
+
             $set_parts = array();
             $params = array();
             $types = '';
@@ -423,9 +421,9 @@ function update_flat_default_charges($flat_id, $charges, $user_id) {
 }
 
 
-// Add this new function to property_model.php
+
 function update_flat_rent($flat_id, $new_rent, $user_id) {
-    // Check access rights
+
     $access_query = "SELECT f.flat_id FROM flats f
                      JOIN buildings b ON f.building_id = b.building_id
                      LEFT JOIN building_managers bm ON b.building_id = bm.building_id
@@ -438,7 +436,7 @@ function update_flat_rent($flat_id, $new_rent, $user_id) {
         return array('success' => false, 'message' => 'Access denied');
     }
     
-    // Call the stored procedure
+
     $query = "CALL update_flat_rent(?, ?)";
     $result = execute_prepared_query($query, array($flat_id, $new_rent), 'id');
     
@@ -452,9 +450,9 @@ function update_flat_rent($flat_id, $new_rent, $user_id) {
     }
 }
 
-// Assign manager to building
+
 function assign_manager_to_building($building_id, $manager_id, $owner_id) {
-    // Verify owner owns the building
+
     $owner_query = "SELECT building_id FROM buildings WHERE building_id = ? AND owner_id = ?";
     $owner_result = execute_prepared_query($owner_query, array($building_id, $owner_id), 'ii');
     
@@ -462,7 +460,7 @@ function assign_manager_to_building($building_id, $manager_id, $owner_id) {
         return array('success' => false, 'message' => 'Access denied - you do not own this building');
     }
     
-    // Verify manager exists and is active
+
     $manager_query = "SELECT user_id FROM users WHERE user_id = ? AND user_type = 'manager' AND is_active = 1";
     $manager_result = execute_prepared_query($manager_query, array($manager_id), 'i');
     
@@ -470,7 +468,7 @@ function assign_manager_to_building($building_id, $manager_id, $owner_id) {
         return array('success' => false, 'message' => 'Manager not found or inactive');
     }
     
-    // Check if assignment already exists
+
     $existing_query = "SELECT bm_id FROM building_managers 
                        WHERE building_id = ? AND manager_id = ? AND is_active = 1";
     $existing_result = execute_prepared_query($existing_query, array($building_id, $manager_id), 'ii');
@@ -479,7 +477,7 @@ function assign_manager_to_building($building_id, $manager_id, $owner_id) {
         return array('success' => false, 'message' => 'Manager is already assigned to this building');
     }
     
-    // Create assignment
+
     $query = "INSERT INTO building_managers (building_id, manager_id, assigned_date) 
               VALUES (?, ?, CURDATE())";
     $result = execute_prepared_query($query, array($building_id, $manager_id), 'ii');
@@ -494,9 +492,9 @@ function assign_manager_to_building($building_id, $manager_id, $owner_id) {
     }
 }
 
-// Remove manager from building
+
 function remove_manager_from_building($building_id, $manager_id, $owner_id) {
-    // Verify ownership
+
     $owner_query = "SELECT building_id FROM buildings WHERE building_id = ? AND owner_id = ?";
     $owner_result = execute_prepared_query($owner_query, array($building_id, $owner_id), 'ii');
     
@@ -504,7 +502,7 @@ function remove_manager_from_building($building_id, $manager_id, $owner_id) {
         return array('success' => false, 'message' => 'Access denied');
     }
     
-    // Deactivate assignment
+
     $query = "UPDATE building_managers 
               SET is_active = 0 
               WHERE building_id = ? AND manager_id = ?";
@@ -520,7 +518,7 @@ function remove_manager_from_building($building_id, $manager_id, $owner_id) {
     }
 }
 
-// Update building flats count
+
 function update_building_flats_count($building_id) {
     $query = "UPDATE buildings 
               SET total_flats = (SELECT COUNT(*) FROM flats WHERE building_id = ?)
@@ -529,7 +527,7 @@ function update_building_flats_count($building_id) {
     return execute_prepared_query($query, array($building_id, $building_id), 'ii');
 }
 
-// Get building statistics
+
 function get_building_statistics($building_id) {
     $query = "SELECT 
                 COUNT(f.flat_id) as total_flats,
@@ -551,7 +549,7 @@ function get_building_statistics($building_id) {
     if ($result && mysqli_num_rows($result) > 0) {
         $stats = fetch_single_row($result);
         
-        // Calculate occupancy rate
+
         if ($stats['total_flats'] > 0) {
             $stats['occupancy_rate'] = round(($stats['occupied_flats'] / $stats['total_flats']) * 100, 1);
         } else {
@@ -564,7 +562,7 @@ function get_building_statistics($building_id) {
     return null;
 }
 
-// Search buildings
+
 function search_buildings($search_term, $user_id, $user_type) {
     $search_term = '%' . $search_term . '%';
     
@@ -578,7 +576,7 @@ function search_buildings($search_term, $user_id, $user_type) {
     $params = array($search_term, $search_term);
     $types = 'ss';
     
-    // Add user-specific filters
+
     if ($user_type === 'owner') {
         $query .= " AND b.owner_id = ?";
         $params[] = $user_id;
@@ -598,7 +596,7 @@ function search_buildings($search_term, $user_id, $user_type) {
     return $result ? fetch_all_rows($result) : array();
 }
 
-// Get building managers
+
 function get_building_managers($building_id) {
     $query = "SELECT bm.*, up.full_name as manager_name, u.email as manager_email
               FROM building_managers bm

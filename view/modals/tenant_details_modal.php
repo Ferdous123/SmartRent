@@ -1,4 +1,4 @@
-<!-- Tenant Details Modal -->
+
 <div id="tenantDetailsModal" class="modal" style="display: none;">
     <div class="modal-content" style="max-width: 800px;">
         <div class="modal-header">
@@ -6,7 +6,7 @@
             <button class="modal-close" onclick="closeTenantDetailsModal()">&times;</button>
         </div>
         <div class="modal-body">
-            <!-- Tenant Basic Info -->
+
             <div class="tenant-info-section">
                 <div class="tenant-header">
                     <div class="tenant-photo-large" id="tenantPhotoLarge">
@@ -20,13 +20,13 @@
                 </div>
             </div>
 
-            <!-- Assigned Flats -->
+
             <div class="section">
                 <h4>Assigned Flats</h4>
                 <div id="assignedFlatsContainer"></div>
             </div>
 
-            <!-- Financial Summary -->
+
             <div class="section">
                 <h4>Financial Summary</h4>
                 <div class="financial-grid">
@@ -41,7 +41,7 @@
                 </div>
             </div>
 
-            <!-- Actions -->
+
             <div class="modal-actions">
                 <button class="btn-secondary" onclick="editTenantProfile()">Edit Profile</button>
                 <button class="btn-primary" onclick="sendMessageToTenant()">Send Message</button>
@@ -53,15 +53,15 @@
 
 <style>
 .tenant-info-section {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.5rem;
+    margin-bottom: 25px;
+    padding-bottom: 25px;
     border-bottom: 2px solid #e0e0e0;
 }
 
 .tenant-header {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 25px;
 }
 
 .tenant-photo-large {
@@ -85,32 +85,32 @@
 }
 
 .tenant-basic-info h3 {
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 8px 0;
     color: #333;
 }
 
 .tenant-basic-info p {
-    margin: 0.25rem 0;
+    margin: 4px 0;
     color: #666;
     font-size: 14px;
 }
 
 .section {
-    margin: 1.5rem 0;
+    margin: 25px 0;
 }
 
 .section h4 {
-    margin: 0 0 1rem 0;
+    margin: 0 0 15px 0;
     color: #333;
     font-size: 16px;
     font-weight: 600;
 }
 
 .flat-assignment-card {
-    padding: 1rem;
-    background: #f5f7fa;
+    padding: 15px;
+    background: #f5f5f5;
     border-radius: 8px;
-    margin-bottom: 1rem;
+    margin-bottom: 15px;
     border-left: 4px solid #667eea;
 }
 
@@ -118,7 +118,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.75rem;
+    margin-bottom: 12px;
 }
 
 .flat-assignment-title {
@@ -129,9 +129,9 @@
 .flat-assignment-details {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
+    gap: 8px;
     font-size: 14px;
-    margin-bottom: 0.75rem;
+    margin-bottom: 12px;
 }
 
 .detail-row {
@@ -150,16 +150,16 @@
 
 .flat-actions {
     display: flex;
-    gap: 0.5rem;
-    margin-top: 0.75rem;
+    gap: 8px;
+    margin-top: 12px;
 }
 
 .notice-warning {
-    padding: 0.75rem;
+    padding: 12px;
     background: #fff3e0;
     border-left: 4px solid #f57c00;
     border-radius: 4px;
-    margin-top: 0.75rem;
+    margin-top: 12px;
 }
 
 .notice-warning p {
@@ -172,16 +172,16 @@
 .financial-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    gap: 15px;
 }
 
 .financial-item {
-    padding: 1rem;
-    background: #f5f7fa;
+    padding: 15px;
+    background: #f5f5f5;
     border-radius: 8px;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
 .financial-item .label {

@@ -1,4 +1,4 @@
-<!-- Assign Manager Modal -->
+
 <div id="assignManagerModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">

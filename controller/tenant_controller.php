@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 exit();
 
-// Get all tenants
+
 function handle_get_tenants($user_id, $user_type) {
     if (!in_array($user_type, array('owner', 'manager'))) {
         echo json_encode(array('success' => false, 'message' => 'Access denied'));
@@ -98,7 +98,7 @@ function handle_get_tenants($user_id, $user_type) {
     exit();
 }
 
-// Get pending assignments
+
 function handle_get_pending_assignments($user_id, $user_type) {
     if (!in_array($user_type, array('owner', 'manager'))) {
         echo json_encode(array('success' => false, 'message' => 'Access denied'));
@@ -110,7 +110,7 @@ function handle_get_pending_assignments($user_id, $user_type) {
     exit();
 }
 
-// Get outstanding tenants
+
 function handle_get_outstanding_tenants($user_id, $user_type) {
     if (!in_array($user_type, array('owner', 'manager'))) {
         echo json_encode(array('success' => false, 'message' => 'Access denied'));
@@ -122,7 +122,7 @@ function handle_get_outstanding_tenants($user_id, $user_type) {
     exit();
 }
 
-// Get tenant details
+
 function handle_get_tenant_details($user_id, $user_type) {
     $tenant_id = isset($_POST['tenant_id']) ? intval($_POST['tenant_id']) : 0;
     
@@ -136,7 +136,7 @@ function handle_get_tenant_details($user_id, $user_type) {
     exit();
 }
 
-// Generate OTP
+
 function handle_generate_otp($user_id, $user_type) {
     if (!in_array($user_type, array('owner', 'manager'))) {
         echo json_encode(array('success' => false, 'message' => 'Only owners and managers can generate OTP'));
@@ -156,7 +156,7 @@ function handle_generate_otp($user_id, $user_type) {
     exit();
 }
 
-// Direct assignment
+
 function handle_assign_tenant_direct($user_id, $user_type) {
     if (!in_array($user_type, array('owner', 'manager'))) {
         echo json_encode(array('success' => false, 'message' => 'Only owners and managers can assign tenants'));
@@ -178,7 +178,7 @@ function handle_assign_tenant_direct($user_id, $user_type) {
     exit();
 }
 
-// Generate credentials
+
 function handle_generate_credentials($user_id, $user_type) {
     if (!in_array($user_type, array('owner', 'manager'))) {
         echo json_encode(array('success' => false, 'message' => 'Only owners and managers can generate credentials'));
@@ -198,7 +198,7 @@ function handle_generate_credentials($user_id, $user_type) {
     exit();
 }
 
-// Move tenant
+
 function handle_move_tenant($user_id, $user_type) {
     if (!in_array($user_type, array('owner', 'manager'))) {
         echo json_encode(array('success' => false, 'message' => 'Access denied'));
@@ -215,7 +215,7 @@ function handle_move_tenant($user_id, $user_type) {
     exit();
 }
 
-// Send end notice
+
 function handle_send_end_notice($user_id, $user_type) {
     if (!in_array($user_type, array('owner', 'manager'))) {
         echo json_encode(array('success' => false, 'message' => 'Access denied'));
@@ -229,7 +229,7 @@ function handle_send_end_notice($user_id, $user_type) {
     exit();
 }
 
-// Cancel end notice
+
 function handle_cancel_end_notice($user_id, $user_type) {
     if (!in_array($user_type, array('owner', 'manager'))) {
         echo json_encode(array('success' => false, 'message' => 'Access denied'));
@@ -243,7 +243,7 @@ function handle_cancel_end_notice($user_id, $user_type) {
     exit();
 }
 
-// Process end tenancy
+
 function handle_process_end_tenancy($user_id, $user_type) {
     if (!in_array($user_type, array('owner', 'manager'))) {
         echo json_encode(array('success' => false, 'message' => 'Access denied'));
@@ -257,7 +257,7 @@ function handle_process_end_tenancy($user_id, $user_type) {
     exit();
 }
 
-// Update tenant profile
+
 function handle_update_tenant_profile($user_id, $user_type) {
     if (!in_array($user_type, array('owner', 'manager'))) {
         echo json_encode(array('success' => false, 'message' => 'Access denied'));
@@ -280,7 +280,7 @@ function handle_update_tenant_profile($user_id, $user_type) {
     exit();
 }
 
-// Search ALL tenants for direct assignment (not limited to existing assignments)
+
 function handle_search_all_tenants($user_id, $user_type) {
     if (!in_array($user_type, array('owner', 'manager'))) {
         echo json_encode(array('success' => false, 'message' => 'Access denied'));
@@ -296,7 +296,7 @@ function handle_search_all_tenants($user_id, $user_type) {
     
     $search_param = '%' . $search_term . '%';
     
-    // Search ALL active tenants (for direct assignment)
+
     $query = "SELECT DISTINCT u.user_id, u.username, u.email, up.full_name
               FROM users u
               JOIN user_profiles up ON u.user_id = up.user_id
@@ -313,7 +313,7 @@ function handle_search_all_tenants($user_id, $user_type) {
     exit();
 }
 
-// Get available flats
+
 function handle_get_available_flats($user_id, $user_type) {
     if (!in_array($user_type, array('owner', 'manager'))) {
         echo json_encode(array('success' => false, 'message' => 'Access denied'));
@@ -342,7 +342,7 @@ function handle_get_available_flats($user_id, $user_type) {
     exit();
 }
 
-// Search tenants
+
 function handle_search_tenants($user_id, $user_type) {
     if (!in_array($user_type, array('owner', 'manager'))) {
         echo json_encode(array('success' => false, 'message' => 'Access denied'));
@@ -388,7 +388,7 @@ function handle_search_tenants($user_id, $user_type) {
     exit();
 }
 
-// Get buildings for filter
+
 function handle_get_buildings($user_id, $user_type) {
     if (!in_array($user_type, array('owner', 'manager'))) {
         echo json_encode(array('success' => false, 'message' => 'Access denied'));

@@ -1,7 +1,4 @@
-// Profile Page JavaScript for SmartRent - Basic W3Schools Style
-// Handles profile updates, 2FA setup, and file uploads
 
-// Global variables
 var current2FASetup = null;
 var setupStep = 1;
 

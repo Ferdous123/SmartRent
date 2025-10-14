@@ -1,4 +1,4 @@
-<!-- End Tenancy Modal -->
+
 <div id="endTenancyModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -37,33 +37,33 @@
 
 <style>
 .warning-box {
-    padding: 1rem;
+    padding: 15px;
     background: #fff3e0;
     border-left: 4px solid #f57c00;
     border-radius: 6px;
-    margin-bottom: 1.5rem;
+    margin-bottom: 25px;
 }
 
 .warning-box p {
-    margin: 0.5rem 0;
+    margin: 8px 0;
     color: #f57c00;
     font-size: 14px;
 }
 
 .tenancy-info {
-    padding: 1rem;
-    background: #f5f7fa;
+    padding: 15px;
+    background: #f5f5f5;
     border-radius: 8px;
-    margin-bottom: 1.5rem;
+    margin-bottom: 25px;
 }
 
 .tenancy-info h4 {
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 8px 0;
     color: #333;
 }
 
 .tenancy-info p {
-    margin: 0.25rem 0;
+    margin: 4px 0;
     color: #666;
 }
 
@@ -71,7 +71,7 @@
     background: #f44336;
     color: white;
     border: none;
-    padding: 0.75rem 1.5rem;
+    padding: 12px 24px;
     border-radius: 6px;
     cursor: pointer;
     font-weight: 600;

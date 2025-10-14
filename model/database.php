@@ -1,36 +1,33 @@
 <?php
-// FIXED DATABASE.PHP - Main issues causing 500 errors
-// Database Configuration for SmartRent
 
-// Database configuration
 define('DB_HOST', 'localhost');
 define('DB_USERNAME', 'root');
 define('DB_PASSWORD', '');
 define('DB_NAME', 'smartrent_db');
 
-// Global database connection variable
+
 $db_connection = null;
 
-// Connect to database function
+
 function connect_database() {
     global $db_connection;
     
-    // Create connection
+
     $db_connection = new mysqli(DB_HOST, DB_USERNAME, DB_PASSWORD, DB_NAME);
     
-    // Check connection
+
     if ($db_connection->connect_error) {
         error_log("Database connection failed: " . $db_connection->connect_error);
         die("Connection failed: " . $db_connection->connect_error);
     }
     
-    // Set charset to UTF-8 for Bengali support
+
     $db_connection->set_charset("utf8mb4");
     
     return $db_connection;
 }
 
-// Close database connection function
+
 function close_database() {
     global $db_connection;
     
@@ -40,7 +37,7 @@ function close_database() {
     }
 }
 
-// Get database connection function
+
 function get_database_connection() {
     global $db_connection;
     
@@ -51,7 +48,7 @@ function get_database_connection() {
     return $db_connection;
 }
 
-// Execute query with error handling
+
 function execute_query($query) {
     $connection = get_database_connection();
     
@@ -66,7 +63,7 @@ function execute_query($query) {
     return $result;
 }
 
-// FIXED: Execute prepared statement - this was causing main 500 errors
+
 function execute_prepared_query($query, $params = array(), $types = '') {
     $connection = get_database_connection();
     
@@ -78,7 +75,7 @@ function execute_prepared_query($query, $params = array(), $types = '') {
         return false;
     }
     
-    // Bind parameters if provided
+
     if (!empty($params) && !empty($types)) {
         if (!$stmt->bind_param($types, ...$params)) {
             error_log("Bind Error: " . $stmt->error);
@@ -93,15 +90,15 @@ function execute_prepared_query($query, $params = array(), $types = '') {
         return false;
     }
     
-    // For SELECT queries, get the result
+
     $result = $stmt->get_result();
     $stmt->close();
     
-    // Return result for SELECT queries, or TRUE for INSERT/UPDATE/DELETE
+
     return $result !== false ? $result : true;
 }
 
-// Sanitize input data
+
 function sanitize_input($data) {
     if (is_array($data)) {
         return array_map('sanitize_input', $data);
@@ -112,13 +109,13 @@ function sanitize_input($data) {
     return $data;
 }
 
-// Escape string for database
+
 function escape_string($string) {
     $connection = get_database_connection();
     return $connection->real_escape_string($string);
 }
 
-// Get single row from result
+
 function fetch_single_row($result) {
     if ($result && $result->num_rows > 0) {
         return $result->fetch_assoc();
@@ -126,7 +123,7 @@ function fetch_single_row($result) {
     return null;
 }
 
-// Get all rows from result
+
 function fetch_all_rows($result) {
     $rows = array();
     
@@ -139,49 +136,49 @@ function fetch_all_rows($result) {
     return $rows;
 }
 
-// Get last inserted ID
+
 function get_last_insert_id() {
     $connection = get_database_connection();
     return $connection->insert_id;
 }
 
-// Get affected rows count
+
 function get_affected_rows() {
     $connection = get_database_connection();
     return $connection->affected_rows;
 }
 
-// Begin transaction
+
 function begin_transaction() {
     $connection = get_database_connection();
     $connection->autocommit(false);
     return $connection->begin_transaction();
 }
 
-// Commit transaction
+
 function commit_transaction() {
     $connection = get_database_connection();
     $connection->commit();
     $connection->autocommit(true);
 }
 
-// Rollback transaction
+
 function rollback_transaction() {
     $connection = get_database_connection();
     $connection->rollback();
     $connection->autocommit(true);
 }
 
-// FIXED: Generate unique transaction number - had syntax error
+
 function generate_transaction_number() {
     $timestamp = date('YmdHis');
     $random = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
     
     $transaction_number = 'TXN-' . $timestamp . '-' . $random;
     
-    // Check if it exists and regenerate if needed
+
     $counter = 0;
-    while ($counter < 10) { // FIXED: was missing $ before counter
+    while ($counter < 10) { 
         $check_query = "SELECT transaction_number FROM payments WHERE transaction_number = ?";
         $result = execute_prepared_query($check_query, [$transaction_number], 's');
         
@@ -189,7 +186,7 @@ function generate_transaction_number() {
             break;
         }
         
-        // Regenerate
+
         $random = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $transaction_number = 'TXN-' . $timestamp . '-' . $random;
         $counter++;
@@ -198,11 +195,11 @@ function generate_transaction_number() {
     return $transaction_number;
 }
 
-// FIXED: Generate OTP code
+
 function generate_otp_code() {
     $otp_code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
     
-    // Check if it exists and regenerate if needed
+
     $counter = 0;
     while ($counter < 10) {
         $check_query = "SELECT otp_code FROM flat_assignments WHERE otp_code = ?";
@@ -212,7 +209,7 @@ function generate_otp_code() {
             break;
         }
         
-        // Regenerate
+
         $otp_code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $counter++;
     }
@@ -220,7 +217,7 @@ function generate_otp_code() {
     return $otp_code;
 }
 
-// Log user activity - FIXED parameter handling
+
 function log_user_activity($user_id, $action_type, $target_table = null, $target_id = null, $old_values = null, $new_values = null) {
     try {
         $query = "INSERT INTO user_logs (user_id, action_type, target_table, target_id, old_values, new_values, ip_address, user_agent, session_id) 
@@ -254,7 +251,7 @@ function log_user_activity($user_id, $action_type, $target_table = null, $target
     }
 }
 
-// Update user activity tracking
+
 function update_user_activity($user_id, $page_visited) {
     try {
         $query = "INSERT INTO user_activity (user_id, last_page_visited, ip_address, user_agent) 
@@ -278,7 +275,7 @@ function update_user_activity($user_id, $page_visited) {
     }
 }
 
-// Test database connection
+
 function test_database_connection() {
     try {
         $connection = get_database_connection();
@@ -292,25 +289,23 @@ function test_database_connection() {
     }
 }
 
-// Initialize database connection when file is included
+
 try {
     connect_database();
 } catch (Exception $e) {
     error_log("Database initialization error: " . $e->getMessage());
 }
 
-// Register shutdown function to close connection
+
 register_shutdown_function('close_database');
 
-// =============================================================
-// TEST REGISTRATION FUNCTION - Add this to test the fix
-// =============================================================
 
-// Test the registration system
+
+
 function test_registration() {
     error_log("=== Testing Registration System ===");
     
-    // Test database connection
+
     $db_test = test_database_connection();
     error_log("Database test: " . json_encode($db_test));
     
@@ -318,7 +313,7 @@ function test_registration() {
         return $db_test;
     }
     
-    // Test user registration
+
     try {
         $test_result = register_user(
             'testuser_' . time(), 

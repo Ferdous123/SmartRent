@@ -1,29 +1,27 @@
 <?php
-// User Model for SmartRent
-// All user-related database operations
 require_once 'database.php';
 
-// Register new user
+
 if (!function_exists('register_user')) {
     function register_user($username, $email, $password, $user_type, $full_name, $phone_number = null) {
-    // Check if username already exists
+
     if (check_username_exists($username)) {
         return array('success' => false, 'message' => 'Username already exists');
     }
     
-    // Check if email already exists
+
     if (check_email_exists($email)) {
         return array('success' => false, 'message' => 'Email already exists');
     }
     
-    // Hash password
+
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
     
-    // Begin transaction
+
     begin_transaction();
     
     try {
-        // Insert into users table
+
         $user_query = "INSERT INTO users (username, email, password_hash, user_type) VALUES (?, ?, ?, ?)";
         $user_params = array($username, $email, $password_hash, $user_type);
         $user_types = 'ssss';

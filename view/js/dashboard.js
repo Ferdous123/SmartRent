@@ -1,22 +1,20 @@
-// SmartRent Dashboard JavaScript
-// Global variables
+
 var currentUser = null;
 var dashboardStats = null;
 var sessionCheckInterval = null;
 
-// Initialize dashboard when page loads
 document.addEventListener('DOMContentLoaded', function() {
     initCommonDashboard();
 });
 
-// Initialize common dashboard features
+
 function initCommonDashboard() {
     loadDashboardStats();
     loadBuildingsOverview();
     loadRecentActivity();
     setupModalHandlers();
 }
-// Load dashboard statistics
+
 function loadDashboardStats() {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '../controller/dashboard_controller.php', true);
@@ -41,9 +39,7 @@ function loadDashboardStats() {
     xhr.send('action=get_dashboard_stats');
 }
 
-// Update dashboard statistics display
 function updateDashboardStats(stats) {
-    // Update stats based on what's available
     updateElementText('totalBuildings', stats.total_buildings || stats.managed_buildings);
     updateElementText('totalFlats', stats.total_flats);
     updateElementText('totalTenants', stats.total_tenants);
@@ -68,7 +64,6 @@ function updateDashboardStats(stats) {
         updateElementText('outstandingAmount', '৳' + formatNumber(stats.outstanding_payments_amount));
     }
     
-    // Tenant specific stats
     if (stats.has_assignment) {
         updateElementText('flatDetails', stats.flat_info);
         updateElementText('flatInfo', stats.flat_info);
@@ -82,7 +77,6 @@ function updateDashboardStats(stats) {
     }
 }
 
-// Update element text safely
 function updateElementText(elementId, text) {
     var element = document.getElementById(elementId);
     if (element && text !== undefined && text !== null) {
@@ -90,13 +84,11 @@ function updateElementText(elementId, text) {
     }
 }
 
-// Format number with commas
 function formatNumber(num) {
     if (num === undefined || num === null) return '0';
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-// Load recent activity
 function loadRecentActivity() {
     setTimeout(function() {
         var activityList = document.getElementById('activityList');
@@ -114,7 +106,6 @@ function loadRecentActivity() {
     }, 1000);
 }
 
-// Setup modal handlers
 function setupModalHandlers() {
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('modal')) {
@@ -132,7 +123,6 @@ function setupModalHandlers() {
     });
 }
 
-// Show modal
 function showModal(modalId) {
     var modal = document.getElementById(modalId);
     if (modal) {
@@ -148,7 +138,6 @@ function showModal(modalId) {
     }
 }
 
-// Close modal
 function closeModal(modal) {
     if (typeof modal === 'string') {
         modal = document.getElementById(modal);

@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $user = fetch_single_row($result);
             
             if (password_verify($password, $user['password_hash'])) {
-                // Use centralized session creation
+
                 create_user_session($user, $stay_logged_in);
                 
                 header("Location: ../controller/dashboard_controller.php");
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// Handle logout
+
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     clear_user_session();
     header("Location: ../view/login.php?success=" . urlencode("Logged out successfully"));

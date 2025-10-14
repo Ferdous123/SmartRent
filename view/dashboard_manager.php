@@ -1,5 +1,4 @@
 <?php
-// Don't start session - already started by dashboard_controller.php
 if (!isset($current_user)) {
     require_once '../controller/session_controller.php';
     
@@ -16,7 +15,6 @@ if ($current_user['user_type'] !== 'manager') {
     exit();
 }
 
-// Initialize user preferences with defaults if not set
 if (!isset($user_preferences)) {
     $user_preferences = [
         'language_code' => 'en',
